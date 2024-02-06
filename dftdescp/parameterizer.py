@@ -78,6 +78,18 @@ class parameterizer:
         prelim_df.insert(0, column="log_name", value=list_of_files)
         self.prelim_df = prelim_df
 
+    def get_filecont(log):  # gets the entire job output
+        error = ""  # default unless "normal termination" is in file
+        an_error = True
+        with open(log + ".log") as f:
+            loglines = f.readlines()
+        for line in loglines[::-1]:
+            if "Normal termination" in line:
+                an_error = False
+            if an_error:
+                error = "****Failed or incomplete jobs for " + log + ".log"
+        return (loglines, error)
+
     def generate_df(self, atom_labels):
         """
         Generate the atom mapped df
