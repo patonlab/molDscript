@@ -26,10 +26,10 @@ def main():
         all_read = files(calc='link',path=args.path_link)
         print(all_read.file_data.keys())
         # nmr_data = nmr(all_read.file_data)
-        # nbo_data = nmr(all_read.file_data)
-        # fukui_data = nmr(all_read.file_data)
-        # sp_ie_ea_data = nmr(all_read.file_data)
-        # ad_ie_ea_data = nmr(all_read.file_data)
+        # nbo_data = nbo(all_read.file_data)
+        # fukui_data = fukui(all_read.file_data)
+        # sp_ie_ea_data = sp_ie_ea(all_read.file_data)
+        # ad_ie_ea_data = ad_ie_ea(all_read.file_data)
 
     else:
         # NMR
@@ -42,25 +42,25 @@ def main():
         if args.nbo:
             nbo_read = files(calc='nbo',path=args.path_nbo)
             print(nbo_read.file_data.keys())
-            # nbo_data = nmr(nbo_read.file_data)
+            # nbo_data = nbo(nbo_read.file_data)
 
         # FUKUI
         if args.fukui:
             fukui_read = files(calc='fukui',path=args.path_fukui)
             print(fukui_read.file_data.keys())
-            # fukui_data = nmr(fukui_read.file_data)
+            # fukui_data = fukui(fukui_read.file_data)
 
         # SP IE & EA
         if args.sp_ie_ea:
             sp_ie_ea_read = files(calc='sp_ie_ea',path=args.path_sp_ie_ea)
             print(sp_ie_ea_read.file_data.keys())
-            # sp_ie_ea_data = nmr(sp_ie_ea_read.file_data)
+            # sp_ie_ea_data = sp_ie_ea(sp_ie_ea_read.file_data)
 
         # AD IE & EA
         if args.ad_ie_ea:
             ad_ie_ea_read = files(calc='ad_ie_ea',path=args.path_ad_ie_ea)
             print(ad_ie_ea_read.file_data.keys())
-            # ad_ie_ea_data = nmr(sp_ie_ea_read.file_data)
+            # ad_ie_ea_data = ad_ie_ea(sp_ie_ea_read.file_data)
     
     
 
