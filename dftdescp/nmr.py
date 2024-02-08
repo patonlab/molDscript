@@ -1,4 +1,4 @@
-from parameterizer import parameterizer
+from dftdescp.parameterizer import parameterizer
 import pandas as pd
 import re
 
