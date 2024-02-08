@@ -1,6 +1,6 @@
 from rdkit import Chem
 import pandas as pd
-import get_properties_functions as gp
+import dftdescp.get_properties_functions as gp
 
 
 class parameterizer:
