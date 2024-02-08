@@ -1,5 +1,8 @@
 from dftdescp.parameterizer import parameterizer
 from dftdescp.files import files
+from dftdescp.fukui import fukui
+from dftdescp.ie_ea import ie_ea
+from dftdescp.opt import opt
 from dftdescp.argument_parser import command_line_args
 import subprocess, sys
 
@@ -32,6 +35,12 @@ def main():
         # ad_ie_ea_data = ad_ie_ea(all_read.file_data)
 
     else:
+        # OPT
+        if args.opt:
+            opt_read = files(calc='opt',path=args.path_opt)
+            opt_data = opt(opt_read.file_data)
+            print(opt_data.file_data.keys())
+
         # NMR
         if args.nmr:
             nmr_read = files(calc='nmr',path=args.path_nmr)
@@ -47,21 +56,20 @@ def main():
         # FUKUI
         if args.fukui:
             fukui_read = files(calc='fukui',path=args.path_fukui)
-            print(fukui_read.file_data.keys())
-            # fukui_data = fukui(fukui_read.file_data)
+            fukui_data = fukui(fukui_read.file_data)
+            print(fukui_data.file_data.keys())
 
         # SP IE & EA
         if args.sp_ie_ea:
             sp_ie_ea_read = files(calc='sp_ie_ea',path=args.path_sp_ie_ea)
-            print(sp_ie_ea_read.file_data.keys())
-            # sp_ie_ea_data = sp_ie_ea(sp_ie_ea_read.file_data)
+            sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data)
+            print(sp_ie_ea_data.file_data.keys())
 
         # AD IE & EA
         if args.ad_ie_ea:
             ad_ie_ea_read = files(calc='ad_ie_ea',path=args.path_ad_ie_ea)
-            print(ad_ie_ea_read.file_data.keys())
-            # ad_ie_ea_data = ad_ie_ea(sp_ie_ea_read.file_data)
-    
+            ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
+            print(ad_ie_ea_data.file_data.keys())
     
 
     # # Creates the parameterizer class and writes a .csv to look at for atom mapping

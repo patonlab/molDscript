@@ -27,7 +27,7 @@ var_dict = {
 
     "link": False,
 
-    "path_opt": "tests/QCALC/success/SP_calcs",
+    "path_opt": "tests/QCALC/success",
     "path_nmr": "tests/SP_NMR/success/SP_calcs",
     "path_nbo": "tests/SP_NBO/success/SP_calcs",
     "path_fukui": "tests/SP_FUKUI/success/SP_calcs",
@@ -37,9 +37,9 @@ var_dict = {
 
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
-    "suffix_fukui": "SP_charge",
-    "suffix_fukui_n": "SP_charge_n",
-    "suffix_fukui_p": "SP_charge_p",
+    "suffix_fukui": "SP_neutral",
+    "suffix_fukui_red": "SP_reduced",
+    "suffix_fukui_ox": "SP_oxidized",
     "suffix_ad_ie": "AD_IE",
     "suffix_ad_ea": "AD_EA",
     "suffix_sp_ie": "SP_IE",
@@ -219,17 +219,17 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
                 f"\no  Importing DFTDESCP parameters from {self.varfile}",
                 "\nx  The specified yaml file containing parameters was not found! Make sure that the valid params file is in the folder where you are running the code.\n",
             ]:
-                self.log = Logger(self.initial_dir, logger_1, verbose=self.verbose)
+                self.log = Logger(f"{self.initial_dir}/DFTDESCP", logger_1, verbose=self.verbose)
                 self.log.write(txt_yaml)
                 error_setup = True
 
             if not error_setup:
                 if not self.command_line:
-                    self.log = Logger(self.initial_dir, logger_1, verbose=self.verbose)
+                    self.log = Logger(f"{self.initial_dir}/DFTDESCP", logger_1, verbose=self.verbose)
                 else:
                     # prevents errors when using command lines and running to remote directories
                     path_command = Path(f"{os.getcwd()}")
-                    self.log = Logger(path_command, logger_1, verbose=self.verbose)
+                    self.log = Logger(f"{path_command}/DFTDESCP", logger_1, verbose=self.verbose)
 
                 self.log.write(f"DFTDESCP v {dftdescp_version} {time_run} \nCitation: {dftdescp_ref}\n")
 
