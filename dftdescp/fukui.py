@@ -26,7 +26,7 @@ class fukui:
             self.args.log.finalize()
             sys.exit()
         else:
-            self.file_data = self.get_data()
+                self.file_data = self.get_data()
         
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
@@ -88,8 +88,8 @@ class fukui:
                 for i in range(start_npop, end_npop):
                     nat_charges.append(float(lines[i].split()[2]))
                 cc_data.atomcharges['natural'] = nat_charges
-        except: 
-            pass
+        except:
+            cc_data.atomcharges['natural'] = None
         
         try: #hirsfeld & cm5
             start_npop = None
@@ -106,7 +106,8 @@ class fukui:
                 cc_data.atomcharges['hirsfeld'] = hers_charges
                 cc_data.atomcharges['cm5'] = cm5_charges
         except: 
-            pass
+            cc_data.atomcharges['hirsfeld'] = None
+            cc_data.atomcharges['cm5'] = None
 
         return cc_data 
 

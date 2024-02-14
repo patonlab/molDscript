@@ -9,6 +9,8 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import (load_variables)
 
+eV_to_hartree = 0.0367493
+
 class opt:
     """
     Class containing all the functions for the opt module related to Gaussian output files
@@ -40,7 +42,7 @@ class opt:
         for file_name in self.data.keys():
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             self.args.log.write(f"Reading information for OPT data from {file_name}\n")
-            file_data[file_name]['opt']['scfenergy'] = opt_data.scfenergies[-1]
+            file_data[file_name]['opt']['scfenergy'] = opt_data.scfenergies[-1]*eV_to_hartree
             file_data[file_name]['opt']['enthalpy'] = opt_data.enthalpy
             file_data[file_name]['opt']['freeenergy'] = opt_data.freeenergy
         return file_data 

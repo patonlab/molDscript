@@ -164,6 +164,7 @@ def command_line_args():
     
     # reassinging properties based on all or specific ones
     if args.all:
+        vars(args)['opt'] = True
         vars(args)['nmr'] = True
         vars(args)['nbo'] = True
         vars(args)['fukui'] = True

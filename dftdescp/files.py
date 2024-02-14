@@ -27,7 +27,7 @@ class files:
         self.files = get_files(self.path)
         
         if self.calc == 'link':
-            self.file_data = self.get_link_data()
+            self.file_data = self.get_link()
         if self.calc == 'opt':
             self.file_data = self.get_opt()
         if self.calc == 'nmr':
