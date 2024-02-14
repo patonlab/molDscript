@@ -1,100 +1,83 @@
-from dftdescp.parameterizer import parameterizer
-import pandas as pd
-import re
+######################################################.
+#        This file stores the NMR class               #
+######################################################.
 
 
-class nmr(parameterizer):
-    def __init__(self, a_list):
-        super().__init__(self)  # Will need to match these inputs
-        self.atom_list = a_list
+import sys, os
+import time
+import cclib as cc
+from collections import defaultdict
+from dftdescp.argument_parser import (load_variables)
 
-    def get_nmr(self):
+class nmr:
+    """
+    Class containing all the functions for the NMR module related to Gaussian output files
+    """
 
-        # these are at the start of the get_properties_functions and are needed for this module
-        nmrstart_pattern = " SCF GIAO Magnetic shielding tensor (ppm):\n"
-        nmrend_pattern = re.compile("End of Minotr F.D.")
-        nmrend_pattern_os = re.compile("g value of the free electron")
+    def __init__(self, data, create_dat=True, **kwargs):
 
-        nmr_dataframe = pd.DataFrame(
-            columns=[]
-        )  # define an empty df to place results in
+        start_time_overall = time.time()
+        # load default and user-specified variables
+        self.args = load_variables(kwargs, "NMR", create_dat=create_dat)
+        self.data = data
+        
+        if len(self.data.keys()) == 0:
+            self.args.log.write(f'\nx  Could not find files to obtain information for calculating NMR')
+            self.args.log.finalize()
+            sys.exit()
+        else:
+            self.file_data = self.get_data()
+        
+        if create_dat:
+            elapsed_time = round(time.time() - start_time_overall, 2)
+            self.args.log.write(f"\nTime Collecting NMR data: {elapsed_time} seconds\n")
+            self.args.log.finalize()
+            
+    def get_data(self):
+        mydict = lambda: defaultdict(mydict)
+        file_data = mydict()
 
-        for index, row in self.mapped_df.iterrows():  # iterate over the dataframe
-
-            # if True:
-            try:  # try to get the data
-                atom_list = []
-                for new_a in self.a_list:
-                    new_atom = row[
-                        str(new_a)
-                    ]  # the atom number (i.e. 16) to add to the list is the df entry of this row for the labeled atom (i.e.) "C1")
-                    atom_list.append(
-                        str(new_atom)
-                    )  # append that to atom_list to make a list of the form [16, 17, 29]
-                log_file = row["log_name"]  # read file name from df
-                filecont, error = self.get_filecont(
-                    log_file
-                )  # read the contents of the log file
-                if error != "":
-                    print(error)
-                    row_i = {}
-                    for a in range(0, len(self.a_list)):
-                        entry = {"NMR_shift_" + str(self.a_list[a]): "no data"}
-                        row_i.update(entry)
-                    nmr_dataframe = nmr_dataframe.append(row_i, ignore_index=True)
-                    continue
-
-                # determining the locations/values for start and end of NMR section
-                start, end, i = 0, 0, 0
-                if nmrstart_pattern in filecont:
-                    start = filecont.index(nmrstart_pattern) + 1
-                    for i in range(start, len(filecont), 1):
-                        if nmrend_pattern.search(
-                            filecont[i]
-                        ) or nmrend_pattern_os.search(filecont[i]):
-                            end = i
-                            break
-                if start == 0:
-                    error = (
-                        "****no NMR data found in file: "
-                        + str(row["log_name"])
-                        + ".log"
-                    )
-                    print(error)
-                    row_i = {}
-                    for a in range(0, len(self.a_list)):
-                        entry = {"NMR_shift_" + str(self.a_list[a]): "no data"}
-                        row_i.update(entry)
-                    nmr_dataframe = nmr_dataframe.append(row_i, ignore_index=True)
-                    continue
-
-                atoms = int(
-                    (end - start) / 5
-                )  # total number of atoms in molecule (there are 5 lines generated per atom)
-                nmr = []
-                for atom in range(atoms):
-                    element = str.split(filecont[start + 5 * atom])[1]
-                    shift_s = str.split(filecont[start + 5 * atom])[4]
-                    nmr.append([element, shift_s])
-                # atom_list = ["1", "2", "3"]
-                nmrout = get_specdata(
-                    atom_list, nmr
-                )  # Need to figure out what this does - Jake
-                # print(nmrout)
-
-                # this adds the data from the nboout into the new property df
-                row_i = {}
-                for a in range(0, len(self.a_list)):
-                    entry = {"NMR_shift_" + str(self.a_list[a]): nmrout[a]}
-                    row_i.update(entry)
-                nmr_dataframe = nmr_dataframe.append(row_i, ignore_index=True)
+        for file_name in self.data.keys():
+            try:
+                nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
-                print("****Unable to acquire NMR shifts for:", row["log_name"], ".log")
-                row_i = {}
-                for a in range(0, len(self.a_list)):
-                    entry = {"NMR_shift_" + str(self.a_list[a]): "no data"}
-                    row_i.update(entry)
-                nmr_dataframe = nmr_dataframe.append(row_i, ignore_index=True)
-        print("NMR function has completed for", self.a_list)
-        complete_df = pd.concat([self.mapped_df, nmr_dataframe], axis=1)
-        complete_df.to_csv("nmr_parameters.csv")
+                nmr_data = None
+            if nmr_data != None:
+                self.args.log.write(f"Reading information for NMR data from {file_name}\n")
+                file_data[file_name]['nmr_shielding']= nmr_data.nmr_shielding
+            else:
+                self.args.log.write(f"Skipping file {file_name} as NMR data didnt exist\n")
+
+        return file_data 
+    
+    def parse_cc_data(self, file_name, file):
+
+        ### parse data
+        parser = cc.io.ccopen(file)
+        try:
+            cc_data = parser.parse()
+
+        except:
+            self.args.log.write(f'\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients')
+            cc_data  = None
+
+        try: # Get NMR shielding tensor data
+            outfile = open(file,"r")
+            lines = outfile.readlines()
+            
+            for i in range(0,len(lines)):
+                if lines[i].find("shielding tensors") > -1:
+                    start = i+2
+                if lines[i].find("End of Minotr F.D.") > -1:
+                    end = i-1
+
+            nmr_shielding = []
+            for j in range(start,end-1, 5):
+                nmr = lines[j].split()[4]
+                nmr_shielding.append(nmr)
+            setattr(cc_data, "nmr_shielding", nmr_shielding)
+        except: setattr(cc_data, "nmr_shielding", None)
+
+        return cc_data 
+
+    

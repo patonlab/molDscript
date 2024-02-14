@@ -3,6 +3,8 @@ from dftdescp.files import files
 from dftdescp.fukui import fukui
 from dftdescp.ie_ea import ie_ea
 from dftdescp.opt import opt
+from dftdescp.nmr import nmr
+from dftdescp.nbo import nbo
 from dftdescp.argument_parser import command_line_args
 import subprocess, sys
 
@@ -27,12 +29,12 @@ def main():
     if args.link:
         # ALL DATA
         all_read = files(calc='link',path=args.path_link)
-        print(all_read.file_data.keys())
-        # nmr_data = nmr(all_read.file_data)
-        # nbo_data = nbo(all_read.file_data)
-        # fukui_data = fukui(all_read.file_data)
-        # sp_ie_ea_data = sp_ie_ea(all_read.file_data)
-        # ad_ie_ea_data = ad_ie_ea(all_read.file_data)
+        if args.opt: opt_data = opt(all_read.file_data)
+        if args.nmr : nmr_data = nmr(all_read.file_data)
+        if args.nbo : nbo_data = nbo(all_read.file_data)
+        # if args.fukui :  fukui_data = fukui(all_read.file_data) ## I dont think we can access this using link
+        # if args.sp_ie_ea:  sp_ie_ea_data = ie_ea(all_read.file_data) ## I dont think we can access this using link
+        # if args.ad_ie_ea : ad_ie_ea_data =  ie_ea(all_read.file_data) ## I dont think we can access this using link
 
     else:
         # OPT
@@ -44,14 +46,14 @@ def main():
         # NMR
         if args.nmr:
             nmr_read = files(calc='nmr',path=args.path_nmr)
-            print(nmr_read.file_data.keys())
-            # nmr_data = nmr(nmr_read.file_data)
+            nmr_data = nmr(nmr_read.file_data)
+            print(nmr_data.file_data.keys())
 
         # NBO
         if args.nbo:
             nbo_read = files(calc='nbo',path=args.path_nbo)
-            print(nbo_read.file_data.keys())
-            # nbo_data = nbo(nbo_read.file_data)
+            nbo_data = nbo(nbo_read.file_data)
+            print(nbo_data.file_data.keys())
 
         # FUKUI
         if args.fukui:
