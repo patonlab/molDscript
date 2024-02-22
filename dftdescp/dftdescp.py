@@ -5,6 +5,7 @@ from dftdescp.ie_ea import ie_ea
 from dftdescp.opt import opt
 from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
+from dftdescp.substructure import substructure
 from dftdescp.argument_parser import command_line_args
 import subprocess, sys
 
@@ -72,6 +73,11 @@ def main():
             ad_ie_ea_read = files(calc='ad_ie_ea',path=args.path_ad_ie_ea)
             ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
             print(ad_ie_ea_data.file_data.keys())
+
+    if args.substructure != '':
+        substructure_read = files(calc='substructure',path=args.path_opt)
+        substurcture_data = substructure(substructure_read.file_data, args.substructure)
+        print(substurcture_data.file_data['/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log'][args.substructure]['index'])
     
 
     # # Creates the parameterizer class and writes a .csv to look at for atom mapping
