@@ -29,7 +29,7 @@ class files:
         if self.calc == 'link':
             self.file_data = self.get_link()
         if self.calc == 'opt':
-            self.file_data = self.get_opt()
+            self.file_data = self.get_opt_or_substurcture()
         if self.calc == 'nmr':
             self.file_data = self.get_nmr()
         if self.calc == 'nbo':
@@ -40,11 +40,13 @@ class files:
             self.file_data = self.get_sp_ie_ea()
         if self.calc == 'ad_ie_ea':
             self.file_data = self.get_ad_ie_ea()
+        if self.calc == 'substructure':
+            self.file_data = self.get_opt_or_substurcture()
         
         if create_dat:
             self.args.log.finalize()
 
-    def get_opt(self):
+    def get_opt_or_substurcture(self):
         file_data = defaultdict(dict)
         for file in self.files:
             file_data[file] = file

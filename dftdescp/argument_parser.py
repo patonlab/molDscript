@@ -27,6 +27,8 @@ var_dict = {
 
     "link": False,
 
+    "substructure": '',
+
     "path_opt": "tests/QCALC/success",
     "path_nmr": "tests/SP_NMR/success/SP_calcs",
     "path_nbo": "tests/SP_NBO/success/SP_calcs",
@@ -105,6 +107,8 @@ def command_line_args():
         "path_ad_ie_ea",
         "path_sp_ie_ea",
         "path_link",
+
+        "substructure",
 
         "suffix_nmr",
         "suffix_nbo",
@@ -214,6 +218,9 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
 
             elif dftdescp_module == "FUKUI":
                 logger_1 = "FUKUI"
+
+            if dftdescp_module == "SUBSTRUCTURE":
+                logger_1 = "SUBSTRUCTURE"
 
             if txt_yaml not in [
                 "",
