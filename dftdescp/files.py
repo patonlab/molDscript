@@ -5,11 +5,12 @@
 
 import sys, os
 import time
-from dftdescp.utils import (
+from utils import (
     get_files,
 )
 from collections import defaultdict
-from dftdescp.argument_parser import (load_variables)
+from dftdescp.argument_parser import load_variables
+
 
 class files:
     """
@@ -25,24 +26,24 @@ class files:
         self.path = path
 
         self.files = get_files(self.path)
-        
-        if self.calc == 'link':
+
+        if self.calc == "link":
             self.file_data = self.get_link()
-        if self.calc == 'opt':
+        if self.calc == "opt":
             self.file_data = self.get_opt_or_substurcture()
-        if self.calc == 'nmr':
+        if self.calc == "nmr":
             self.file_data = self.get_nmr()
-        if self.calc == 'nbo':
+        if self.calc == "nbo":
             self.file_data = self.get_nbo()
-        if self.calc == 'fukui':
+        if self.calc == "fukui":
             self.file_data = self.get_fukui()
-        if self.calc == 'sp_ie_ea':
+        if self.calc == "sp_ie_ea":
             self.file_data = self.get_sp_ie_ea()
-        if self.calc == 'ad_ie_ea':
+        if self.calc == "ad_ie_ea":
             self.file_data = self.get_ad_ie_ea()
-        if self.calc == 'substructure':
+        if self.calc == "substructure":
             self.file_data = self.get_opt_or_substurcture()
-        
+
         if create_dat:
             self.args.log.finalize()
 
@@ -56,7 +57,7 @@ class files:
         file_data = defaultdict(dict)
         for file in self.files:
             if self.args.suffix_nmr in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_nmr}')
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_nmr}")
                 file_data[key_name[0]] = file
         return file_data
 
@@ -64,7 +65,7 @@ class files:
         file_data = defaultdict(dict)
         for file in self.files:
             if self.args.suffix_nbo in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_nbo}')
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_nbo}")
                 file_data[key_name[0]] = file
         return file_data
 
@@ -72,41 +73,42 @@ class files:
         file_data = defaultdict(dict)
         for file in self.files:
             if self.args.suffix_fukui in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_fukui}')
-                file_data[key_name[0]]['neutral'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui}")
+                file_data[key_name[0]]["neutral"] = file
             if self.args.suffix_fukui_red in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_fukui_red}')
-                file_data[key_name[0]]['reduced'] = file
+                key_name = os.path.basename(file).split(
+                    f"_{self.args.suffix_fukui_red}"
+                )
+                file_data[key_name[0]]["reduced"] = file
             if self.args.suffix_fukui_ox in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_fukui_ox}')
-                file_data[key_name[0]]['oxidized'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui_ox}")
+                file_data[key_name[0]]["oxidized"] = file
         return file_data
 
     def get_sp_ie_ea(self):
         file_data = defaultdict(dict)
         for file in self.files:
             if self.args.suffix_sp_ie in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_sp_ie}')
-                file_data[key_name[0]]['ie'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ie}")
+                file_data[key_name[0]]["ie"] = file
             if self.args.suffix_sp_ea in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_sp_ea}')
-                file_data[key_name[0]]['ea'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ea}")
+                file_data[key_name[0]]["ea"] = file
         return file_data
 
     def get_ad_ie_ea(self):
         file_data = defaultdict(dict)
         for file in self.files:
             if self.args.suffix_ad_ie in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_ad_ie}')
-                file_data[key_name[0]]['ie'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_ad_ie}")
+                file_data[key_name[0]]["ie"] = file
             if self.args.suffix_ad_ea in os.path.basename(file):
-                key_name = os.path.basename(file).split(f'_{self.args.suffix_ad_ea}')
-                file_data[key_name[0]]['ea'] = file
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_ad_ea}")
+                file_data[key_name[0]]["ea"] = file
         return file_data
-    
+
     def get_link(self):
         file_data = defaultdict(dict)
         for file in self.files:
-                file_data[file] = file
+            file_data[file] = file
         return file_data
-        
