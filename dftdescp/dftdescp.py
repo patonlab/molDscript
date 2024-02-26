@@ -9,25 +9,25 @@ from argument_parser import command_line_args
 import subprocess, sys
 
 
-def checks():
-    # this is a dummy import just to warn the user if Open babel is not installed
-    try:
-        command_run_1 = ["obabel", "-H"]
-        subprocess.run(
-            command_run_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-    except FileNotFoundError:
-        print(
-            "x  Open Babel is not installed! You can install the program with 'conda install -c conda-forge openbabel'"
-        )
-        sys.exit()
-    try:
-        from rdkit.Chem import AllChem as Chem
-    except ModuleNotFoundError:
-        print(
-            "x  RDKit is not installed! You can install the program with 'conda install -c conda-forge rdkit'"
-        )
-        sys.exit()
+# def checks():
+#     # this is a dummy import just to warn the user if Open babel is not installed
+#     try:
+#         command_run_1 = ["obabel", "-H"]
+#         subprocess.run(
+#             command_run_1, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+#         )
+#     except FileNotFoundError:
+#         print(
+#             "x  Open Babel is not installed! You can install the program with 'conda install -c conda-forge openbabel'"
+#         )
+#         sys.exit()
+#     try:
+#         from rdkit.Chem import AllChem as Chem
+#     except ModuleNotFoundError:
+#         print(
+#             "x  RDKit is not installed! You can install the program with 'conda install -c conda-forge rdkit'"
+#         )
+#         sys.exit()
 
 
 def main():

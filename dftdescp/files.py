@@ -9,7 +9,7 @@ from utils import (
     get_files,
 )
 from collections import defaultdict
-from dftdescp.argument_parser import load_variables
+from argument_parser import load_variables
 
 
 class files:
