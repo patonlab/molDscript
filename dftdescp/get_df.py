@@ -4,6 +4,7 @@
 
 
 import pandas as pd
+import time
 from dftdescp.argument_parser import command_line_args
 
 
@@ -32,4 +33,5 @@ class get_df:
                 self.df = dict_df
             else:
                 pd.concat(self.df, dict_df)
+        self.df.to_csv(f'dftdescp_{time.strftime("%Y%m%d-%H%M%S")}_out.csv')
         return self.df
