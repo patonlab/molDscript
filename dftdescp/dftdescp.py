@@ -1,11 +1,11 @@
-import dftdescp.files
-import dftdescp.fukui
-import dftdescp.ie_ea
-import dftdescp.opt
-import dftdescp.nmr
-import dftdescp.nbo
-import dftdescp.substructure
-import dftdescp.get_df as get_df
+from dftdescp.files import files
+from dftdescp.fukui import fukui
+from dftdescp.ie_ea import ie_ea
+from dftdescp.opt import opt
+from dftdescp.nmr import nmr
+from dftdescp.nbo import nbo
+from dftdescp.substructure import substructure
+from dftdescp.get_df import get_df
 from dftdescp.argument_parser import command_line_args
 import subprocess, sys
 
@@ -101,7 +101,7 @@ def main():
                 "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
             ][args.substructure]["index"]
         )
-    final_df = get_df(data_dicts)
+    final_df = get_df(data_dicts, 'molecular')
 
     # # Creates the parameterizer class and writes a .csv to look at for atom mapping
     # param = parameterizer(args["struc"], args["sdf"], args["txt"])
