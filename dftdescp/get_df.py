@@ -17,7 +17,7 @@ class get_df:
         self.dd = data_dicts
         if data_type == "molecular":
             mol_df = self.get_mol_df()
-            return mol_df
+            self.mol_df = mol_df
 
         # self.df = False
         # for dict in data_dicts:
