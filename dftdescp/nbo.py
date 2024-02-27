@@ -7,7 +7,7 @@ import sys, os
 import time
 import cclib as cc
 from collections import defaultdict
-from argument_parser import load_variables
+from dftdescp.argument_parser import load_variables
 
 
 class nbo:

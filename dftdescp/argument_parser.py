@@ -4,7 +4,7 @@
 
 import os, time, getopt, sys
 from pathlib import Path
-from utils import format_lists, load_from_yaml, Logger
+from dftdescp.utils import format_lists, load_from_yaml, Logger
 
 dftdescp_version = "X.X"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())

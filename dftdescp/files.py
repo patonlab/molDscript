@@ -5,11 +5,11 @@
 
 import sys, os
 import time
-from utils import (
+from dftdescp.utils import (
     get_files,
 )
 from collections import defaultdict
-from argument_parser import load_variables
+from dftdescp.argument_parser import load_variables
 
 
 class files:

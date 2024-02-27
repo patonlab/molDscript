@@ -1,12 +1,12 @@
-import files
-import fukui
-import ie_ea
-import opt
-import nmr
-import nbo
-import substructure
+import dftdescp.files
+import dftdescp.fukui
+import dftdescp.ie_ea
+import dftdescp.opt
+import dftdescp.nmr
+import dftdescp.nbo
+import dftdescp.substructure
 import dftdescp.get_df as get_df
-from argument_parser import command_line_args
+from dftdescp.argument_parser import command_line_args
 import subprocess, sys
 
 
