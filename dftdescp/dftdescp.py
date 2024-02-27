@@ -34,19 +34,19 @@ import subprocess, sys
 def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
-    data_dicts = []
+    data_dicts = {}
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link)
         if args.opt:
             opt_data = opt(all_read.file_data)
-            data_dicts.append(opt_data)
+            data_dicts["opt"] = opt_data
         if args.nmr:
             nmr_data = nmr(all_read.file_data)
-            data_dicts.append(nmr_data)
+            data_dicts["nmr"] = nmr_data
         if args.nbo:
             nbo_data = nbo(all_read.file_data)
-            data_dicts.append(nbo_data)
+            data_dicts["nbo"] = nbo_data
         # if args.fukui :  fukui_data = fukui(all_read.file_data) ## I dont think we can access this using link
         # if args.sp_ie_ea:  sp_ie_ea_data = ie_ea(all_read.file_data) ## I dont think we can access this using link
         # if args.ad_ie_ea : ad_ie_ea_data =  ie_ea(all_read.file_data) ## I dont think we can access this using link
@@ -57,41 +57,41 @@ def main():
             opt_read = files(calc="opt", path=args.path_opt)
             opt_data = opt(opt_read.file_data)
             print(opt_data.file_data.keys())
-            data_dicts.append(opt_data)
+            data_dicts["opt"] = opt_data
 
         # NMR
         if args.nmr:
             nmr_read = files(calc="nmr", path=args.path_nmr)
             nmr_data = nmr(nmr_read.file_data)
             print(nmr_data.file_data.keys())
-            data_dicts.append(nmr_data)
+            data_dicts["nmr"] = nmr_data
         # NBO
         if args.nbo:
             nbo_read = files(calc="nbo", path=args.path_nbo)
             nbo_data = nbo(nbo_read.file_data)
             print(nbo_data.file_data.keys())
-            data_dicts.append(nbo_data)
+            data_dicts["nbo"] = nbo_data
 
         # FUKUI
         if args.fukui:
             fukui_read = files(calc="fukui", path=args.path_fukui)
             fukui_data = fukui(fukui_read.file_data)
             print(fukui_data.file_data.keys())
-            data_dicts.append(fukui_data)
+            data_dicts["fukui"] = fukui_data
 
         # SP IE & EA
         if args.sp_ie_ea:
             sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea)
             sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data)
             print(sp_ie_ea_data.file_data.keys())
-            data_dicts.append(sp_ie_ea_data)
+            data_dicts["sp_ieea"] = sp_ie_ea_data
 
         # AD IE & EA
         if args.ad_ie_ea:
             ad_ie_ea_read = files(calc="ad_ie_ea", path=args.path_ad_ie_ea)
             ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
             print(ad_ie_ea_data.file_data.keys())
-            data_dicts.append(ad_ie_ea_data)
+            data_dicts["ad_ieea"] = ad_ie_ea_data
 
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
