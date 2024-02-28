@@ -99,11 +99,10 @@ class get_df:
                             dict_df['ad_ie'].append(ie)
                             dict_df['ad_ea'].append(ea)
                 dict_df = pd.DataFrame(dict_df)
-                print(dict_df)
                 if mol_df.empty:
                     mol_df = dict_df
                 else:
-                    mol_df = mol_df.merge(dict_df, on='File')
+                    mol_df = mol_df.merge(dict_df,how='left', on='File')
         mol_df.to_csv('mol_df.csv')
         return mol_df
     def file_base(self, string):
