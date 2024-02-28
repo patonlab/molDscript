@@ -19,7 +19,9 @@ class get_df:
         if data_type == "molecular":
             mol_df = self.get_mol_df()
             self.mol_df = mol_df
-
+        if data_type == "bond":
+            bond_df = self.get_bond_df()
+            self.bond_df = bond_df
         # self.df = False
         # for dict in data_dicts:
         #     dict_df = False
@@ -43,6 +45,17 @@ class get_df:
         # return self.df
 
     # create a df of molecular properties
+    def get_bond_df(self):
+        bond_df = pd.DataFrame()
+        dict = self.dd.file_data
+        print(dict)
+        for file_name in dict.keys():
+            print(dict[file_name])
+##########UNFINISHED, no BO or BO matrix in data##############
+        
+
+
+
     def get_mol_df(self):
         mol_df = pd.DataFrame()
         mol_list = ["opt", "sp_ieea", "ad_ieea"]

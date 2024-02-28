@@ -101,7 +101,10 @@ def main():
                 "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
             ][args.substructure]["index"]
         )
-    final_df = get_df(data_dicts, 'molecular')
+    #mol_df = get_df(data_dicts, 'molecular')
+    bond_df = get_df(nbo_data, 'bond')
+
+
 
     # # Creates the parameterizer class and writes a .csv to look at for atom mapping
     # param = parameterizer(args["struc"], args["sdf"], args["txt"])
