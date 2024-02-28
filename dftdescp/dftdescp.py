@@ -92,18 +92,21 @@ def main():
             ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
             print(ad_ie_ea_data.file_data.keys())
             data_dicts["ad_ieea"] = ad_ie_ea_data
-
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
-        substurcture_data = substructure(substructure_read.file_data, args.substructure)
+        substructure_data = substructure(substructure_read.file_data, args.substructure)
         print(
-            substurcture_data.file_data[
+            substructure_data.file_data[
                 "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
             ][args.substructure]["index"]
         )
+        atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
+    else:
+        atom_df = get_df(data_dicts, 'atom')
     mol_df = get_df(data_dicts, 'molecular')
     #bond_df = get_df(nbo_data, 'bond')
-    atom_df = get_df(data_dicts, 'atom')
+    
+
 
 
 

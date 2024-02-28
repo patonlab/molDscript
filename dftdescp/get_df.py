@@ -13,7 +13,7 @@ class get_df:
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure=False):
+    def __init__(self, data_dicts, data_type, substructure=''):
         self.dd = data_dicts
         self.substructure = substructure
         #print(self.dd)
@@ -116,7 +116,24 @@ class get_df:
                     atom_df = dict_df
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['File','atom'])
-        atom_df.to_csv('atom_df.csv')
+        if self.substructure != '':
+            final_df = pd.DataFrame()
+            for filename in self.substructure.keys():
+                dict = self.substructure[filename]
+                struc = list(dict.keys())[0]
+                basename = self.file_base(filename)
+                temp_df = atom_df.loc[atom_df['File'] == basename]
+                try:
+                    indexes = list(dict[struc]['index'][0])
+                except:
+                    print(f'{basename}: substructure not found')
+                    continue
+                filtered_df = temp_df.loc[temp_df['atom'].isin(indexes)]
+                final_df = pd.concat([final_df, filtered_df])
+                
+            final_df.to_csv('atom_df_substructure.csv', index=False)
+            return atom_df
+        atom_df.to_csv('atom_df.csv', index=False)
         return atom_df
 # create a df of mol properties
     def get_mol_df(self):
@@ -179,7 +196,7 @@ class get_df:
                     mol_df = dict_df
                 else:
                     mol_df = mol_df.merge(dict_df,how='left', on='File')
-        mol_df.to_csv('mol_df.csv')
+        mol_df.to_csv('mol_df.csv', index=False)
         return mol_df
     def file_base(self, string):
         try:
