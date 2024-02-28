@@ -38,6 +38,7 @@ class get_df:
             
 
     def get_atom_df(self):
+        print('Generating atomic property df \n\n')
         atom_df = pd.DataFrame()
         atom_list = ['nbo', 'nmr', 'fukui']
         calced_list = list(self.dd.keys())
@@ -116,6 +117,7 @@ class get_df:
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['File','atom'])
         if self.substructure != '':
+            print('Filtering atomic property df by substructure\n\n')
             final_df = pd.DataFrame()
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
@@ -125,19 +127,20 @@ class get_df:
                 try:
                     indexes = list(dict[struc]['index'][0])
                 except:
-                    print(f'{basename}: substructure not found')
+                    print(f'{basename}: substructure not found, omitting from final df\n')
                     continue
                 filtered_df = temp_df.loc[temp_df['atom'].isin(indexes)]
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv('atom_df_substructure.csv', index=False)
-            print("Saved substructure-filtered atom properties to 'atom_df_substructure.csv'")
+            print("Saved substructure-filtered atom properties to 'atom_df_substructure.csv'\n\n")
             return atom_df
         atom_df.to_csv('atom_df.csv', index=False)
         print("Saved atom properties to 'atom_df.csv'")
         return atom_df
 # create a df of mol properties
     def get_mol_df(self):
+        print('Generating molecular property df\n\n')
         mol_df = pd.DataFrame()
         mol_list = ["opt", "sp_ieea", "ad_ieea"]
         calced_list = list(self.dd.keys())
@@ -198,7 +201,7 @@ class get_df:
                 else:
                     mol_df = mol_df.merge(dict_df,how='left', on='File')
         mol_df.to_csv('mol_df.csv', index=False)
-        print("Saved molecular properties to 'mol_df.csv'")
+        print("Saved molecular properties to 'mol_df.csv'\n\n")
         return mol_df
     def file_base(self, string):
         try:
