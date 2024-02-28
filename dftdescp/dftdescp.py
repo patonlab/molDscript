@@ -103,6 +103,7 @@ def main():
         )
     #mol_df = get_df(data_dicts, 'molecular')
     bond_df = get_df(nbo_data, 'bond')
+    atom_df = get_df(data_dicts, 'atom')
 
 
 

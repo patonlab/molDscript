@@ -15,6 +15,7 @@ class get_df:
 
     def __init__(self, data_dicts, data_type, substructure=False):
         self.dd = data_dicts
+        self.substructure = substructure
         #print(self.dd)
         if data_type == "molecular":
             mol_df = self.get_mol_df()
@@ -22,29 +23,12 @@ class get_df:
         if data_type == "bond":
             bond_df = self.get_bond_df()
             self.bond_df = bond_df
-        # self.df = False
-        # for dict in data_dicts:
-        #     dict_df = False
-        #     for file_name in dict.keys():
-        #         value_column = []
-        #         property_column = []
-        #         for property in dict[file_name].keys():
-        #             value = dict[file_name][property]
-        #             value_column.append(value)
-        #             property_column.append(property)
-        #         if dict_df == False:
-        #             data = {"Property": property_column, file_name: value_column}
-        #             dict_df = pd.DataFrame(data)
-        #         else:
-        #             dict_df[file_name] = value_column
-        #     if self.df == False:
-        #         self.df = dict_df
-        #     else:
-        #         pd.concat(self.df, dict_df)
-        # self.df.to_csv(f'dftdescp_{time.strftime("%Y%m%d-%H%M%S")}_out.csv')
-        # return self.df
+        if data_type == "atom":
+            atom_df = self.get_atom_df()
+            self.atom_df = atom_df
 
-    # create a df of molecular properties
+
+    # create a df of bond properties
     def get_bond_df(self):
         bond_df = pd.DataFrame()
         dict = self.dd.file_data
@@ -52,10 +36,90 @@ class get_df:
         for file_name in dict.keys():
             print(dict[file_name])
 ##########UNFINISHED, no BO or BO matrix in data##############
-        
+            
 
+    def get_atom_df(self):
+        atom_df = pd.DataFrame()
+        atom_list = ['nbo', 'nmr', 'fukui']
+        calced_list = list(self.dd.keys())
+        for category in atom_list:
+            if category in calced_list:
+                dict = self.dd[category].file_data
+                if category == 'nbo':
+                    dict_df = {k: [] for k in ['File', 'atom', 'nbo_charge']}
+                    for filename in dict.keys():
+                        
+                        charges = list(dict[filename]['charges']['npa'])
+                        #print(len(charges))
+                        for charge in charges:
+                            dict_df['nbo_charge'].append(charge)
+                            dict_df['File'].append(filename)
+                            dict_df['atom'].append(charges.index(charge))
+                elif category == 'nmr':
+                    dict_df = {k: [] for k in ['File', 'atom', 'nmr_shielding']}
+                    for filename in dict.keys():
+                        
+                        shields = list(dict[filename]['nmr_shielding'])
 
+                        for shield in shields:
+                            dict_df['nmr_shielding'].append(shield)
+                            dict_df['File'].append(filename)
+                            dict_df['atom'].append(shields.index(shield))
+                elif category == 'fukui':
+                    dict_df = {k: [] for k in ['File', 'atom', 'neut_nat', 'neut_cm5', 'neut_mulliken', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_mulliken', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_mulliken', 'red_hirsfeld']}
+                    states = ['neutral', 'oxidized', 'reduced']
+                    charges = ['natural', 'cm5', 'mulliken', 'hirsfeld']
+                    for filename in dict.keys():
 
+                        neut_nat = list(dict[filename]["neutral"]["atomcharges"]["natural"])
+                        for atom in neut_nat:
+                            dict_df['File'].append(filename)
+                            dict_df['atom'].append(neut_nat.index(atom))
+                            dict_df['neut_nat'].append(atom)
+                        neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
+                        for atom in neut_cm5:
+                            dict_df['neut_cm5'].append(atom)
+                        neut_mulliken = list(dict[filename]["neutral"]["atomcharges"]["mulliken"])
+                        for atom in neut_mulliken:
+                            dict_df['neut_mulliken'].append(atom)
+                        neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
+                        for atom in neut_hirsfeld:
+                            dict_df['neut_hirsfeld'].append(atom)
+
+                        ox_nat = list(dict[filename]["oxidized"]["atomcharges"]["natural"])
+                        for atom in ox_nat:
+                            dict_df['ox_nat'].append(atom)
+                        ox_cm5 = list(dict[filename]["oxidized"]["atomcharges"]["cm5"])
+                        for atom in ox_cm5:
+                            dict_df['ox_cm5'].append(atom)
+                        ox_mulliken = list(dict[filename]["oxidized"]["atomcharges"]["mulliken"])
+                        for atom in ox_mulliken:
+                            dict_df['ox_mulliken'].append(atom)
+                        ox_hirsfeld = list(dict[filename]["oxidized"]["atomcharges"]["hirsfeld"])
+                        for atom in ox_hirsfeld:
+                            dict_df['ox_hirsfeld'].append(atom)
+
+                        red_nat = list(dict[filename]["reduced"]["atomcharges"]["natural"])
+                        for atom in red_nat:
+                            dict_df['red_nat'].append(atom)
+                        red_cm5 = list(dict[filename]["reduced"]["atomcharges"]["cm5"])
+                        for atom in red_cm5:
+                            dict_df['red_cm5'].append(atom)
+                        red_mulliken = list(dict[filename]["reduced"]["atomcharges"]["mulliken"])
+                        for atom in red_mulliken:
+                            dict_df['red_mulliken'].append(atom)
+                        red_hirsfeld = list(dict[filename]["reduced"]["atomcharges"]["hirsfeld"])
+                        for atom in red_hirsfeld:
+                            dict_df['red_hirsfeld'].append(atom)
+
+                dict_df = pd.DataFrame(dict_df)
+                print(dict_df)
+                if atom_df.empty:
+                    atom_df = dict_df
+                else:
+                    atom_df = atom_df.merge(dict_df,how='left', on=['File','atom'])
+        atom_df.to_csv('atom_df.csv')
+# create a df of mol properties
     def get_mol_df(self):
         mol_df = pd.DataFrame()
         mol_list = ["opt", "sp_ieea", "ad_ieea"]
