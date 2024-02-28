@@ -95,11 +95,11 @@ def main():
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
         substructure_data = substructure(substructure_read.file_data, args.substructure)
-        print(
-            substructure_data.file_data[
-                "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
-            ][args.substructure]["index"]
-        )
+        #print(
+        #    substructure_data.file_data[
+        #        "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
+         #   ][args.substructure]["index"]
+        #)
         atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
     else:
         atom_df = get_df(data_dicts, 'atom')
