@@ -117,6 +117,7 @@ class get_df:
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['File','atom'])
         atom_df.to_csv('atom_df.csv')
+        return atom_df
 # create a df of mol properties
     def get_mol_df(self):
         mol_df = pd.DataFrame()
