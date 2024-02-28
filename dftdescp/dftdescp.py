@@ -101,8 +101,8 @@ def main():
                 "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
             ][args.substructure]["index"]
         )
-    #mol_df = get_df(data_dicts, 'molecular')
-    bond_df = get_df(nbo_data, 'bond')
+    mol_df = get_df(data_dicts, 'molecular')
+    #bond_df = get_df(nbo_data, 'bond')
     atom_df = get_df(data_dicts, 'atom')
 
 

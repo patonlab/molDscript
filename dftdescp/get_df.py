@@ -67,7 +67,6 @@ class get_df:
                             dict_df['atom'].append(shields.index(shield))
                 elif category == 'fukui':
                     dict_df = {k: [] for k in ['File', 'atom', 'neut_nat', 'neut_cm5', 'neut_mulliken', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_mulliken', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_mulliken', 'red_hirsfeld']}
-                    states = ['neutral', 'oxidized', 'reduced']
                     charges = ['natural', 'cm5', 'mulliken', 'hirsfeld']
                     for filename in dict.keys():
 
@@ -113,7 +112,6 @@ class get_df:
                             dict_df['red_hirsfeld'].append(atom)
 
                 dict_df = pd.DataFrame(dict_df)
-                print(dict_df)
                 if atom_df.empty:
                     atom_df = dict_df
                 else:
