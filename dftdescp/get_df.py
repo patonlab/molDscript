@@ -30,12 +30,15 @@ class get_df:
     # create a df of bond properties
     def get_bond_df(self):
         bond_df = pd.DataFrame()
-        dict = self.dd.file_data
+        nbo_dict = self.dd.file_data
         print(dict)
-        for file_name in dict.keys():
-            print(dict[file_name])
-##########UNFINISHED, no BO or BO matrix in data##############
+        for file_name in nbo_dict.keys():
+           dict = nbo_dict[file_name]
+           bond_orders = dict['bond_orders']
+           bo_matrix = dict['bond_order_matrix']
+
             
+        
 
     def get_atom_df(self):
         print('Generating atomic property df \n\n')
