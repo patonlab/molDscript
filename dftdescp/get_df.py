@@ -29,15 +29,47 @@ class get_df:
 
     # create a df of bond properties
     def get_bond_df(self):
-        
+        print('Generating bond propertuy df.')
         nbo_dict = self.dd.file_data
-
+        dict_df = {k: [] for k in ['File', 'atom1', 'atom2', 'bonding']}
         for file_name in nbo_dict.keys():
-           dict = nbo_dict[file_name]
-           bond_orders = dict['bond_orders']
-           bo_matrix = dict['bond_order_matrix']
-           #print(f'{bond_orders=}\n {bo_matrix=}')
-           raise SystemExit
+            dict = nbo_dict[file_name]
+            bo_matrix = dict['bond_order_matrix']
+            atom1 = 0
+            for row in bo_matrix:
+                for combination, index in zip(row, range(len(row))):
+                    if index < atom1:
+                        dict_df['File'].append(file_name)
+                        dict_df['atom1'].append(atom1)
+                        dict_df['atom2'].append(index)
+                        dict_df['bonding'].append(combination)
+                atom1 +=1
+        bond_df = pd.DataFrame(dict_df)
+        if self.substructure != '':
+            print('Filtering atomic property df by substructure\n\n')
+            final_df = pd.DataFrame()
+            for filename in self.substructure.keys():
+                dict = self.substructure[filename]
+                struc = list(dict.keys())[0]
+                filename = self.file_base(filename)
+                temp_df = bond_df.loc[bond_df['File'] == filename]
+                try:
+                    indexes = list(dict[struc]['index'][0])
+                except:
+                    print(f'{filename}: substructure not found, omitting from final bond df\n')
+                    continue
+                filtered_df = temp_df.loc[temp_df['atom1'].isin(indexes) | temp_df['atom2'].isin(indexes)]
+                final_df = pd.concat([final_df, filtered_df])
+                
+            final_df.to_csv('bond_df_substructure.csv', index=False)
+            print("Saved substructure-filtered atom properties to 'bond_df_substructure.csv'\n\n")
+            return bond_df
+        bond_df.to_csv('bond_df.csv', index=False)
+        print("Saved bond properties to 'bond_df.csv'")
+        return bond_df
+
+
+           
 
             
         

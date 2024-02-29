@@ -101,10 +101,12 @@ def main():
          #   ][args.substructure]["index"]
         #)
         atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
+        bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
     else:
         atom_df = get_df(data_dicts, 'atom')
+        bond_df = get_df(nbo_data, 'bond')
     mol_df = get_df(data_dicts, 'molecular')
-    bond_df = get_df(nbo_data, 'bond')
+   
     
 
 
