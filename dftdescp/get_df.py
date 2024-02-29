@@ -29,13 +29,15 @@ class get_df:
 
     # create a df of bond properties
     def get_bond_df(self):
-        bond_df = pd.DataFrame()
+        
         nbo_dict = self.dd.file_data
-        print(dict)
+
         for file_name in nbo_dict.keys():
            dict = nbo_dict[file_name]
            bond_orders = dict['bond_orders']
            bo_matrix = dict['bond_order_matrix']
+           #print(f'{bond_orders=}\n {bo_matrix=}')
+           raise SystemExit
 
             
         
@@ -49,12 +51,14 @@ class get_df:
             if category in calced_list:
                 dict = self.dd[category].file_data
                 if category == 'nbo':
-                    dict_df = {k: [] for k in ['File', 'atom', 'nbo_charge']}
+                    dict_df = {k: [] for k in ['File', 'atom', 'nbo_charge', 'bond_order']}
                     for filename in dict.keys():
                         
                         charges = list(dict[filename]['charges']['npa'])
+                        bond_orders = list(dict[filename]['bond_orders'])
                         #print(len(charges))
-                        for charge in charges:
+                        for charge, bo in zip(charges, bond_orders):
+                            dict_df['bond_order'].append(bo)
                             dict_df['nbo_charge'].append(charge)
                             dict_df['File'].append(filename)
                             dict_df['atom'].append(charges.index(charge))
