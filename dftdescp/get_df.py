@@ -63,7 +63,6 @@ class get_df:
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv(bond_csv, index=False)
-            print("Saved substructure-filtered atom properties to 'bond_df_substructure.csv'\n\n")
             return bond_df
         bond_df.to_csv(bond_csv, index=False)
         # print("Saved bond properties to 'bond_df.csv'")
@@ -169,7 +168,6 @@ class get_df:
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv(atom_csv, index=False)
-            print("Saved substructure-filtered atom properties to 'atom_df_substructure.csv'\n\n")
             return atom_df
         atom_df.to_csv(atom_csv, index=False)
         #print("Saved atom properties to 'atom_df.csv'")
