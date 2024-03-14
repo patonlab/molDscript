@@ -29,7 +29,8 @@ class get_df:
 
     # create a df of bond properties
     def get_bond_df(self):
-        print('Generating bond propertuy df.')
+        bond_csv = 'bond_level.csv'
+        print('\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
         nbo_dict = self.dd.file_data
         dict_df = {k: [] for k in ['File', 'atom1', 'atom2', 'bonding']}
         for file_name in nbo_dict.keys():
@@ -64,18 +65,14 @@ class get_df:
             final_df.to_csv('bond_df_substructure.csv', index=False)
             print("Saved substructure-filtered atom properties to 'bond_df_substructure.csv'\n\n")
             return bond_df
-        bond_df.to_csv('bond_df.csv', index=False)
-        print("Saved bond properties to 'bond_df.csv'")
+        bond_df.to_csv(bond_csv, index=False)
+        # print("Saved bond properties to 'bond_df.csv'")
         return bond_df
 
-
-           
-
-            
-        
-
+    # create a df of atom properties
     def get_atom_df(self):
-        print('Generating atomic property df \n\n')
+        atom_csv = 'atom_level.csv'
+        print('\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}'.format(atom_csv))
         atom_df = pd.DataFrame()
         atom_list = ['nbo', 'nmr', 'fukui']
         calced_list = list(self.dd.keys())
@@ -174,12 +171,14 @@ class get_df:
             final_df.to_csv('atom_df_substructure.csv', index=False)
             print("Saved substructure-filtered atom properties to 'atom_df_substructure.csv'\n\n")
             return atom_df
-        atom_df.to_csv('atom_df.csv', index=False)
-        print("Saved atom properties to 'atom_df.csv'")
+        atom_df.to_csv(atom_csv, index=False)
+        #print("Saved atom properties to 'atom_df.csv'")
         return atom_df
-# create a df of mol properties
+    
+    # create a df of mol properties
     def get_mol_df(self):
-        print('Generating molecular property df\n\n')
+        mol_csv = 'molecule_level.csv'
+        print('\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}\n'.format(mol_csv))
         mol_df = pd.DataFrame()
         mol_list = ["opt", "sp_ieea", "ad_ieea"]
         calced_list = list(self.dd.keys())
@@ -239,8 +238,8 @@ class get_df:
                     mol_df = dict_df
                 else:
                     mol_df = mol_df.merge(dict_df,how='left', on='File')
-        mol_df.to_csv('mol_df.csv', index=False)
-        print("Saved molecular properties to 'mol_df.csv'\n\n")
+        mol_df.to_csv(mol_csv, index=False)
+        # print("Saved molecular properties to 'mol_df.csv'\n\n")
         return mol_df
     def file_base(self, string):
         try:

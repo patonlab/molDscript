@@ -34,13 +34,17 @@ class ie_ea:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"\nTime Collecting IE & EA data: {elapsed_time} seconds\n"
+                f"   --- IE & EA Parameter Collection complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
+
+        self.args.log.write(
+                    f"   --- IE & EA Parameter Collection starting"
+                )
 
         for file_name in self.data.keys():
             ie_data, ea_data = None, None
@@ -51,13 +55,13 @@ class ie_ea:
 
             if ie_data != None and ea_data != None:
                 self.args.log.write(
-                    f"Reading information for IE & EA data from {file_name}\n"
+                    f"o  Parsing IE & EA data from {file_name}"
                 )
                 file_data[file_name]["ie"]["E"] = ie_data.scfenergies[-1]
                 file_data[file_name]["ea"]["E"] = ea_data.scfenergies[-1]
             else:
                 self.args.log.write(
-                    f"Skipping file {file_name} as one either IE or EA didnt exist\n"
+                    f"x  Skipping file {file_name} as either IE or EA doest not exist!"
                 )
 
         return file_data

@@ -25,12 +25,12 @@ var_dict = {
     "skip_list": [],
     "link": False,
     "substructure": "",
-    "path_opt": "tests/QCALC/success",
-    "path_nmr": "tests/SP_NMR/success/SP_calcs",
-    "path_nbo": "tests/SP_NBO/success/SP_calcs",
-    "path_fukui": "tests/SP_FUKUI/success/SP_calcs",
-    "path_ad_ie_ea": "tests/AD_IE_EA/success",
-    "path_sp_ie_ea": "tests/SP_IE_EA/success/SP_calcs",
+    "path_opt": "../tests/QCALC/success",
+    "path_nmr": "../tests/NMR/success",
+    "path_nbo": "../tests/NBO/success",
+    "path_fukui": "../tests/FUKUI/success",
+    "path_ad_ie_ea": "../tests/AD_IE_EA/success",
+    "path_sp_ie_ea": "../tests/SP_IE_EA/success",
     "path_link": "tests/link",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
@@ -243,8 +243,8 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
                         f"{path_command}/DFTDESCP", logger_1, verbose=self.verbose
                     )
 
-                self.log.write(
-                    f"DFTDESCP v {dftdescp_version} {time_run} \nCitation: {dftdescp_ref}\n"
+                self.log.write_only(
+                    f"   DFTDESCP v {dftdescp_version} {time_run} \n   Citation: {dftdescp_ref}\n"
                 )
 
                 if self.command_line:

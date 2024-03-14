@@ -33,12 +33,16 @@ class nbo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"\nTime Collecting NBO data: {elapsed_time} seconds\n")
+            self.args.log.write(f"   --- NBO Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
+
+        self.args.log.write(
+                    f"   --- NBO Parameter Collection starting"
+                )
 
         for file_name in self.data.keys():
             try:
@@ -48,7 +52,7 @@ class nbo:
 
             if nbo_data != None:
                 self.args.log.write(
-                    f"Reading information for NBO data from {file_name}\n"
+                    f"o  Parsing NBO & NPA data from {file_name}"
                 )
                 file_data[file_name]["charges"]["npa"] = nbo_data.atomcharges["natural"]
                 file_data[file_name]["bond_orders"] = nbo_data.bondorders

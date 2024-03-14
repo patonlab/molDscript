@@ -35,7 +35,21 @@ class Logger:
             self.log.write(f"{message}\n")
         except AttributeError:
             pass
-        print(f"{message}\n")
+        print(f"{message}")
+
+    def write_only(self, message):
+        """
+        Appends a newline character to the message and writes it into the file, but does not print it.
+
+        Parameters
+        ----------
+        message : str
+           Text to be written in the log file.
+        """
+        try:
+            self.log.write(f"{message}\n")
+        except AttributeError:
+            pass
 
     def finalize(self):
         """

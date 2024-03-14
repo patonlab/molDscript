@@ -34,13 +34,17 @@ class fukui:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"\nTime Collecting FUKUI data: {elapsed_time} seconds\n"
+                f"   --- Fukui Parameter Collection complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
+
+        self.args.log.write(
+                    f"   --- Fukui Parameter Collection starting"
+                )
 
         for file_name in self.data.keys():
             neutral_data, oxidized_data, reduced_data = None, None, None
@@ -59,7 +63,7 @@ class fukui:
 
             if neutral_data != None and oxidized_data != None and reduced_data != None:
                 self.args.log.write(
-                    f"Reading information for FUKUI data from {file_name}\n"
+                    f"o  Parsing Fukui data from {file_name}"
                 )
                 file_data[file_name]["neutral"]["atomcharges"]["natural"] = (
                     neutral_data.atomcharges["natural"]
@@ -101,7 +105,7 @@ class fukui:
                 )
             else:
                 self.args.log.write(
-                    f"Skipping file {file_name} as one either neutral, oxidized or reduced didnt exist\n"
+                    f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
                 )
 
         return file_data

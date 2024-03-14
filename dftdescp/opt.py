@@ -35,16 +35,20 @@ class opt:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"\nTime Collecting OPT data: {elapsed_time} seconds\n")
+            self.args.log.write(f"   --- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
+        self.args.log.write(
+                    f"   --- Optimization Parameter Collection starting"
+                )
+
         for file_name in self.data.keys():
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
-            self.args.log.write(f"Reading information for OPT data from {file_name}\n")
+            self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
             file_data[file_name]["opt"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
