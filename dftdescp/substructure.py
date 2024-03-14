@@ -49,7 +49,7 @@ class substructure:
             index = ()
             index = self.get_mol(self.data[file_name])
             self.args.log.write(
-                f"Finding substructe information for data from {file_name}\n"
+                f"o  Finding substructe information for data from {file_name}"
             )
             file_data[file_name][self.substructure]["index"] = index
         return file_data
