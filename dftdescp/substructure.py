@@ -37,7 +37,7 @@ class substructure:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"\nTime Collecting SUBSTRUCTURE data: {elapsed_time} seconds\n"
+                f"--- Substructure Matching complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
