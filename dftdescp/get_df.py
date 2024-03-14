@@ -62,7 +62,7 @@ class get_df:
                 filtered_df = temp_df.loc[temp_df['atom1'].isin(indexes) | temp_df['atom2'].isin(indexes)]
                 final_df = pd.concat([final_df, filtered_df])
                 
-            final_df.to_csv('bond_df_substructure.csv', index=False)
+            final_df.to_csv(bond_csv, index=False)
             print("Saved substructure-filtered atom properties to 'bond_df_substructure.csv'\n\n")
             return bond_df
         bond_df.to_csv(bond_csv, index=False)
@@ -168,7 +168,7 @@ class get_df:
                 filtered_df = temp_df.loc[temp_df['atom'].isin(indexes)]
                 final_df = pd.concat([final_df, filtered_df])
                 
-            final_df.to_csv('atom_df_substructure.csv', index=False)
+            final_df.to_csv(atom_csv, index=False)
             print("Saved substructure-filtered atom properties to 'atom_df_substructure.csv'\n\n")
             return atom_df
         atom_df.to_csv(atom_csv, index=False)
