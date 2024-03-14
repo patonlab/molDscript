@@ -71,9 +71,6 @@ class fukui:
                 file_data[file_name]["neutral"]["atomcharges"]["cm5"] = (
                     neutral_data.atomcharges["cm5"]
                 )
-                file_data[file_name]["neutral"]["atomcharges"]["mulliken"] = (
-                    neutral_data.atomcharges["mulliken"]
-                )
                 file_data[file_name]["neutral"]["atomcharges"]["hirsfeld"] = (
                     neutral_data.atomcharges["hirsfeld"]
                 )
@@ -84,9 +81,6 @@ class fukui:
                 file_data[file_name]["oxidized"]["atomcharges"]["cm5"] = (
                     oxidized_data.atomcharges["cm5"]
                 )
-                file_data[file_name]["oxidized"]["atomcharges"]["mulliken"] = (
-                    oxidized_data.atomcharges["mulliken"]
-                )
                 file_data[file_name]["oxidized"]["atomcharges"]["hirsfeld"] = (
                     oxidized_data.atomcharges["hirsfeld"]
                 )
@@ -96,9 +90,6 @@ class fukui:
                 )
                 file_data[file_name]["reduced"]["atomcharges"]["cm5"] = (
                     reduced_data.atomcharges["cm5"]
-                )
-                file_data[file_name]["reduced"]["atomcharges"]["mulliken"] = (
-                    reduced_data.atomcharges["mulliken"]
                 )
                 file_data[file_name]["reduced"]["atomcharges"]["hirsfeld"] = (
                     reduced_data.atomcharges["hirsfeld"]

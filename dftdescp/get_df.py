@@ -101,8 +101,8 @@ class get_df:
                             dict_df['File'].append(filename)
                             dict_df['atom'].append(shields.index(shield))
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['File', 'atom', 'neut_nat', 'neut_cm5', 'neut_mulliken', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_mulliken', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_mulliken', 'red_hirsfeld']}
-                    charges = ['natural', 'cm5', 'mulliken', 'hirsfeld']
+                    dict_df = {k: [] for k in ['File', 'atom', 'neut_nat', 'neut_cm5', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_hirsfeld']}
+                    charges = ['natural', 'cm5', 'hirsfeld']
                     for filename in dict.keys():
 
                         neut_nat = list(dict[filename]["neutral"]["atomcharges"]["natural"])
@@ -113,9 +113,6 @@ class get_df:
                         neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
                         for atom in neut_cm5:
                             dict_df['neut_cm5'].append(atom)
-                        neut_mulliken = list(dict[filename]["neutral"]["atomcharges"]["mulliken"])
-                        for atom in neut_mulliken:
-                            dict_df['neut_mulliken'].append(atom)
                         neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         for atom in neut_hirsfeld:
                             dict_df['neut_hirsfeld'].append(atom)
@@ -126,9 +123,6 @@ class get_df:
                         ox_cm5 = list(dict[filename]["oxidized"]["atomcharges"]["cm5"])
                         for atom in ox_cm5:
                             dict_df['ox_cm5'].append(atom)
-                        ox_mulliken = list(dict[filename]["oxidized"]["atomcharges"]["mulliken"])
-                        for atom in ox_mulliken:
-                            dict_df['ox_mulliken'].append(atom)
                         ox_hirsfeld = list(dict[filename]["oxidized"]["atomcharges"]["hirsfeld"])
                         for atom in ox_hirsfeld:
                             dict_df['ox_hirsfeld'].append(atom)
@@ -139,9 +133,6 @@ class get_df:
                         red_cm5 = list(dict[filename]["reduced"]["atomcharges"]["cm5"])
                         for atom in red_cm5:
                             dict_df['red_cm5'].append(atom)
-                        red_mulliken = list(dict[filename]["reduced"]["atomcharges"]["mulliken"])
-                        for atom in red_mulliken:
-                            dict_df['red_mulliken'].append(atom)
                         red_hirsfeld = list(dict[filename]["reduced"]["atomcharges"]["hirsfeld"])
                         for atom in red_hirsfeld:
                             dict_df['red_hirsfeld'].append(atom)
