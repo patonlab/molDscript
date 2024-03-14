@@ -47,11 +47,12 @@ def checks():
 def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
+    
     data_dicts = {}
     
     print(header)
     print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
-
+    print(f'\nArguments passed to program: \n{sys.argv[1:]}\n')
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link)
