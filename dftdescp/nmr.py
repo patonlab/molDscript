@@ -33,13 +33,16 @@ class nmr:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"\nTime Collecting NMR data: {elapsed_time} seconds\n")
+            self.args.log.write(f"   --- NMR Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
+        self.args.log.write(
+                    f"   --- NMR Parameter Collection starting"
+                )
         for file_name in self.data.keys():
             try:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
@@ -47,14 +50,14 @@ class nmr:
                 nmr_data = None
             if nmr_data != None:
                 self.args.log.write(
-                    f"Reading information for NMR data from {file_name}\n"
+                    f"o  Parsing NMR Shielding Tensors from {file_name}"
                 )
                 file_data[file_name]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
                 self.args.log.write(
-                    f"Skipping file {file_name} as NMR data didnt exist\n"
+                    f"!  Skipping {file_name} as NMR data not found"
                 )
-
+ 
         return file_data
 
     def parse_cc_data(self, file_name, file):

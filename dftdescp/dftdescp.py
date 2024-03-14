@@ -6,9 +6,22 @@ from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
 from dftdescp.substructure import substructure
 from dftdescp.get_df import get_df
-from dftdescp.argument_parser import command_line_args
+from dftdescp.argument_parser import command_line_args, dftdescp_version, dftdescp_ref, time_run
 import subprocess, sys
 
+
+header = """
+   ▓█████▄   ██████  ▄████▄   ██▀███   ██▓ ██▓███  ▄▄▄█████▓
+   ▒██▀ ██▌▒██    ▒ ▒██▀ ▀█  ▓██ ▒ ██▒▓██▒▓██░  ██▒▓  ██▒ ▓▒
+   ░██   █▌░ ▓██▄   ▒▓█    ▄ ▓██ ░▄█ ▒▒██▒▓██░ ██▓▒▒ ▓██░ ▒░
+   ░▓█▄   ▌  ▒   ██▒▒▓▓▄ ▄██▒▒██▀▀█▄  ░██░▒██▄█▓▒ ▒░ ▓██▓ ░
+   ░▒████▓ ▒██████▒▒▒ ▓███▀ ░░██▓ ▒██▒░██░▒██▒ ░  ░  ▒██▒ ░ 
+    ▒▒▓  ▒ ▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░░ ▒▓ ░▒▓░░▓  ▒▓▒░ ░  ░  ▒ ░░   
+    ░ ▒  ▒ ░ ░▒  ░ ░  ░  ▒     ░▒ ░ ▒░ ▒ ░░▒ ░         ░    
+    ░ ░  ░ ░  ░  ░  ░          ░░   ░  ▒ ░░░         ░      
+      ░          ░  ░ ░         ░      ░                    
+    ░               ░    Paton Research Group, Colorado 2024                              
+"""
 
 def checks():
     # this is a dummy import just to warn the user if Open babel is not installed
@@ -35,6 +48,10 @@ def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
     data_dicts = {}
+    
+    print(header)
+    print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
+
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link)
@@ -56,42 +73,43 @@ def main():
         if args.opt:
             opt_read = files(calc="opt", path=args.path_opt)
             opt_data = opt(opt_read.file_data)
-            print(opt_data.file_data.keys())
+            # print(opt_data.file_data.keys())
             data_dicts["opt"] = opt_data
 
         # NMR
         if args.nmr:
             nmr_read = files(calc="nmr", path=args.path_nmr)
             nmr_data = nmr(nmr_read.file_data)
-            print(nmr_data.file_data.keys())
+            # print(nmr_data.file_data.keys())
             data_dicts["nmr"] = nmr_data
         # NBO
         if args.nbo:
             nbo_read = files(calc="nbo", path=args.path_nbo)
             nbo_data = nbo(nbo_read.file_data)
-            print(nbo_data.file_data.keys())
+            # print(nbo_data.file_data.keys())
             data_dicts["nbo"] = nbo_data
 
         # FUKUI
         if args.fukui:
             fukui_read = files(calc="fukui", path=args.path_fukui)
             fukui_data = fukui(fukui_read.file_data)
-            print(fukui_data.file_data.keys())
+            # print(fukui_data.file_data.keys())
             data_dicts["fukui"] = fukui_data
 
         # SP IE & EA
         if args.sp_ie_ea:
             sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea)
             sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data)
-            print(sp_ie_ea_data.file_data.keys())
+            # print(sp_ie_ea_data.file_data.keys())
             data_dicts["sp_ieea"] = sp_ie_ea_data
 
         # AD IE & EA
         if args.ad_ie_ea:
             ad_ie_ea_read = files(calc="ad_ie_ea", path=args.path_ad_ie_ea)
             ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
-            print(ad_ie_ea_data.file_data.keys())
+            # print(ad_ie_ea_data.file_data.keys())
             data_dicts["ad_ieea"] = ad_ie_ea_data
+    
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
         substructure_data = substructure(substructure_read.file_data, args.substructure)
@@ -101,10 +119,11 @@ def main():
          #   ][args.substructure]["index"]
         #)
         atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
-        bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
+        if args.nbo: bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
+    
     else:
         atom_df = get_df(data_dicts, 'atom')
-        bond_df = get_df(nbo_data, 'bond')
+        if args.nbo: bond_df = get_df(nbo_data, 'bond')
     mol_df = get_df(data_dicts, 'molecular')
    
     
