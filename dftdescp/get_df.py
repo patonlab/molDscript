@@ -79,15 +79,15 @@ class get_df:
             if category in calced_list:
                 dict = self.dd[category].file_data
                 if category == 'nbo':
-                    dict_df = {k: [] for k in ['species', 'atom', 'nbo_charge', 'bond_order']}
+                    dict_df = {k: [] for k in ['species', 'atom', 'npa_charge', 'wiberg_total']}
                     for filename in dict.keys():
                         
                         charges = list(dict[filename]['charges']['npa'])
                         bond_orders = list(dict[filename]['bond_orders'])
                         #print(len(charges))
                         for charge, bo in zip(charges, bond_orders):
-                            dict_df['bond_order'].append(bo)
-                            dict_df['nbo_charge'].append(charge)
+                            dict_df['wiberg_total'].append(bo)
+                            dict_df['npa_charge'].append(charge)
                             dict_df['species'].append(filename)
                             dict_df['atom'].append(charges.index(charge))
                 elif category == 'nmr':
@@ -101,7 +101,7 @@ class get_df:
                             dict_df['species'].append(filename)
                             dict_df['atom'].append(shields.index(shield))
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['species', 'atom', 'neut_nat', 'neut_cm5', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_hirsfeld']}
+                    dict_df = {k: [] for k in ['species', 'atom',  'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge']}
                     charges = ['natural', 'cm5', 'hirsfeld']
                     for filename in dict.keys():
 
@@ -109,33 +109,32 @@ class get_df:
                         for atom in neut_nat:
                             dict_df['species'].append(filename)
                             dict_df['atom'].append(neut_nat.index(atom))
-                            dict_df['neut_nat'].append(atom)
                         neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
                         for atom in neut_cm5:
-                            dict_df['neut_cm5'].append(atom)
+                            dict_df['cm5_charge'].append(atom)
                         neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         for atom in neut_hirsfeld:
-                            dict_df['neut_hirsfeld'].append(atom)
+                            dict_df['hirshfeld_charge'].append(atom)
 
                         ox_nat = list(dict[filename]["oxidized"]["atomcharges"]["natural"])
                         for atom in ox_nat:
-                            dict_df['ox_nat'].append(atom)
+                            dict_df['ox_npa_charge'].append(atom)
                         ox_cm5 = list(dict[filename]["oxidized"]["atomcharges"]["cm5"])
                         for atom in ox_cm5:
-                            dict_df['ox_cm5'].append(atom)
+                            dict_df['ox_cm5_charge'].append(atom)
                         ox_hirsfeld = list(dict[filename]["oxidized"]["atomcharges"]["hirsfeld"])
                         for atom in ox_hirsfeld:
-                            dict_df['ox_hirsfeld'].append(atom)
+                            dict_df['ox_hirshfeld_charge'].append(atom)
 
                         red_nat = list(dict[filename]["reduced"]["atomcharges"]["natural"])
                         for atom in red_nat:
-                            dict_df['red_nat'].append(atom)
+                            dict_df['red_npa_charge'].append(atom)
                         red_cm5 = list(dict[filename]["reduced"]["atomcharges"]["cm5"])
                         for atom in red_cm5:
-                            dict_df['red_cm5'].append(atom)
+                            dict_df['red_cm5_charge'].append(atom)
                         red_hirsfeld = list(dict[filename]["reduced"]["atomcharges"]["hirsfeld"])
                         for atom in red_hirsfeld:
-                            dict_df['red_hirsfeld'].append(atom)
+                            dict_df['red_hirshfeld_charge'].append(atom)
 
                 dict_df = pd.DataFrame(dict_df)
                 if atom_df.empty:
