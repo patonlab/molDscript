@@ -32,7 +32,7 @@ class get_df:
         bond_csv = 'bond_level.csv'
         print('\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
         nbo_dict = self.dd.file_data
-        dict_df = {k: [] for k in ['File', 'atom1', 'atom2', 'bonding']}
+        dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order']}
         for file_name in nbo_dict.keys():
             dict = nbo_dict[file_name]
             bo_matrix = dict['bond_order_matrix']
@@ -40,10 +40,10 @@ class get_df:
             for row in bo_matrix:
                 for combination, index in zip(row, range(len(row))):
                     if index < atom1:
-                        dict_df['File'].append(file_name)
+                        dict_df['species'].append(file_name)
                         dict_df['atom1'].append(atom1)
                         dict_df['atom2'].append(index)
-                        dict_df['bonding'].append(combination)
+                        dict_df['wiberg_bond_order'].append(combination)
                 atom1 +=1
         bond_df = pd.DataFrame(dict_df)
         if self.substructure != '':
@@ -53,7 +53,7 @@ class get_df:
                 dict = self.substructure[filename]
                 struc = list(dict.keys())[0]
                 filename = self.file_base(filename)
-                temp_df = bond_df.loc[bond_df['File'] == filename]
+                temp_df = bond_df.loc[bond_df['species'] == filename]
                 try:
                     indexes = list(dict[struc]['index'][0])
                 except:
@@ -79,7 +79,7 @@ class get_df:
             if category in calced_list:
                 dict = self.dd[category].file_data
                 if category == 'nbo':
-                    dict_df = {k: [] for k in ['File', 'atom', 'nbo_charge', 'bond_order']}
+                    dict_df = {k: [] for k in ['species', 'atom', 'nbo_charge', 'bond_order']}
                     for filename in dict.keys():
                         
                         charges = list(dict[filename]['charges']['npa'])
@@ -88,26 +88,26 @@ class get_df:
                         for charge, bo in zip(charges, bond_orders):
                             dict_df['bond_order'].append(bo)
                             dict_df['nbo_charge'].append(charge)
-                            dict_df['File'].append(filename)
+                            dict_df['species'].append(filename)
                             dict_df['atom'].append(charges.index(charge))
                 elif category == 'nmr':
-                    dict_df = {k: [] for k in ['File', 'atom', 'nmr_shielding']}
+                    dict_df = {k: [] for k in ['species', 'atom', 'nmr_shielding']}
                     for filename in dict.keys():
                         
                         shields = list(dict[filename]['nmr_shielding'])
 
                         for shield in shields:
                             dict_df['nmr_shielding'].append(shield)
-                            dict_df['File'].append(filename)
+                            dict_df['species'].append(filename)
                             dict_df['atom'].append(shields.index(shield))
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['File', 'atom', 'neut_nat', 'neut_cm5', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_hirsfeld']}
+                    dict_df = {k: [] for k in ['species', 'atom', 'neut_nat', 'neut_cm5', 'neut_hirsfeld', 'ox_nat', 'ox_cm5', 'ox_hirsfeld', 'red_nat', 'red_cm5', 'red_hirsfeld']}
                     charges = ['natural', 'cm5', 'hirsfeld']
                     for filename in dict.keys():
 
                         neut_nat = list(dict[filename]["neutral"]["atomcharges"]["natural"])
                         for atom in neut_nat:
-                            dict_df['File'].append(filename)
+                            dict_df['species'].append(filename)
                             dict_df['atom'].append(neut_nat.index(atom))
                             dict_df['neut_nat'].append(atom)
                         neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
@@ -141,7 +141,7 @@ class get_df:
                 if atom_df.empty:
                     atom_df = dict_df
                 else:
-                    atom_df = atom_df.merge(dict_df,how='left', on=['File','atom'])
+                    atom_df = atom_df.merge(dict_df,how='left', on=['species','atom'])
         if self.substructure != '':
             print('Filtering atomic property df by substructure\n\n')
             final_df = pd.DataFrame()
@@ -149,7 +149,7 @@ class get_df:
                 dict = self.substructure[filename]
                 struc = list(dict.keys())[0]
                 basename = self.file_base(filename)
-                temp_df = atom_df.loc[atom_df['File'] == basename]
+                temp_df = atom_df.loc[atom_df['species'] == basename]
                 try:
                     indexes = list(dict[struc]['index'][0])
                 except:
@@ -187,12 +187,12 @@ class get_df:
 
                             properties = list(final_dict.keys())
 
-                            properties.insert(0, 'File')
+                            properties.insert(0, 'species')
                             if start == False:
                                 dict_df = {k: [] for k in properties}
                                 start = True
                             for property in properties:
-                                if property == 'File':
+                                if property == 'species':
                                     dict_df[property].append(basename)
                                 else:
                                     dict_df[property].append(final_dict[property])
@@ -204,9 +204,9 @@ class get_df:
                             ie = final_dict['ie']['E']
                             ea = final_dict['ea']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['File', 'sp_ie','sp_ea']}
+                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea']}
                                 start=True
-                            dict_df['File'].append(basename)
+                            dict_df['species'].append(basename)
                             dict_df['sp_ie'].append(ie)
                             dict_df['sp_ea'].append(ea)
                 elif category == 'ad_ieea':
@@ -217,16 +217,16 @@ class get_df:
                             ie = final_dict['ie']['E']
                             ea = final_dict['ea']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['File', 'ad_ie','ad_ea']}
+                                dict_df = {k: [] for k in ['species', 'ad_ie','ad_ea']}
                                 start=True
-                            dict_df['File'].append(basename)
+                            dict_df['species'].append(basename)
                             dict_df['ad_ie'].append(ie)
                             dict_df['ad_ea'].append(ea)
                 dict_df = pd.DataFrame(dict_df)
                 if mol_df.empty:
                     mol_df = dict_df
                 else:
-                    mol_df = mol_df.merge(dict_df,how='left', on='File')
+                    mol_df = mol_df.merge(dict_df,how='left', on='species')
         mol_df.to_csv(mol_csv, index=False)
         # print("Saved molecular properties to 'mol_df.csv'\n\n")
         return mol_df

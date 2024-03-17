@@ -119,13 +119,13 @@ def main():
         #        "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
          #   ][args.substructure]["index"]
         #)
-        atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
         if args.nbo: bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
     
     else:
-        atom_df = get_df(data_dicts, 'atom')
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
         if args.nbo: bond_df = get_df(nbo_data, 'bond')
-    mol_df = get_df(data_dicts, 'molecular')
+    if args.opt: mol_df = get_df(data_dicts, 'molecular')
    
     
 
