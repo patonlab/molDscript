@@ -101,7 +101,7 @@ class get_df:
                             dict_df['species'].append(filename)
                             dict_df['atom'].append(shields.index(shield))
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['species', 'atom',  'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge']}
+                    dict_df = {k: [] for k in ['species', 'atom',  'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
                     charges = ['natural', 'cm5', 'hirsfeld']
                     for filename in dict.keys():
 
@@ -115,7 +115,7 @@ class get_df:
                         neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         for atom in neut_hirsfeld:
                             dict_df['hirshfeld_charge'].append(atom)
-
+                    
                         ox_nat = list(dict[filename]["oxidized"]["atomcharges"]["natural"])
                         for atom in ox_nat:
                             dict_df['ox_npa_charge'].append(atom)
@@ -135,7 +135,13 @@ class get_df:
                         red_hirsfeld = list(dict[filename]["reduced"]["atomcharges"]["hirsfeld"])
                         for atom in red_hirsfeld:
                             dict_df['red_hirshfeld_charge'].append(atom)
-
+                        for neutral, reduced, oxidized in zip(neut_hirsfeld, red_hirsfeld, ox_hirsfeld):
+                            fplus =  reduced- neutral
+                            dict_df['fukui_plus'].append(fplus)
+                            fminus = neutral- oxidized
+                            dict_df['fukui_minus'].append(fminus)
+                            frad = fplus - fminus
+                            dict_df['fukui_rad'].append(frad)       
                 dict_df = pd.DataFrame(dict_df)
                 if atom_df.empty:
                     atom_df = dict_df
