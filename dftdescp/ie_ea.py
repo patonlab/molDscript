@@ -41,7 +41,7 @@ class ie_ea:
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
-
+        first = False
         self.args.log.write(
                     f"   --- IE & EA Parameter Collection starting"
                 )
@@ -50,9 +50,16 @@ class ie_ea:
             ie_data, ea_data = None, None
             if "ie" in self.data[file_name].keys():
                 ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
+                if first == False:
+                    self.args.log.write(f'Functional used: {ie_data.metadata['functional']}')
+                    self.args.log.write(f'Basis set used: {ie_data.metadata['basis_set']}')
+                    first = True
             if "ea" in self.data[file_name].keys():
                 ea_data = self.parse_cc_data(file_name, self.data[file_name]["ea"])
-
+                if first == False:
+                    self.args.log.write(f'Functional used: {ea_data.metadata['functional']}')
+                    self.args.log.write(f'Basis set used: {ea_data.metadata['basis_set']}')
+                    first = True
             if ie_data != None and ea_data != None:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"

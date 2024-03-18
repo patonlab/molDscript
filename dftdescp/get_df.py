@@ -184,17 +184,14 @@ class get_df:
                             basename = self.file_base(file_name)
                             final_dict = dict[file_name][title]
 
-                            properties = list(final_dict.keys())
-
-                            properties.insert(0, 'species')
+                            properties = ['species', 'energy', 'gibbs_energy']
                             if start == False:
                                 dict_df = {k: [] for k in properties}
                                 start = True
-                            for property in properties:
-                                if property == 'species':
-                                    dict_df[property].append(basename)
-                                else:
-                                    dict_df[property].append(final_dict[property])
+                            dict_df['species'].append(basename)
+                            dict_df['energy'].append(final_dict['scfenergy'])
+                            dict_df['gibbs_energy'].append(final_dict['freeenergy'])
+                            
                 elif category == 'sp_ieea':
                      start = False
                      for file_name in dict.keys():
