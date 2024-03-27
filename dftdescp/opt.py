@@ -8,6 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
+import numpy as np
 
 eV_to_hartree = 0.0367493
 
@@ -58,6 +59,21 @@ class opt:
             )
             file_data[file_name]["opt"]["enthalpy"] = opt_data.enthalpy
             file_data[file_name]["opt"]["freeenergy"] = opt_data.freeenergy
+            coords = opt_data.atomcoords[-1]
+            bond_data_matrix = []
+            for atom1 in range(len(coords)):
+                row = []
+                for atom2 in range(len(coords)):
+                    p1 = np.array(coords[atom1])
+                    p2 = np.array(coords[atom2])
+                    squared_dist = np.sum((p1-p2)**2, axis=0)
+                    dist = np.sqrt(squared_dist)
+                    row.append(dist)
+                bond_data_matrix.append(row)
+            file_data[file_name]["opt"]["bond_length_matrix"] = bond_data_matrix
+                            
+
+                
         return file_data
 
     def parse_cc_data(self, file_name, file):
