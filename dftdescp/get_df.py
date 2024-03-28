@@ -258,15 +258,17 @@ class get_df:
                             ie = final_dict['ie']['E']
                             ea = final_dict['ea']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_potential', 'chemical_hardness']}
+                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_potential', 'chemical_hardness', 'global_electrophilicity']}
                                 start=True
                             dict_df['species'].append(basename)
                             dict_df['sp_ie'].append(ie)
                             dict_df['sp_ea'].append(ea)
                             cp = -1*(ie+ea)/2
                             hardness = (ie-ea)/2
+                            electrophilicity = cp**2 / (2*hardness)
                             dict_df['chemical_potential'].append(cp)
                             dict_df['chemical_hardness'].append(hardness)
+                            dict_df['global_electrophilicity'].append(electrophilicity)
 
                 elif category == 'ad_ieea':
                      start = False
