@@ -54,6 +54,7 @@ class opt:
                 self.args.log.write(f'Basis set used: {opt_data.metadata['basis_set']}')
             
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
+            file_name = self.file_base(file_name)
             file_data[file_name]["opt"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
@@ -70,8 +71,8 @@ class opt:
                     dist = np.sqrt(squared_dist)
                     row.append(dist)
                 bond_data_matrix.append(row)
-            file_data[file_name]["opt"]["bond_length_matrix"] = bond_data_matrix
-                            
+            
+            file_data[file_name]["bond_length_matrix"] = bond_data_matrix              
 
                 
         return file_data
@@ -89,3 +90,22 @@ class opt:
             cc_data = None
 
         return cc_data
+    def file_base(self, string):
+        try:
+            int(string[-1])
+        except:
+            pass
+        else:
+            return string
+        for i in string[::-1]:
+            try:
+                int(i)
+            except:
+                pass
+            else:
+                lastidx = string.rfind(i) + 1
+
+                break
+        startidx = string.rfind('/') +1
+
+        return string[startidx:lastidx]

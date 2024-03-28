@@ -120,30 +120,12 @@ def main():
          #   ][args.substructure]["index"]
         #)
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
-        if args.nbo: bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
+        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.nbo_suffix)
     
     else:
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
-        if args.nbo: bond_df = get_df(nbo_data, 'bond')
-    if args.opt: mol_df = get_df(data_dicts, 'molecular')
-   
-    
-
-
-
-
-    # # Creates the parameterizer class and writes a .csv to look at for atom mapping
-    # param = parameterizer(args["struc"], args["sdf"], args["txt"])
-
-    # ######Need to do something about this step for sure########
-    # atom_labels = {"log_name": "log_name", 0: "C4", 1: "C1", 2: "O3", 3: "H5", 4: "O2"}
-    # ###############################################
-
-    # # generate the atom mapped df and writes it to a .csv
-    # param.generate_df(atom_labels)
-
-    # # gets the parameters and writes them to a .csv
-    # param.get_params(args["skip_list"])
+        if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
+    if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
 
 
 if __name__ == "__main__":

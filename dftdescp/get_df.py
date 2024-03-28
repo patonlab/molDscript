@@ -12,7 +12,7 @@ class get_df:
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure=''):
+    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO'):
         self.dd = data_dicts
         self.substructure = substructure
         #print(self.dd)
@@ -30,21 +30,64 @@ class get_df:
     # create a df of bond properties
     def get_bond_df(self):
         bond_csv = 'bond_level.csv'
+        calced_list = list(self.dd.keys())
         print('\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
-        nbo_dict = self.dd.file_data
+        
         dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order']}
-        for file_name in nbo_dict.keys():
-            dict = nbo_dict[file_name]
-            bo_matrix = dict['bond_order_matrix']
-            atom1 = 0
-            for row in bo_matrix:
-                for combination, index in zip(row, range(len(row))):
-                    if index < atom1:
-                        dict_df['species'].append(file_name)
-                        dict_df['atom1'].append(atom1)
-                        dict_df['atom2'].append(index)
-                        dict_df['wiberg_bond_order'].append(combination)
-                atom1 +=1
+        
+            
+        if all(x in calced_list for x in ['nbo', 'opt']):
+            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order', 'bond_length']}
+            nbo_dict = self.dd['nbo'].file_data
+            opt_dict = self.dd['opt'].file_data
+
+            for file_name in nbo_dict.keys():
+                dict = nbo_dict[file_name]
+                bo_matrix = dict['bond_order_matrix']
+                length_dict = opt_dict[file_name]
+                length_matrix = length_dict['bond_length_matrix']
+                atom1 = 0
+                for row_bo, row_length in zip(bo_matrix, length_matrix):
+                    for bo, length, index in zip(row_bo, row_length, range(len(row_bo))):
+                        if index < atom1:
+                            dict_df['species'].append(file_name)
+                            dict_df['atom1'].append(atom1)
+                            dict_df['atom2'].append(index)
+                            dict_df['wiberg_bond_order'].append(bo)
+                            dict_df['bond_length'].append(length)
+                    atom1 +=1
+        elif 'opt' in calced_list:
+            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'bond_length']}
+            opt_dict = self.dd['opt'].file_data
+
+            for file_name in opt_dict.keys():
+                length_dict = opt_dict[file_name]
+                length_matrix = length_dict['bond_length_matrix']
+                atom1 = 0
+                for  row_length in length_matrix:
+                    for length, index in zip(row_length, range(len(row_length))):
+                        if index < atom1:
+                            dict_df['species'].append(file_name)
+                            dict_df['atom1'].append(atom1)
+                            dict_df['atom2'].append(index)
+                            dict_df['bond_length'].append(length)
+                    atom1 +=1
+        elif 'nbo' in calced_list:
+            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order']}
+            nbo_dict = self.dd['nbo'].file_data
+            for file_name in nbo_dict.keys():
+                dict = nbo_dict[file_name]
+                bo_matrix = dict['bond_order_matrix']
+                atom1 = 0
+                for row_bo in bo_matrix:
+                    for bo,  index in zip(row_bo, range(len(row_bo))):
+                        if index < atom1:
+                            dict_df['species'].append(file_name)
+                            dict_df['atom1'].append(atom1)
+                            dict_df['atom2'].append(index)
+                            dict_df['wiberg_bond_order'].append(bo)
+
+                    atom1 +=1
         bond_df = pd.DataFrame(dict_df)
         if self.substructure != '':
             print('Filtering atomic property df by substructure\n\n')
@@ -67,6 +110,7 @@ class get_df:
         bond_df.to_csv(bond_csv, index=False)
         # print("Saved bond properties to 'bond_df.csv'")
         return bond_df
+            
 
     # create a df of atom properties
     def get_atom_df(self):
@@ -185,18 +229,17 @@ class get_df:
                 start = False
                 if category == 'opt':
                     for file_name in dict.keys():
-                        for title in dict[file_name].keys():
+                        final_dict = dict[file_name]['opt']
+                        basename = self.file_base(file_name)
 
-                            basename = self.file_base(file_name)
-                            final_dict = dict[file_name][title]
-
-                            properties = ['species', 'energy', 'gibbs_energy']
-                            if start == False:
-                                dict_df = {k: [] for k in properties}
-                                start = True
-                            dict_df['species'].append(basename)
-                            dict_df['energy'].append(final_dict['scfenergy'])
-                            dict_df['gibbs_energy'].append(final_dict['freeenergy'])
+                        properties = ['species', 'energy', 'enthalpy', 'gibbs_energy']
+                        if start == False:
+                            dict_df = {k: [] for k in properties}
+                            start = True
+                        dict_df['species'].append(basename)
+                        dict_df['energy'].append(final_dict['scfenergy'])
+                        dict_df['enthalpy'].append(final_dict['enthalpy'])
+                        dict_df['gibbs_energy'].append(final_dict['freeenergy'])
                             
                 elif category == 'sp_ieea':
                      start = False
