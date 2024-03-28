@@ -4,7 +4,9 @@
 
 
 import pandas as pd
-
+import numpy as np
+import scipy.constants as sc
+pd.options.mode.chained_assignment = None
 
 
 class get_df:
@@ -19,13 +21,15 @@ class get_df:
         if data_type == "molecular":
             mol_df = self.get_mol_df()
             self.mol_df = mol_df
+            
         if data_type == "bond":
             bond_df = self.get_bond_df()
             self.bond_df = bond_df
         if data_type == "atom":
             atom_df = self.get_atom_df()
             self.atom_df = atom_df
-
+        if data_type == "boltzmann":
+            self.boltzmann_weight()
 
     # create a df of bond properties
     def get_bond_df(self):
@@ -258,7 +262,7 @@ class get_df:
                             ie = final_dict['ie']['E']
                             ea = final_dict['ea']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_potential', 'chemical_hardness', 'global_electrophilicity']}
+                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
                                 start=True
                             dict_df['species'].append(basename)
                             dict_df['sp_ie'].append(ie)
@@ -266,10 +270,10 @@ class get_df:
                             cp = -1*(ie+ea)/2
                             hardness = (ie-ea)/2
                             electrophilicity = cp**2 / (2*hardness)
-                            dict_df['chemical_potential'].append(cp)
+                            electronegativity = -1 * cp
                             dict_df['chemical_hardness'].append(hardness)
                             dict_df['global_electrophilicity'].append(electrophilicity)
-
+                            dict_df['electronegativity'].append(electronegativity)
                 elif category == 'ad_ieea':
                      start = False
                      for file_name in dict.keys():
@@ -310,3 +314,39 @@ class get_df:
         startidx = string.rfind('/') +1
 
         return string[startidx:lastidx]
+    def boltzmann_weight(self):
+        temp = 298
+        kb = sc.k
+        denom = kb*temp
+        mol_df = pd.read_csv('molecule_level.csv')
+        full_names = mol_df['species']
+        codenames = []
+        for name in full_names:
+            ulineidx = name.find('_')
+            codename = name[:ulineidx]
+            codenames.append(codename)
+        arrnames = np.array(codenames)
+        done_list = []
+        weighted_df = pd.DataFrame()
+        for name in codenames:
+            if not name in done_list:
+                
+                idxes = np.where(arrnames == name) 
+                tempdf = mol_df.iloc[idxes]
+                if len(tempdf) == 1:
+                    tempdf['species'] = [name]
+                    weighted_df = pd.concat([weighted_df, tempdf])
+                else:
+                    energies = tempdf['energy']
+                    columns = list(tempdf.columns)
+                    wtrow = {k: [] for k in columns}
+                    wtrow['species'] = name
+                    for prop in columns[1:]:
+                        numerator = 0
+                        denominator = 0
+                        for property, energy in zip(tempdf[prop], energies):
+                            nege = -1 * energy
+                            boltz_term = np.exp(nege/denom)
+                            numerator += property*boltz_term
+                            denominator += boltz_term
+                done_list.append(name)
