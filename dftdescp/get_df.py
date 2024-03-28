@@ -258,11 +258,16 @@ class get_df:
                             ie = final_dict['ie']['E']
                             ea = final_dict['ea']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea']}
+                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_potential', 'chemical_hardness']}
                                 start=True
                             dict_df['species'].append(basename)
                             dict_df['sp_ie'].append(ie)
                             dict_df['sp_ea'].append(ea)
+                            cp = -1*(ie+ea)/2
+                            hardness = (ie-ea)/2
+                            dict_df['chemical_potential'].append(cp)
+                            dict_df['chemical_hardness'].append(hardness)
+
                 elif category == 'ad_ieea':
                      start = False
                      for file_name in dict.keys():
