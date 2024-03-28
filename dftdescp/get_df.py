@@ -232,7 +232,7 @@ class get_df:
                         final_dict = dict[file_name]['opt']
                         basename = self.file_base(file_name)
 
-                        properties = ['species', 'energy', 'enthalpy', 'gibbs_energy']
+                        properties = ['species', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
                         if start == False:
                             dict_df = {k: [] for k in properties}
                             start = True
@@ -240,7 +240,16 @@ class get_df:
                         dict_df['energy'].append(final_dict['scfenergy'])
                         dict_df['enthalpy'].append(final_dict['enthalpy'])
                         dict_df['gibbs_energy'].append(final_dict['freeenergy'])
-                            
+                        dict_df['dipole'].append(final_dict['dipole'])
+                        dict_df['XX_quadrupole_moment'].append(final_dict['XX_quadrupole_moment'])
+                        dict_df['XY_quadrupole_moment'].append(final_dict['XY_quadrupole_moment'])  
+                        dict_df['XZ_quadrupole_moment'].append(final_dict['XZ_quadrupole_moment'])    
+                        dict_df['YY_quadrupole_moment'].append(final_dict['YY_quadrupole_moment']) 
+                        dict_df['YZ_quadrupole_moment'].append(final_dict['YZ_quadrupole_moment']) 
+                        dict_df['ZZ_quadrupole_moment'].append(final_dict['ZZ_quadrupole_moment']) 
+                        dict_df['HOMO'].append(final_dict['HOMO'])
+                        dict_df['LUMO'].append(final_dict['LUMO'])
+                        dict_df['HOMO-LUMO_gap'].append(final_dict['HOMO-LUMO_gap'])
                 elif category == 'sp_ieea':
                      start = False
                      for file_name in dict.keys():

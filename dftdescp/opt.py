@@ -72,8 +72,25 @@ class opt:
                     row.append(dist)
                 bond_data_matrix.append(row)
             
-            file_data[file_name]["bond_length_matrix"] = bond_data_matrix              
-
+            file_data[file_name]["bond_length_matrix"] = bond_data_matrix
+            moments = opt_data.moments
+            com = moments[0]
+            xyzdipole = moments[1]
+            scalar_dipole = np.sqrt(np.sum((com-xyzdipole)**2, axis=0))
+            file_data[file_name]["opt"]["dipole"] = scalar_dipole
+            quad_moments = moments[2]
+            file_data[file_name]["opt"]["XX_quadrupole_moment"] = quad_moments[0]
+            file_data[file_name]["opt"]["XY_quadrupole_moment"] = quad_moments[1]
+            file_data[file_name]["opt"]["XZ_quadrupole_moment"] = quad_moments[2]
+            file_data[file_name]["opt"]["YY_quadrupole_moment"] = quad_moments[3]
+            file_data[file_name]["opt"]["YZ_quadrupole_moment"] = quad_moments[4]
+            file_data[file_name]["opt"]["ZZ_quadrupole_moment"] = quad_moments[5]
+            homo = opt_data.moenergies[0][opt_data.homos[0]]
+            lumo = opt_data.moenergies[0][opt_data.homos[0]+1]
+            hl_gap = lumo - homo
+            file_data[file_name]["opt"]["HOMO"] = homo
+            file_data[file_name]["opt"]["LUMO"] = lumo
+            file_data[file_name]["opt"]["HOMO-LUMO_gap"] = hl_gap
                 
         return file_data
 
