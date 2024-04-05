@@ -9,6 +9,7 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 
+eV_to_hartree = 0.0367493
 
 class ie_ea:
     """
@@ -64,8 +65,8 @@ class ie_ea:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"
                 )
-                file_data[file_name]["ie"]["E"] = ie_data.scfenergies[-1]
-                file_data[file_name]["ea"]["E"] = ea_data.scfenergies[-1]
+                file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1]*eV_to_hartree
+                file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1]*eV_to_hartree
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
