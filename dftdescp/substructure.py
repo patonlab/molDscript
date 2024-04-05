@@ -5,10 +5,12 @@
 
 import sys, os
 import time
+
 from openbabel import openbabel as ob
 from rdkit import Chem
 from collections import defaultdict
-from dftdescp.argument_parser import (load_variables)
+from dftdescp.argument_parser import load_variables
+
 
 class substructure:
     """
@@ -22,45 +24,69 @@ class substructure:
         self.args = load_variables(kwargs, "SUBSTRUCTURE", create_dat=create_dat)
         self.data = data
         self.substructure = substructure
-        
+
         if len(self.data.keys()) == 0:
-            self.args.log.write(f'\nx  Could not find files to obtain information optimization')
+            self.args.log.write(
+                f"\nx  Could not find files to obtain information optimization"
+            )
             self.args.log.finalize()
             sys.exit()
         else:
             self.file_data = self.get_data()
-        
+
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"\nTime Collecting SUBSTRUCTURE data: {elapsed_time} seconds\n")
+            self.args.log.write(
+                f"--- Substructure Matching complete in {elapsed_time} seconds\n"
+            )
             self.args.log.finalize()
-            
+
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
         for file_name in self.data.keys():
-            index=()
+            index = ()
             index = self.get_mol(self.data[file_name])
-            self.args.log.write(f"Finding substructe information for data from {file_name}\n")
-            file_data[file_name][self.substructure]['index'] = index
-        return file_data 
-    
+            basename = self.file_base(file_name)
+            self.args.log.write(
+                f"o  Parsing substructe data from {basename}"
+            )
+            file_data[file_name][self.substructure]["index"] = index
+        return file_data
+
     def get_mol(self, file):
-        #obabel convert
+        # obabel convert
         obConversion = ob.OBConversion()
         obConversion.SetInAndOutFormats("log", "mol")
         ob_mol = ob.OBMol()
         obConversion.ReadFile(ob_mol, file)
-        obConversion.WriteFile(ob_mol, file.split('.')[0]+'.mol')
+        obConversion.WriteFile(ob_mol, file.split(".")[0] + ".mol")
         obConversion.CloseOutFile()
-        mol = Chem.MolFromMolFile(file.split('.')[0]+'.mol', removeHs=False)
+        mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
 
         substructure = Chem.MolFromSmarts(self.substructure)
 
         indexsall = mol.GetSubstructMatches(substructure)
-        os.remove(file.split('.')[0]+'.mol')
+        os.remove(file.split(".")[0] + ".mol")
 
-        return indexsall 
-
+        return indexsall
     
+    def file_base(self, string):
+        try:
+            int(string[-1])
+        except:
+            pass
+        else:
+            return string
+        for i in string[::-1]:
+            try:
+                int(i)
+            except:
+                pass
+            else:
+                lastidx = string.rfind(i) + 1
+
+                break
+        startidx = string.rfind('/') +1
+        return string[startidx:lastidx]
