@@ -259,14 +259,14 @@ class get_df:
                      for file_name in dict.keys():
                             basename = self.file_base(file_name)
                             final_dict = dict[file_name]
-                            ie = final_dict['ie']['E']
-                            ea = final_dict['ea']['E']
+                            ie = final_dict['ox']['E']
+                            ea = final_dict['red']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['species', 'sp_ie','sp_ea', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
+                                dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
                                 start=True
                             dict_df['species'].append(basename)
-                            dict_df['sp_ie'].append(ie)
-                            dict_df['sp_ea'].append(ea)
+                            dict_df['SP_ox_energy'].append(ie)
+                            dict_df['SP_red_energy'].append(ea)
                             cp = -1*(ie+ea)/2
                             hardness = (ie-ea)/2
                             electrophilicity = cp**2 / (2*hardness)
@@ -279,14 +279,14 @@ class get_df:
                      for file_name in dict.keys():
                             basename = self.file_base(file_name)
                             final_dict = dict[file_name]
-                            ie = final_dict['ie']['E']
-                            ea = final_dict['ea']['E']
+                            ie = final_dict['ox']['E']
+                            ea = final_dict['red']['E']
                             if start == False:
-                                dict_df = {k: [] for k in ['species', 'ad_ie','ad_ea']}
+                                dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
                                 start=True
                             dict_df['species'].append(basename)
-                            dict_df['ad_ie'].append(ie)
-                            dict_df['ad_ea'].append(ea)
+                            dict_df['AD_ox_energy'].append(ie)
+                            dict_df['AD_red_energy'].append(ea)
                 dict_df = pd.DataFrame(dict_df)
                 if mol_df.empty:
                     mol_df = dict_df
