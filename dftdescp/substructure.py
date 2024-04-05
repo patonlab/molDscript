@@ -37,7 +37,7 @@ class substructure:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"\nTime Collecting SUBSTRUCTURE data: {elapsed_time} seconds\n"
+                f"--- Substructure Matching complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
@@ -48,8 +48,9 @@ class substructure:
         for file_name in self.data.keys():
             index = ()
             index = self.get_mol(self.data[file_name])
+            basename = self.file_base(file_name)
             self.args.log.write(
-                f"Finding substructe information for data from {file_name}\n"
+                f"o  Parsing substructe data from {basename}"
             )
             file_data[file_name][self.substructure]["index"] = index
         return file_data
@@ -70,3 +71,22 @@ class substructure:
         os.remove(file.split(".")[0] + ".mol")
 
         return indexsall
+    
+    def file_base(self, string):
+        try:
+            int(string[-1])
+        except:
+            pass
+        else:
+            return string
+        for i in string[::-1]:
+            try:
+                int(i)
+            except:
+                pass
+            else:
+                lastidx = string.rfind(i) + 1
+
+                break
+        startidx = string.rfind('/') +1
+        return string[startidx:lastidx]

@@ -49,7 +49,9 @@ class nbo:
                 nbo_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nbo_data = None
-
+            if list(self.data.keys()).index(file_name) == 0:
+                self.args.log.write(f'Functional used: {nbo_data.metadata['functional']}')
+                self.args.log.write(f'Basis set used: {nbo_data.metadata['basis_set']}')
             if nbo_data != None:
                 self.args.log.write(
                     f"o  Parsing NBO & NPA data from {file_name}"

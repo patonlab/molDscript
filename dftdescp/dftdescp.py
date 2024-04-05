@@ -47,11 +47,12 @@ def checks():
 def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
+    
     data_dicts = {}
     
     print(header)
     print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
-
+    print(f'\nArguments passed to program: \n{sys.argv[1:]}\n')
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link)
@@ -118,32 +119,14 @@ def main():
         #        "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
          #   ][args.substructure]["index"]
         #)
-        atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
-        if args.nbo: bond_df = get_df(nbo_data, 'bond', substructure= substructure_data.file_data)
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
+        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.nbo_suffix)
     
     else:
-        atom_df = get_df(data_dicts, 'atom')
-        if args.nbo: bond_df = get_df(nbo_data, 'bond')
-    mol_df = get_df(data_dicts, 'molecular')
-   
-    
-
-
-
-
-    # # Creates the parameterizer class and writes a .csv to look at for atom mapping
-    # param = parameterizer(args["struc"], args["sdf"], args["txt"])
-
-    # ######Need to do something about this step for sure########
-    # atom_labels = {"log_name": "log_name", 0: "C4", 1: "C1", 2: "O3", 3: "H5", 4: "O2"}
-    # ###############################################
-
-    # # generate the atom mapped df and writes it to a .csv
-    # param.generate_df(atom_labels)
-
-    # # gets the parameters and writes them to a .csv
-    # param.get_params(args["skip_list"])
-
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
+        if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
+    if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
+    #get_df(data_dicts, 'boltzmann')
 
 if __name__ == "__main__":
     checks()

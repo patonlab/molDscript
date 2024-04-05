@@ -48,6 +48,9 @@ class nmr:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nmr_data = None
+            if list(self.data.keys()).index(file_name) == 0:
+                self.args.log.write(f'Functional used: {nmr_data.metadata['functional']}')
+                self.args.log.write(f'Basis set used: {nmr_data.metadata['basis_set']}')
             if nmr_data != None:
                 self.args.log.write(
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
