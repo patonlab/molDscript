@@ -24,6 +24,7 @@ var_dict = {
     "sp_ie_ea": False,
     "skip_list": [],
     "link": False,
+    "boltz": True,
     "substructure": "",
     "path_opt": "tests/QCALC/success",
     "path_nmr": "tests/NMR/success",
@@ -91,6 +92,7 @@ def command_line_args():
         "ad_ie_ea",
         "sp_ie_ea",
         "link",
+        "boltz"
     ]
     list_args = ["skip_list"]
     int_args = []

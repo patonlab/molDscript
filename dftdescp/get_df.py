@@ -328,8 +328,10 @@ class get_df:
             codename = name[:ulineidx]
             codenames.append(codename)
         arrnames = np.array(codenames)
+        
         done_list = []
         weighted_df = pd.DataFrame()
+        weight_dict = {}
         for name in codenames:
             if not name in done_list:
                 
@@ -338,6 +340,7 @@ class get_df:
                 if len(tempdf) == 1:
                     tempdf['species'] = [name]
                     weighted_df = pd.concat([weighted_df, tempdf])
+                    weight_dict[name] = 1
                 else:
                     energies = tempdf['energy'] - tempdf['energy'].min()
                     columns = list(tempdf.columns)
@@ -351,7 +354,7 @@ class get_df:
                     for e in energies:
                         weight = math.exp(-e * J_TO_AU / GAS_CONSTANT / T) / boltz_sum
                         weights.append(weight)
-
+                    weight_dict[name] = weights
                     for i in columns:
                         wt_val = 0
                         for val, wt in zip(tempdf[i], weights):
@@ -363,6 +366,55 @@ class get_df:
                 done_list.append(name)
         boltz_mol_df = weighted_df
         boltz_mol_df.to_csv('boltzmann_molecular_level.csv', index=False)
+        mol_df['codenames'] = arrnames
+
+
+        atom_df = pd.read_csv('atom_level.csv')
+        
+        atoms = atom_df['atom'].unique()
+        weighted_df = pd.DataFrame()
+        
+        for atom in atoms:
+            done_list = []
+            spec_atom = atom_df.loc[atom_df['atom'] == atom]
+            full_names = spec_atom['species']
+            codenames = []
+            for name in full_names:
+                ulineidx = name.find('_')
+                codename = name[:ulineidx]
+                codenames.append(codename)
+            arrnames = np.array(codenames)
+            for name in codenames:
+                if not name in done_list:
+                    
+                    idxes = np.where(arrnames == name) 
+                    tempdf = spec_atom.iloc[idxes]
+                    if len(tempdf) == 1:
+                        tempdf['species'] = [name]
+                        weighted_df = pd.concat([weighted_df, tempdf])
+                    else:
+                        weights = weight_dict[name]
+                        columns = list(tempdf.columns)
+                        wtrow = {k: [] for k in columns}
+                        columns.remove('species')
+                        columns.remove('atom')
+                        wtrow['species'] = name
+                        wtrow['atom'] = atom
+                        for i in columns:
+                            wt_val = 0
+                            for val, wt in zip(tempdf[i], weights):
+                                if math.isnan(val):
+
+                                    continue
+                                contribution = val * wt
+                                wt_val += contribution
+                            wtrow[i] = wt_val
+                    df_row = pd.DataFrame(wtrow, index=[0])
+                    weighted_df = pd.concat([weighted_df, df_row])
+                done_list.append(name)
+
+        atom_df = weighted_df
+        atom_df.to_csv('boltzmann_atom_level.csv', index=False)
 
 
 
@@ -378,43 +430,3 @@ class get_df:
 
 
 
-
-
-
-
-
-        # temp = 298
-        # kb = sc.k
-        # denom = kb*temp
-        # mol_df = pd.read_csv('molecule_level.csv')
-        # full_names = mol_df['species']
-        # codenames = []
-        # for name in full_names:
-        #     ulineidx = name.find('_')
-        #     codename = name[:ulineidx]
-        #     codenames.append(codename)
-        # arrnames = np.array(codenames)
-        # done_list = []
-        # weighted_df = pd.DataFrame()
-        # for name in codenames:
-        #     if not name in done_list:
-                
-        #         idxes = np.where(arrnames == name) 
-        #         tempdf = mol_df.iloc[idxes]
-        #         if len(tempdf) == 1:
-        #             tempdf['species'] = [name]
-        #             weighted_df = pd.concat([weighted_df, tempdf])
-        #         else:
-        #             energies = tempdf['energy']
-        #             columns = list(tempdf.columns)
-        #             wtrow = {k: [] for k in columns}
-        #             wtrow['species'] = name
-        #             for prop in columns[1:]:
-        #                 numerator = 0
-        #                 denominator = 0
-        #                 for property, energy in zip(tempdf[prop], energies):
-        #                     nege = -1 * energy
-        #                     boltz_term = np.exp(nege/denom)
-        #                     numerator += property*boltz_term
-        #                     denominator += boltz_term
-        #         done_list.append(name)
