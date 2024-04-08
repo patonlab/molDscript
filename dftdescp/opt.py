@@ -50,8 +50,8 @@ class opt:
         for file_name in self.data.keys():
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f'Functional used: {opt_data.metadata['functional']}')
-                self.args.log.write(f'Basis set used: {opt_data.metadata['basis_set']}')
+                self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
             
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
             file_name = self.file_base(file_name)

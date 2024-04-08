@@ -9,6 +9,9 @@ import scipy.constants as sc
 pd.options.mode.chained_assignment = None
 import math
 
+GAS_CONSTANT = 8.3144621  # J / K / mol
+J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
+T = 298.15
 
 class get_df:
     """
@@ -18,11 +21,10 @@ class get_df:
     def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO'):
         self.dd = data_dicts
         self.substructure = substructure
-        #print(self.dd)
+   
         if data_type == "molecular":
             mol_df = self.get_mol_df()
-            self.mol_df = mol_df
-            
+            self.mol_df = mol_df 
         if data_type == "bond":
             bond_df = self.get_bond_df()
             self.bond_df = bond_df
@@ -95,7 +97,7 @@ class get_df:
                     atom1 +=1
         bond_df = pd.DataFrame(dict_df)
         if self.substructure != '':
-            print('Filtering atomic property df by substructure\n\n')
+            print('   (Filtered by user-defined substructure)')
             final_df = pd.DataFrame()
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
@@ -197,7 +199,7 @@ class get_df:
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['species','atom'])
         if self.substructure != '':
-            print('Filtering atomic property df by substructure\n\n')
+            print('   (Filtered by user-defined substructure)')
             final_df = pd.DataFrame()
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
@@ -297,6 +299,7 @@ class get_df:
         mol_df.to_csv(mol_csv, index=False)
         # print("Saved molecular properties to 'mol_df.csv'\n\n")
         return mol_df
+    
     def file_base(self, string):
         try:
             int(string[-1])
@@ -316,10 +319,11 @@ class get_df:
         startidx = string.rfind('/') +1
 
         return string[startidx:lastidx]
+    
     def boltzmann_weight(self):
-        GAS_CONSTANT = 8.3144621  # J / K / mol
-        J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
-        T = 298.15
+        ensemble_mol_csv = 'ensemble_molecule_level.csv'
+        print('\u25A1  AVERAGING MOLECULE-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_mol_csv))
+       
         mol_df = pd.read_csv('molecule_level.csv')
         full_names = mol_df['species']
         codenames = []
@@ -332,6 +336,7 @@ class get_df:
         done_list = []
         weighted_df = pd.DataFrame()
         weight_dict = {}
+        
         for name in codenames:
             if not name in done_list:
                 
@@ -365,10 +370,12 @@ class get_df:
                 weighted_df = pd.concat([weighted_df, df_row])
                 done_list.append(name)
         boltz_mol_df = weighted_df
-        boltz_mol_df.to_csv('boltzmann_molecular_level.csv', index=False)
+        boltz_mol_df.to_csv(ensemble_mol_csv, index=False)
         mol_df['codenames'] = arrnames
 
 
+        ensemble_atom_csv = 'ensemble_atom_level.csv'
+        print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
         atom_df = pd.read_csv('atom_level.csv')
         
         atoms = atom_df['atom'].unique()
@@ -414,7 +421,7 @@ class get_df:
                 done_list.append(name)
 
         atom_df = weighted_df
-        atom_df.to_csv('boltzmann_atom_level.csv', index=False)
+        atom_df.to_csv(ensemble_atom_csv, index=False)
 
 
 

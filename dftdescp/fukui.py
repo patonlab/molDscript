@@ -54,24 +54,24 @@ class fukui:
                     file_name, self.data[file_name]["neutral"]
                 )
                 if first == False:
-                    self.args.log.write(f'Functional used: {neutral_data.metadata['functional']}')
-                    self.args.log.write(f'Basis set used: {neutral_data.metadata['basis_set']}')
+                    self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}")
                     first = True
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(
                     file_name, self.data[file_name]["oxidized"]
                 )
                 if first == False:
-                    self.args.log.write(f'Functional used: {oxidized_data.metadata['functional']}')
-                    self.args.log.write(f'Basis set used: {oxidized_data.metadata['basis_set']}')
+                    self.args.log.write(f"   Functional used: {oxidized_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {oxidized_data.metadata['basis_set']}")
                     first = True
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(
                     file_name, self.data[file_name]["reduced"]
                 )
                 if first == False:
-                    self.args.log.write(f'Functional used: {reduced_data.metadata['functional']}')
-                    self.args.log.write(f'Basis set used: {reduced_data.metadata['basis_set']}')
+                    self.args.log.write(f"   Functional used: {reduced_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {reduced_data.metadata['basis_set']}")
                     first = True
 
             if neutral_data != None and oxidized_data != None and reduced_data != None:
