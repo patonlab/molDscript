@@ -6,9 +6,9 @@ import os, time, getopt, sys
 from pathlib import Path
 from dftdescp.utils import format_lists, load_from_yaml, Logger
 
-dftdescp_version = "X.X"
+dftdescp_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
-dftdescp_ref = "X.X"
+dftdescp_ref = "XXX"
 
 var_dict = {
     "struc": "",
@@ -26,13 +26,13 @@ var_dict = {
     "link": False,
     "boltz": True,
     "substructure": "",
-    "path_opt": "tests/QCALC/success",
-    "path_nmr": "tests/NMR/success",
-    "path_nbo": "tests/NBO/success",
-    "path_fukui": "tests/FUKUI/success",
-    "path_ad_ie_ea": "tests/AD_IE_EA/success",
-    "path_sp_ie_ea": "tests/SP_IE_EA/success",
-    "path_link": "tests/link",
+    "path_opt": "../tests/QCALC/success",
+    "path_nmr": "../tests/NMR/success",
+    "path_nbo": "../tests/NBO/success",
+    "path_fukui": "../tests/FUKUI/success",
+    "path_ad_ie_ea": "../tests/AD_IE_EA/success",
+    "path_sp_ie_ea": "../tests/SP_IE_EA/success",
+    "path_link": "../tests/link",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
     "suffix_fukui": "SP_neutral",
