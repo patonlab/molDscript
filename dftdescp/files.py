@@ -91,7 +91,7 @@ class files:
             if self.args.suffix_sp_ie in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ie}")
                 file_data[key_name[0]]["ie"] = file
-            if self.args.suffix_sp_ea in os.path.basename(file):
+            elif self.args.suffix_sp_ea in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ea}")
                 file_data[key_name[0]]["ea"] = file
         return file_data
