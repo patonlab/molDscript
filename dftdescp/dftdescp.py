@@ -126,7 +126,7 @@ def main():
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
     if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
-    #get_df(data_dicts, 'boltzmann')
+    if args.boltz: get_df(data_dicts, 'boltzmann')
 
 if __name__ == "__main__":
     checks()

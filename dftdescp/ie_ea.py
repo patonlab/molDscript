@@ -49,6 +49,7 @@ class ie_ea:
 
         for file_name in self.data.keys():
             ie_data, ea_data = None, None
+
             if "ie" in self.data[file_name].keys():
                 ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
                 if first == False:
@@ -67,6 +68,7 @@ class ie_ea:
                 )
                 file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1]*eV_to_hartree
                 file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1]*eV_to_hartree
+                
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
