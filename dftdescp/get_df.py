@@ -376,7 +376,26 @@ class get_df:
                     weight_dict[name] = weights
                     for i in columns:
                         wt_val = 0
-                        for val, wt in zip(tempdf[i], weights):
+                        props = list(tempdf[i])
+                        missing_values = []
+                        tempweights = weights.copy()
+                        for value, idx in zip(props[::-1], range(len(props))[::-1]):
+                            if math.isnan(value):
+                                missing_values.append(idx)
+                        if missing_values != []:
+
+                            for index in missing_values:
+                                del props[index]
+                                del tempweights[index]
+                            tempwt_arr = np.array(tempweights)
+                            sum = tempwt_arr.sum()
+
+                            tempweights = [x / sum for x in tempweights]
+
+                        for val, wt in zip(props, tempweights):
+                            if math.isnan(val):
+
+                                continue
                             contribution = val * wt
                             wt_val += contribution
                         wtrow[i] = wt_val
@@ -432,7 +451,23 @@ class get_df:
                             wtrow['atom_index'] = atom
                             for i in columns:
                                 wt_val = 0
-                                for val, wt in zip(tempdf[i], weights):
+                                props = list(tempdf[i])
+                                missing_values = []
+                                tempweights = weights.copy()
+                                for value, idx in zip(props[::-1], range(len(props))[::-1]):
+                                    if math.isnan(value):
+                                        missing_values.append(idx)
+                                if missing_values != []:
+
+                                    for index in missing_values:
+                                        del props[index]
+                                        del tempweights[index]
+                                    tempwt_arr = np.array(tempweights)
+                                    sum = tempwt_arr.sum()
+
+                                    tempweights = [x / sum for x in tempweights]
+
+                                for val, wt in zip(props, tempweights):
                                     if math.isnan(val):
 
                                         continue
@@ -483,7 +518,6 @@ class get_df:
                     if not name in done_list:
                         
                         idxes = np.where(arrnames == name) 
-                        print(len(spec_bond))
                         
                         tempdf = spec_bond.iloc[idxes]
 
@@ -512,7 +546,23 @@ class get_df:
                             wtrow['atom2'] = atom2_idx[0]
                             for i in columns:
                                 wt_val = 0
-                                for val, wt in zip(tempdf[i], weights):
+                                props = list(tempdf[i])
+                                missing_values = []
+                                tempweights = weights.copy()
+                                for value, idx in zip(props[::-1], range(len(props))[::-1]):
+                                    if math.isnan(value):
+                                        missing_values.append(idx)
+                                if missing_values != []:
+
+                                    for index in missing_values:
+                                        del props[index]
+                                        del tempweights[index]
+                                    tempwt_arr = np.array(tempweights)
+                                    sum = tempwt_arr.sum()
+
+                                    tempweights = [x / sum for x in tempweights]
+
+                                for val, wt in zip(props, tempweights):
                                     if math.isnan(val):
 
                                         continue
