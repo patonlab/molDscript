@@ -45,7 +45,7 @@ class get_df:
         
             
         if all(x in calced_list for x in ['nbo', 'opt']):
-            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order', 'bond_length']}
+            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'atom1_type', 'atom2_type', 'wiberg_bond_order', 'bond_length']}
             nbo_dict = self.dd['nbo'].file_data
             opt_dict = self.dd['opt'].file_data
 
@@ -55,21 +55,30 @@ class get_df:
                 length_dict = opt_dict[file_name]
                 length_matrix = length_dict['bond_length_matrix']
                 atom1 = 0
+                atoms = length_dict['opt']['atomnos']
+
                 for row_bo, row_length in zip(bo_matrix, length_matrix):
                     for bo, length, index in zip(row_bo, row_length, range(len(row_bo))):
                         if index < atom1:
                             dict_df['species'].append(file_name)
                             dict_df['atom1'].append(atom1)
+                            num = atoms[atom1]
+                            element = periodictable.elements[num]
+                            dict_df['atom1_type'].append(element.symbol)
                             dict_df['atom2'].append(index)
+                            num = atoms[index]
+                            element = periodictable.elements[num]
+                            dict_df['atom2_type'].append(element.symbol)
                             dict_df['wiberg_bond_order'].append(bo)
                             dict_df['bond_length'].append(length)
                     atom1 +=1
         elif 'opt' in calced_list:
-            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'bond_length']}
+            dict_df = {k: [] for k in ['species', 'atom1', 'atom2',  'atom1_type', 'atom2_type', 'bond_length']}
             opt_dict = self.dd['opt'].file_data
 
             for file_name in opt_dict.keys():
                 length_dict = opt_dict[file_name]
+                atoms = length_dict['opt']['atomnos']
                 length_matrix = length_dict['bond_length_matrix']
                 atom1 = 0
                 for  row_length in length_matrix:
@@ -77,25 +86,16 @@ class get_df:
                         if index < atom1:
                             dict_df['species'].append(file_name)
                             dict_df['atom1'].append(atom1)
+                            num = atoms[atom1]
+                            element = periodictable.elements[num]
+                            dict_df['atom1_type'].append(element.symbol)
                             dict_df['atom2'].append(index)
+                            num = atoms[index]
+                            element = periodictable.elements[num]
+                            dict_df['atom2_type'].append(element.symbol)
                             dict_df['bond_length'].append(length)
                     atom1 +=1
-        elif 'nbo' in calced_list:
-            dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order']}
-            nbo_dict = self.dd['nbo'].file_data
-            for file_name in nbo_dict.keys():
-                dict = nbo_dict[file_name]
-                bo_matrix = dict['bond_order_matrix']
-                atom1 = 0
-                for row_bo in bo_matrix:
-                    for bo,  index in zip(row_bo, range(len(row_bo))):
-                        if index < atom1:
-                            dict_df['species'].append(file_name)
-                            dict_df['atom1'].append(atom1)
-                            dict_df['atom2'].append(index)
-                            dict_df['wiberg_bond_order'].append(bo)
-
-                    atom1 +=1
+       
         bond_df = pd.DataFrame(dict_df)
         if self.substructure != '':
             print('   (Filtered by user-defined substructure)')

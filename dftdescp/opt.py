@@ -72,6 +72,7 @@ class opt:
             file_data[file_name]["opt"]["enthalpy"] = opt_data.enthalpy
             file_data[file_name]["opt"]["freeenergy"] = opt_data.freeenergy
             file_data[file_name]["opt"]["smiles"] = smi
+            file_data[file_name]['opt']['atomnos'] = opt_data.atomnos
 
 
 
