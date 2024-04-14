@@ -8,6 +8,7 @@ import numpy as np
 import scipy.constants as sc
 pd.options.mode.chained_assignment = None
 import math
+import periodictable
 
 GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
@@ -130,36 +131,45 @@ class get_df:
             if category in calced_list:
                 dict = self.dd[category].file_data
                 if category == 'nbo':
-                    dict_df = {k: [] for k in ['species', 'atom', 'npa_charge', 'wiberg_total']}
+                    dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'npa_charge', 'wiberg_total']}
                     for filename in dict.keys():
                         
                         charges = list(dict[filename]['charges']['npa'])
                         bond_orders = list(dict[filename]['bond_orders'])
                         #print(len(charges))
-                        for charge, bo in zip(charges, bond_orders):
+                        atoms = list(dict[filename]['atomnos'])
+                        for charge, bo, num in zip(charges, bond_orders, atoms):
                             dict_df['wiberg_total'].append(bo)
                             dict_df['npa_charge'].append(charge)
                             dict_df['species'].append(filename)
-                            dict_df['atom'].append(charges.index(charge))
+                            dict_df['atom_index'].append(charges.index(charge))
+                            element = periodictable.elements[num]
+                            dict_df['atom_type'].append(element.symbol)
+                            
                 elif category == 'nmr':
-                    dict_df = {k: [] for k in ['species', 'atom', 'nmr_shielding']}
+                    dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'nmr_shielding']}
                     for filename in dict.keys():
                         
                         shields = list(dict[filename]['nmr_shielding'])
-
-                        for shield in shields:
+                        atoms = list(dict[filename]['atomnos'])
+                        for shield, num in zip(shields, atoms):
                             dict_df['nmr_shielding'].append(shield)
                             dict_df['species'].append(filename)
-                            dict_df['atom'].append(shields.index(shield))
+                            dict_df['atom_index'].append(shields.index(shield))
+                            element = periodictable.elements[num]
+                            dict_df['atom_type'].append(element.symbol)
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['species', 'atom',  'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
+                    dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
                     charges = ['natural', 'cm5', 'hirsfeld']
                     for filename in dict.keys():
 
                         neut_nat = list(dict[filename]["neutral"]["atomcharges"]["natural"])
-                        for atom in neut_nat:
+                        atoms = list(dict[filename]['atomnos'])
+                        for atom, num in zip(neut_nat, atoms):
                             dict_df['species'].append(filename)
-                            dict_df['atom'].append(neut_nat.index(atom))
+                            dict_df['atom_index'].append(neut_nat.index(atom))
+                            element = periodictable.elements[num]
+                            dict_df['atom_type'].append(element.symbol)
                         neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
                         for atom in neut_cm5:
                             dict_df['cm5_charge'].append(atom)
@@ -197,7 +207,7 @@ class get_df:
                 if atom_df.empty:
                     atom_df = dict_df
                 else:
-                    atom_df = atom_df.merge(dict_df,how='left', on=['species','atom'])
+                    atom_df = atom_df.merge(dict_df,how='left', on=['species','atom_index', 'atom_type'])
         if self.substructure != '':
             print('   (Filtered by user-defined substructure)')
             final_df = pd.DataFrame()
@@ -387,12 +397,12 @@ class get_df:
             print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
             atom_df = pd.read_csv('atom_level.csv')
             
-            atoms = atom_df['atom'].unique()
+            atoms = atom_df['atom_index'].unique()
             weighted_df = pd.DataFrame()
             
             for atom in atoms:
                 done_list = []
-                spec_atom = atom_df.loc[atom_df['atom'] == atom]
+                spec_atom = atom_df.loc[atom_df['atom_index'] == atom]
                 full_names = spec_atom['species']
                 codenames = []
                 for name in full_names:
@@ -407,15 +417,19 @@ class get_df:
                         tempdf = spec_atom.iloc[idxes]
                         if len(tempdf) == 1:
                             tempdf['species'] = [name]
+
                             weighted_df = pd.concat([weighted_df, tempdf])
                         else:
                             weights = weight_dict[name]
                             columns = list(tempdf.columns)
                             wtrow = {k: [] for k in columns}
                             columns.remove('species')
-                            columns.remove('atom')
+                            columns.remove('atom_type')
+                            columns.remove('atom_index')
+                            atoms = list(tempdf['atom_type'])
                             wtrow['species'] = name
-                            wtrow['atom'] = atom
+                            wtrow['atom_type'] = atoms[0]
+                            wtrow['atom_index'] = atom
                             for i in columns:
                                 wt_val = 0
                                 for val, wt in zip(tempdf[i], weights):
