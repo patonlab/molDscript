@@ -446,7 +446,85 @@ class get_df:
             atom_df = weighted_df
             atom_df.to_csv(ensemble_atom_csv, index=False)
 
+        try:
+            bond_df = pd.read_csv('bond_level.csv')
+        except:
+            print('\u25A1  SKIPPING BOND LEVEL BOLTZMANN AVERAGING: no atom_level.csv found')
+        else:
 
+            ensemble_bond_csv = 'ensemble_bond_level.csv'
+            print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_bond_csv))
+            bond_df = pd.read_csv('bond_level.csv')
+            atom1_list = list(bond_df['atom1'])
+            atom2_list = list(bond_df['atom2'])
+            pair_list = []
+            for atom1, atom2 in zip(atom1_list, atom2_list):
+                pair = (atom1, atom2)
+                pair_list.append(pair)
+            pair_arr = np.array(pair_list)
+            bonds = np.unique(pair_arr, axis=0)
+            weighted_df = pd.DataFrame()
+            
+            for bond in bonds:
+                done_list = []
+                atom1 = bond[0]
+                atom2 = bond[1]
+                
+                spec_bond = bond_df.loc[(bond_df['atom1'] == atom1) & (bond_df['atom2'] == atom2)]
+                full_names = spec_bond['species']
+                
+                codenames = []
+                for name in full_names:
+                    ulineidx = name.find('_')
+                    codename = name[:ulineidx]
+                    codenames.append(codename)
+                arrnames = np.array(codenames)
+                for name in codenames:
+                    if not name in done_list:
+                        
+                        idxes = np.where(arrnames == name) 
+                        print(len(spec_bond))
+                        
+                        tempdf = spec_bond.iloc[idxes]
+
+                        if len(tempdf) == 1:
+                            tempdf['species'] = [name]
+
+                            weighted_df = pd.concat([weighted_df, tempdf])
+                        else:
+                            weights = weight_dict[name]
+                            columns = list(tempdf.columns)
+                            wtrow = {k: [] for k in columns}
+                            columns.remove('species')
+                            columns.remove('atom1_type')
+                            columns.remove('atom1')
+                            columns.remove('atom2_type')
+                            columns.remove('atom2')
+                            atom1_idx = list(tempdf['atom1'])
+                            atom1_type = list(tempdf['atom1_type'])
+
+                            atom2_idx = list(tempdf['atom2'])
+                            atom2_type = list(tempdf['atom2_type'])
+                            wtrow['species'] = name
+                            wtrow['atom1_type'] = atom1_type[0]
+                            wtrow['atom1'] = atom1_idx[0]
+                            wtrow['atom2_type'] = atom2_type[0]
+                            wtrow['atom2'] = atom2_idx[0]
+                            for i in columns:
+                                wt_val = 0
+                                for val, wt in zip(tempdf[i], weights):
+                                    if math.isnan(val):
+
+                                        continue
+                                    contribution = val * wt
+                                    wt_val += contribution
+                                wtrow[i] = wt_val
+                        df_row = pd.DataFrame(wtrow, index=[0])
+                        weighted_df = pd.concat([weighted_df, df_row])
+                    done_list.append(name)
+
+            bond_df = weighted_df
+            bond_df.to_csv(ensemble_bond_csv, index=False)
 
 
 
