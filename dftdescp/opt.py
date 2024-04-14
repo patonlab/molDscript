@@ -58,6 +58,7 @@ class opt:
             obConversion.WriteFile(ob_mol, file_name.split('.')[0]+'.mol')
             obConversion.CloseOutFile()
             mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
+            os.remove(file_name.split('.')[0]+'.mol')
             smi = Chem.MolToSmiles(mol)
             
             if list(self.data.keys()).index(file_name) == 0:
