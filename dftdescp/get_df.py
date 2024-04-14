@@ -273,8 +273,12 @@ class get_df:
                      for file_name in dict.keys():
                             basename = self.file_base(file_name)
                             final_dict = dict[file_name]
-                            oe = final_dict['ox']['E']
-                            re = final_dict['red']['E']
+                            neut_row = mol_df.loc[mol_df['species'] == file_name]
+                            neut_e = list(neut_row['energy'])[0]
+                            oxidized_e = final_dict['ox']['E']
+                            reduced_e = final_dict['red']['E']
+                            oe = oxidized_e - neut_e
+                            re = reduced_e - neut_e
                             if start == False:
                                 dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
                                 start=True
@@ -294,8 +298,13 @@ class get_df:
                      for file_name in dict.keys():
                             basename = self.file_base(file_name)
                             final_dict = dict[file_name]
-                            oe = final_dict['ox']['E']
-                            re = final_dict['red']['E']
+                            neut_row = mol_df.loc[mol_df['species'] == file_name]
+                            neut_e = list(neut_row['energy'])[0]
+                            oxidized_e = final_dict['ox']['E']
+                            reduced_e = final_dict['red']['E']
+                            oe = oxidized_e - neut_e
+                            re = reduced_e - neut_e
+
                             if start == False:
                                 dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
                                 start=True
