@@ -25,14 +25,15 @@ var_dict = {
     "skip_list": [],
     "link": False,
     "boltz": True,
+    "temp":298.15,
     "substructure": "",
-    "path_opt": "../tests/QCALC/success",
-    "path_nmr": "../tests/NMR/success",
-    "path_nbo": "../tests/NBO/success",
-    "path_fukui": "../tests/FUKUI/success",
-    "path_ad_ie_ea": "../tests/AD_IE_EA/success",
-    "path_sp_ie_ea": "../tests/SP_IE_EA/success",
-    "path_link": "../tests/link",
+    "path_opt": "tests/QCALC/success",
+    "path_nmr": "tests/NMR/success",
+    "path_nbo": "tests/NBO/success",
+    "path_fukui": "tests/FUKUI/success",
+    "path_ad_ie_ea": "tests/AD_IE_EA/success",
+    "path_sp_ie_ea": "tests/SP_IE_EA/success",
+    "path_link": "tests/link",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
     "suffix_fukui": "SP_neutral",
@@ -96,7 +97,9 @@ def command_line_args():
     ]
     list_args = ["skip_list"]
     int_args = []
-    float_args = []
+    float_args = [
+        "temp"
+    ]
     str_args = [
         "struct",
         "varfile",
