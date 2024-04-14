@@ -56,11 +56,11 @@ class nmr:
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
                 )
                 file_data[file_name]["nmr_shielding"] = nmr_data.nmr_shielding
+                file_data[file_name]['atomnos'] = nmr_data.atomnos
             else:
                 self.args.log.write(
                     f"!  Skipping {file_name} as NMR data not found"
                 )
- 
         return file_data
 
     def parse_cc_data(self, file_name, file):

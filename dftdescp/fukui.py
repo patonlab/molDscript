@@ -87,6 +87,7 @@ class fukui:
                 file_data[file_name]["neutral"]["atomcharges"]["hirsfeld"] = (
                     neutral_data.atomcharges["hirsfeld"]
                 )
+                file_data[file_name]['atomnos'] = neutral_data.atomnos
 
                 file_data[file_name]["oxidized"]["atomcharges"]["natural"] = (
                     oxidized_data.atomcharges["natural"]

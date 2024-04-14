@@ -11,17 +11,17 @@ import math
 
 GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
-T = 298.15
+
 
 class get_df:
     """
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO'):
+    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO', temp=298.15):
         self.dd = data_dicts
         self.substructure = substructure
-   
+        self.temp = temp
         if data_type == "molecular":
             mol_df = self.get_mol_df()
             self.mol_df = mol_df 
@@ -239,11 +239,12 @@ class get_df:
                         final_dict = dict[file_name]['opt']
                         basename = self.file_base(file_name)
 
-                        properties = ['species', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+                        properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
                         if start == False:
                             dict_df = {k: [] for k in properties}
                             start = True
                         dict_df['species'].append(basename)
+                        dict_df['smiles'].append(final_dict['smiles'])
                         dict_df['energy'].append(final_dict['scfenergy'])
                         dict_df['enthalpy'].append(final_dict['enthalpy'])
                         dict_df['gibbs_energy'].append(final_dict['freeenergy'])
@@ -351,13 +352,16 @@ class get_df:
                     columns = list(tempdf.columns)
                     wtrow = {k: [] for k in columns}
                     columns.remove('species')
+                    columns.remove('smiles')
                     wtrow['species'] = name
+                    smiles = list(tempdf['smiles'])
+                    wtrow['smiles'] = smiles[0]
                     boltz_sum = 0.0
                     for e in energies:
-                        boltz_sum += math.exp(-e * J_TO_AU / GAS_CONSTANT  / T)
+                        boltz_sum += math.exp(-e * J_TO_AU / GAS_CONSTANT  / self.temp)
                     weights = []
                     for e in energies:
-                        weight = math.exp(-e * J_TO_AU / GAS_CONSTANT / T) / boltz_sum
+                        weight = math.exp(-e * J_TO_AU / GAS_CONSTANT / self.temp) / boltz_sum
                         weights.append(weight)
                     weight_dict[name] = weights
                     for i in columns:
@@ -373,55 +377,60 @@ class get_df:
         boltz_mol_df.to_csv(ensemble_mol_csv, index=False)
         mol_df['codenames'] = arrnames
 
+        try:
+            atom_df = pd.read_csv('atom_level.csv')
+        except:
+            print('\u25A1  SKIPPING ATOM LEVEL BOLTZMANN AVERAGING: no atom_level.csv found')
+        else:
 
-        ensemble_atom_csv = 'ensemble_atom_level.csv'
-        print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
-        atom_df = pd.read_csv('atom_level.csv')
-        
-        atoms = atom_df['atom'].unique()
-        weighted_df = pd.DataFrame()
-        
-        for atom in atoms:
-            done_list = []
-            spec_atom = atom_df.loc[atom_df['atom'] == atom]
-            full_names = spec_atom['species']
-            codenames = []
-            for name in full_names:
-                ulineidx = name.find('_')
-                codename = name[:ulineidx]
-                codenames.append(codename)
-            arrnames = np.array(codenames)
-            for name in codenames:
-                if not name in done_list:
-                    
-                    idxes = np.where(arrnames == name) 
-                    tempdf = spec_atom.iloc[idxes]
-                    if len(tempdf) == 1:
-                        tempdf['species'] = [name]
-                        weighted_df = pd.concat([weighted_df, tempdf])
-                    else:
-                        weights = weight_dict[name]
-                        columns = list(tempdf.columns)
-                        wtrow = {k: [] for k in columns}
-                        columns.remove('species')
-                        columns.remove('atom')
-                        wtrow['species'] = name
-                        wtrow['atom'] = atom
-                        for i in columns:
-                            wt_val = 0
-                            for val, wt in zip(tempdf[i], weights):
-                                if math.isnan(val):
+            ensemble_atom_csv = 'ensemble_atom_level.csv'
+            print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
+            atom_df = pd.read_csv('atom_level.csv')
+            
+            atoms = atom_df['atom'].unique()
+            weighted_df = pd.DataFrame()
+            
+            for atom in atoms:
+                done_list = []
+                spec_atom = atom_df.loc[atom_df['atom'] == atom]
+                full_names = spec_atom['species']
+                codenames = []
+                for name in full_names:
+                    ulineidx = name.find('_')
+                    codename = name[:ulineidx]
+                    codenames.append(codename)
+                arrnames = np.array(codenames)
+                for name in codenames:
+                    if not name in done_list:
+                        
+                        idxes = np.where(arrnames == name) 
+                        tempdf = spec_atom.iloc[idxes]
+                        if len(tempdf) == 1:
+                            tempdf['species'] = [name]
+                            weighted_df = pd.concat([weighted_df, tempdf])
+                        else:
+                            weights = weight_dict[name]
+                            columns = list(tempdf.columns)
+                            wtrow = {k: [] for k in columns}
+                            columns.remove('species')
+                            columns.remove('atom')
+                            wtrow['species'] = name
+                            wtrow['atom'] = atom
+                            for i in columns:
+                                wt_val = 0
+                                for val, wt in zip(tempdf[i], weights):
+                                    if math.isnan(val):
 
-                                    continue
-                                contribution = val * wt
-                                wt_val += contribution
-                            wtrow[i] = wt_val
-                    df_row = pd.DataFrame(wtrow, index=[0])
-                    weighted_df = pd.concat([weighted_df, df_row])
-                done_list.append(name)
+                                        continue
+                                    contribution = val * wt
+                                    wt_val += contribution
+                                wtrow[i] = wt_val
+                        df_row = pd.DataFrame(wtrow, index=[0])
+                        weighted_df = pd.concat([weighted_df, df_row])
+                    done_list.append(name)
 
-        atom_df = weighted_df
-        atom_df.to_csv(ensemble_atom_csv, index=False)
+            atom_df = weighted_df
+            atom_df.to_csv(ensemble_atom_csv, index=False)
 
 
 

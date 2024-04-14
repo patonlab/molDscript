@@ -9,6 +9,8 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 import numpy as np
+import openbabel as ob
+from rdkit import Chem
 
 eV_to_hartree = 0.0367493
 
@@ -49,6 +51,15 @@ class opt:
 
         for file_name in self.data.keys():
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
+            obConversion = ob.OBConversion()
+            obConversion.SetInAndOutFormats("log", "mol")
+            ob_mol = ob.OBMol()
+            mol = obConversion.ReadFile(ob_mol, file_name)
+            obConversion.WriteFile(ob_mol, file_name.split('.')[0]+'.mol')
+            obConversion.CloseOutFile()
+            mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
+            smi = Chem.MolToSmiles(mol)
+            
             if list(self.data.keys()).index(file_name) == 0:
                 self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
                 self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
@@ -60,6 +71,10 @@ class opt:
             )
             file_data[file_name]["opt"]["enthalpy"] = opt_data.enthalpy
             file_data[file_name]["opt"]["freeenergy"] = opt_data.freeenergy
+            file_data[file_name]["opt"]["smiles"] = smi
+
+
+
             coords = opt_data.atomcoords[-1]
             bond_data_matrix = []
             for atom1 in range(len(coords)):
