@@ -412,6 +412,7 @@ class get_df:
                 weighted_df = pd.concat([weighted_df, df_row])
                 done_list.append(name)
         boltz_mol_df = weighted_df
+        boltz_mol_df.drop_duplicates(inplace=True)
         boltz_mol_df.to_csv(ensemble_mol_csv, index=False)
         mol_df['codenames'] = arrnames
 
@@ -488,6 +489,7 @@ class get_df:
                     done_list.append(name)
 
             atom_df = weighted_df
+            atom_df.drop_duplicates(inplace=True)
             atom_df.to_csv(ensemble_atom_csv, index=False)
 
         try:
@@ -583,6 +585,7 @@ class get_df:
                     done_list.append(name)
 
             bond_df = weighted_df
+            bond_df.drop_duplicates(inplace=True)
             bond_df.to_csv(ensemble_bond_csv, index=False)
 
 

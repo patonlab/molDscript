@@ -6,6 +6,7 @@ from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
 from dftdescp.substructure import substructure
 from dftdescp.get_df import get_df
+from dftdescp.min_max import min_max
 from dftdescp.argument_parser import command_line_args, dftdescp_version, dftdescp_ref, time_run
 import subprocess, sys
 
@@ -126,7 +127,8 @@ def main():
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
     if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
-    if args.boltz: get_df(data_dicts, 'boltzmann')
+    if args.boltz: get_df(data_dicts, 'boltzmann', temp=args.temp)
+    if args.min_max: min_max(temp=args.temp, cut=args.cut)
 
 if __name__ == "__main__":
     checks()
