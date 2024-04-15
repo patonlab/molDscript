@@ -25,7 +25,9 @@ var_dict = {
     "skip_list": [],
     "link": False,
     "boltz": True,
+    "min_max": True,
     "temp":298.15,
+    "cut":0.95,
     "substructure": "",
     "path_opt": "tests/QCALC/success",
     "path_nmr": "tests/NMR/success",
@@ -93,12 +95,14 @@ def command_line_args():
         "ad_ie_ea",
         "sp_ie_ea",
         "link",
-        "boltz"
+        "boltz",
+        "min_max"
     ]
     list_args = ["skip_list"]
     int_args = []
     float_args = [
-        "temp"
+        "temp",
+        "cut"
     ]
     str_args = [
         "struct",
