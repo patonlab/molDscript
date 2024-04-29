@@ -50,8 +50,8 @@ class nbo:
             except:
                 nbo_data = None
             if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f'Functional used: {nbo_data.metadata['functional']}')
-                self.args.log.write(f'Basis set used: {nbo_data.metadata['basis_set']}')
+                self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}")
             if nbo_data != None:
                 self.args.log.write(
                     f"o  Parsing NBO & NPA data from {file_name}"
@@ -59,6 +59,7 @@ class nbo:
                 file_data[file_name]["charges"]["npa"] = nbo_data.atomcharges["natural"]
                 file_data[file_name]["bond_orders"] = nbo_data.bondorders
                 file_data[file_name]["bond_order_matrix"] = nbo_data.bondorders_matrix
+                file_data[file_name]['atomnos'] = nbo_data.atomnos
             else:
                 self.args.log.write(
                     f"Skipping file {file_name} as NBO data didnt exist\n"

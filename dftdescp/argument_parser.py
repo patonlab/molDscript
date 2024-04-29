@@ -6,9 +6,9 @@ import os, time, getopt, sys
 from pathlib import Path
 from dftdescp.utils import format_lists, load_from_yaml, Logger
 
-dftdescp_version = "X.X"
+dftdescp_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
-dftdescp_ref = "X.X"
+dftdescp_ref = "XXX"
 
 var_dict = {
     "struc": "",
@@ -24,6 +24,10 @@ var_dict = {
     "sp_ie_ea": False,
     "skip_list": [],
     "link": False,
+    "boltz": True,
+    "min_max": True,
+    "temp":298.15,
+    "cut":0.95,
     "substructure": "",
     "path_opt": "tests/QCALC/success",
     "path_nmr": "tests/NMR/success",
@@ -91,10 +95,15 @@ def command_line_args():
         "ad_ie_ea",
         "sp_ie_ea",
         "link",
+        "boltz",
+        "min_max"
     ]
     list_args = ["skip_list"]
     int_args = []
-    float_args = []
+    float_args = [
+        "temp",
+        "cut"
+    ]
     str_args = [
         "struct",
         "varfile",

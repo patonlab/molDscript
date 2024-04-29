@@ -49,17 +49,18 @@ class ie_ea:
 
         for file_name in self.data.keys():
             ie_data, ea_data = None, None
+
             if "ie" in self.data[file_name].keys():
                 ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
                 if first == False:
-                    self.args.log.write(f'Functional used: {ie_data.metadata['functional']}')
-                    self.args.log.write(f'Basis set used: {ie_data.metadata['basis_set']}')
+                    self.args.log.write(f"   Functional used: {ie_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {ie_data.metadata['basis_set']}")
                     first = True
             if "ea" in self.data[file_name].keys():
                 ea_data = self.parse_cc_data(file_name, self.data[file_name]["ea"])
                 if first == False:
-                    self.args.log.write(f'Functional used: {ea_data.metadata['functional']}')
-                    self.args.log.write(f'Basis set used: {ea_data.metadata['basis_set']}')
+                    self.args.log.write(f"   Functional used: {ea_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {ea_data.metadata['basis_set']}")
                     first = True
             if ie_data != None and ea_data != None:
                 self.args.log.write(
@@ -67,6 +68,7 @@ class ie_ea:
                 )
                 file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1]*eV_to_hartree
                 file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1]*eV_to_hartree
+                
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"

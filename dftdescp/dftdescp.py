@@ -6,6 +6,7 @@ from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
 from dftdescp.substructure import substructure
 from dftdescp.get_df import get_df
+from dftdescp.min_max import min_max
 from dftdescp.argument_parser import command_line_args, dftdescp_version, dftdescp_ref, time_run
 import subprocess, sys
 
@@ -52,7 +53,7 @@ def main():
     
     print(header)
     print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
-    print(f'\nArguments passed to program: \n{sys.argv[1:]}\n')
+    print(f'   Arguments passed to program: \n   {sys.argv[1:]}\n')
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link)
@@ -120,13 +121,14 @@ def main():
          #   ][args.substructure]["index"]
         #)
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
-        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.nbo_suffix)
+        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.suffix_nbo)
     
     else:
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
     if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
-    #get_df(data_dicts, 'boltzmann')
+    if args.boltz: get_df(data_dicts, 'boltzmann', temp=args.temp)
+    if args.min_max: min_max(temp=args.temp, cut=args.cut)
 
 if __name__ == "__main__":
     checks()

@@ -49,18 +49,18 @@ class nmr:
             except:
                 nmr_data = None
             if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f'Functional used: {nmr_data.metadata['functional']}')
-                self.args.log.write(f'Basis set used: {nmr_data.metadata['basis_set']}')
+                self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}")
             if nmr_data != None:
                 self.args.log.write(
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
                 )
                 file_data[file_name]["nmr_shielding"] = nmr_data.nmr_shielding
+                file_data[file_name]['atomnos'] = nmr_data.atomnos
             else:
                 self.args.log.write(
                     f"!  Skipping {file_name} as NMR data not found"
                 )
- 
         return file_data
 
     def parse_cc_data(self, file_name, file):
