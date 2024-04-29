@@ -48,7 +48,8 @@ class nmr:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nmr_data = None
-            if list(self.data.keys()).index(file_name) == 0:
+
+            if list(self.data.keys()).index(file_name) == 0 and self.args.program=='gaussian':
                 self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
                 self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}")
             if nmr_data != None:
@@ -64,7 +65,6 @@ class nmr:
         return file_data
 
     def parse_cc_data(self, file_name, file):
-
         ### parse data
         parser = cc.io.ccopen(file)
         try:
@@ -76,22 +76,41 @@ class nmr:
             )
             cc_data = None
 
-        try:  # Get NMR shielding tensor data
-            outfile = open(file, "r")
-            lines = outfile.readlines()
-
-            for i in range(0, len(lines)):
-                if lines[i].find("shielding tensors") > -1:
-                    start = i + 2
-                if lines[i].find("End of Minotr F.D.") > -1:
-                    end = i - 1
-
-            nmr_shielding = []
-            for j in range(start, end - 1, 5):
-                nmr = lines[j].split()[4]
-                nmr_shielding.append(nmr)
-            setattr(cc_data, "nmr_shielding", nmr_shielding)
-        except:
-            setattr(cc_data, "nmr_shielding", None)
+        if self.args.program=='gaussian':
+            try: setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
+            except: setattr(cc_data, "nmr_shielding", None)
+        
+        if self.args.program=='orca':
+            try: setattr(cc_data, "nmr_shielding", self.orca_nmr_shielding(file, cc_data.natom))
+            except: setattr(cc_data, "nmr_shielding", None)
 
         return cc_data
+
+    def gaussian_nmr_shielding(self, file):
+        outfile = open(file, "r")
+        lines = outfile.readlines()
+        for i in range(0, len(lines)):
+            if lines[i].find("shielding tensors") > -1:
+                start = i + 2
+            if lines[i].find("End of Minotr F.D.") > -1:
+                end = i - 1
+        nmr_shielding = []
+        for j in range(start, end - 1, 5):
+            nmr = lines[j].split()[4]
+            nmr_shielding.append(nmr)
+        return nmr_shielding
+
+    def orca_nmr_shielding(self, file, natoms):
+        outfile = open(file, "r")
+        lines = outfile.readlines()
+        for i in range(0, len(lines)):
+            if lines[i].find("CHEMICAL SHIELDING SUMMARY (ppm)") > -1:
+                start = i + 6
+        
+        end = start + natoms
+        nmr_shielding = []
+        for j in range(start, end):
+            nmr = lines[j].split()[2]
+            nmr_shielding.append(nmr)
+        return nmr_shielding
+        
