@@ -14,7 +14,7 @@ from dftdescp.argument_parser import load_variables
 
 class files:
     """
-    Class containing all the functions from the files module related to Gaussian output files
+    Class containing all the functions from the files module related to output files
     """
 
     def __init__(self, calc, path, create_dat=False, **kwargs):
@@ -24,13 +24,15 @@ class files:
         self.args = load_variables(kwargs, "FILES", create_dat=create_dat)
         self.calc = calc
         self.path = path
-
+        
         self.files = get_files(self.path)
 
         if self.calc == "link":
             self.file_data = self.get_link()
         if self.calc == "opt":
             self.file_data = self.get_opt_or_substurcture()
+        if self.calc == "spc":
+            self.file_data = self.get_spc()
         if self.calc == "nmr":
             self.file_data = self.get_nmr()
         if self.calc == "nbo":
@@ -51,6 +53,14 @@ class files:
         file_data = defaultdict(dict)
         for file in self.files:
             file_data[file] = file
+        return file_data
+    
+    def get_spc(self):
+        file_data = defaultdict(dict)
+        for file in self.files:
+            if self.args.suffix_spc in os.path.basename(file):
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_spc}")
+                file_data[key_name[0]] = file
         return file_data
 
     def get_nmr(self):
@@ -75,13 +85,13 @@ class files:
             if self.args.suffix_fukui in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui}")
                 file_data[key_name[0]]["neutral"] = file
-            if self.args.suffix_fukui_red in os.path.basename(file):
+            if self.args.suffix_fred in os.path.basename(file):
                 key_name = os.path.basename(file).split(
-                    f"_{self.args.suffix_fukui_red}"
+                    f"_{self.args.suffix_fred}"
                 )
                 file_data[key_name[0]]["reduced"] = file
-            if self.args.suffix_fukui_ox in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui_ox}")
+            if self.args.suffix_fox in os.path.basename(file):
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_fox}")
                 file_data[key_name[0]]["oxidized"] = file
         return file_data
 

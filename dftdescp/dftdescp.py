@@ -2,6 +2,7 @@ from dftdescp.files import files
 from dftdescp.fukui import fukui
 from dftdescp.ie_ea import ie_ea
 from dftdescp.opt import opt
+from dftdescp.spc import spc
 from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
 from dftdescp.substructure import substructure
@@ -56,70 +57,88 @@ def main():
     print(f'   Arguments passed to program: \n   {sys.argv[1:]}\n')
     if args.link:
         # ALL DATA
-        all_read = files(calc="link", path=args.path_link)
+        all_read = files(calc="link", path=args.path_link, program=args.program)
         if args.opt:
-            opt_data = opt(all_read.file_data)
+            opt_data = opt(all_read.file_data, program=args.program)
             data_dicts["opt"] = opt_data
         if args.nmr:
-            nmr_data = nmr(all_read.file_data)
+            nmr_data = nmr(all_read.file_data, program=args.program)
             data_dicts["nmr"] = nmr_data
         if args.nbo:
-            nbo_data = nbo(all_read.file_data)
+            nbo_data = nbo(all_read.file_data, program=args.program)
             data_dicts["nbo"] = nbo_data
-        # if args.fukui :  fukui_data = fukui(all_read.file_data) ## I dont think we can access this using link
-        # if args.sp_ie_ea:  sp_ie_ea_data = ie_ea(all_read.file_data) ## I dont think we can access this using link
-        # if args.ad_ie_ea : ad_ie_ea_data =  ie_ea(all_read.file_data) ## I dont think we can access this using link
 
     else:
         # OPT
         if args.opt:
-            opt_read = files(calc="opt", path=args.path_opt)
-            opt_data = opt(opt_read.file_data)
-            # print(opt_data.file_data.keys())
+            opt_read = files(calc="opt", path=args.path_opt, 
+                             program=args.program)
+            opt_data = opt(opt_read.file_data,
+                           program=args.program)
             data_dicts["opt"] = opt_data
+
+        # SPC
+        if args.spc:
+            spc_read = files(calc="spc", path=args.path_spc,
+                            suffix_spc=args.suffix_spc,
+                            program=args.program)
+            spc_data = spc(spc_read.file_data,
+                           program=args.program)
+            data_dicts["spc"] = spc_data
 
         # NMR
         if args.nmr:
-            nmr_read = files(calc="nmr", path=args.path_nmr)
-            nmr_data = nmr(nmr_read.file_data)
-            # print(nmr_data.file_data.keys())
+            nmr_read = files(calc="nmr", path=args.path_nmr, 
+                             suffix_nmr=args.suffix_nmr,
+                             program=args.program)
+            nmr_data = nmr(nmr_read.file_data,
+                           program=args.program)
             data_dicts["nmr"] = nmr_data
+
         # NBO
         if args.nbo:
-            nbo_read = files(calc="nbo", path=args.path_nbo)
-            nbo_data = nbo(nbo_read.file_data)
-            # print(nbo_data.file_data.keys())
+            nbo_read = files(calc="nbo", path=args.path_nbo,
+                            suffix_nbo=args.suffix_nbo,
+                            program=args.program)
+            nbo_data = nbo(nbo_read.file_data,
+                           program=args.program)
             data_dicts["nbo"] = nbo_data
 
         # FUKUI
         if args.fukui:
-            fukui_read = files(calc="fukui", path=args.path_fukui)
-            fukui_data = fukui(fukui_read.file_data)
-            # print(fukui_data.file_data.keys())
+            fukui_read = files(calc="fukui", path=args.path_fukui, 
+                               suffix_fukui=args.suffix_fukui, 
+                               suffix_fred=args.suffix_fred,
+                               suffix_fox=args.suffix_fox,
+                               program=args.program)
+            fukui_data = fukui(fukui_read.file_data,
+                               program=args.program)
             data_dicts["fukui"] = fukui_data
 
         # SP IE & EA
         if args.sp_ie_ea:
-            sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea)
-            sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data)
-            # print(sp_ie_ea_data.file_data.keys())
+            sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea, 
+                                  suffix_sp_ie=args.suffix_sp_ie,
+                                  suffix_sp_ea=args.suffix_sp_ea,
+                                  program=args.program)
+            sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data,
+                                  program=args.program)
             data_dicts["sp_ieea"] = sp_ie_ea_data
 
         # AD IE & EA
         if args.ad_ie_ea:
-            ad_ie_ea_read = files(calc="ad_ie_ea", path=args.path_ad_ie_ea)
-            ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data)
-            # print(ad_ie_ea_data.file_data.keys())
+            ad_ie_ea_read = files(calc="ad_ie_ea", path=args.path_ad_ie_ea,
+                                  suffix_ad_ie=args.suffix_ad_ie,
+                                  suffix_ad_ea=args.suffix_ad_ea,
+                                  program=args.program)
+            ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data,
+                                  program=args.program)
             data_dicts["ad_ieea"] = ad_ie_ea_data
     
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
         substructure_data = substructure(substructure_read.file_data, args.substructure)
-        #print(
-        #    substructure_data.file_data[
-        #        "/Users/shreesowndarya/github/dftdecsp/tests/QCALC/success/Ac4_rdkit_conf_1.log"
-         #   ][args.substructure]["index"]
-        #)
+
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
         if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.suffix_nbo)
     

@@ -12,11 +12,13 @@ dftdescp_ref = "XXX"
 
 var_dict = {
     "struc": "",
+    "program": "gaussian",
     "varfile": None,
     "command_line": False,
     "verbose": True,
     "all": False,
     "opt": False,
+    "spc": False,
     "nmr": False,
     "nbo": False,
     "fukui": False,
@@ -24,23 +26,25 @@ var_dict = {
     "sp_ie_ea": False,
     "skip_list": [],
     "link": False,
-    "boltz": True,
-    "min_max": True,
+    "boltz": False,
+    "min_max": False,
     "temp":298.15,
     "cut":0.95,
     "substructure": "",
-    "path_opt": "tests/QCALC/success",
-    "path_nmr": "tests/NMR/success",
-    "path_nbo": "tests/NBO/success",
-    "path_fukui": "tests/FUKUI/success",
-    "path_ad_ie_ea": "tests/AD_IE_EA/success",
-    "path_sp_ie_ea": "tests/SP_IE_EA/success",
-    "path_link": "tests/link",
+    "path_opt": "tests/gaussian/QCALC/success",
+    "path_spc": "tests/gaussian/SP/success",
+    "path_nmr": "tests/gaussian/NMR/success",
+    "path_nbo": "tests/gaussian/NBO/success",
+    "path_fukui": "tests/gaussian/FUKUI/success",
+    "path_ad_ie_ea": "tests/gaussian/AD_IE_EA/success",
+    "path_sp_ie_ea": "tests/gaussian/SP_IE_EA/success",
+    "path_link": "tests/gaussian/link",
+    "suffix_spc": "SP",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
     "suffix_fukui": "SP_neutral",
-    "suffix_fukui_red": "SP_reduced",
-    "suffix_fukui_ox": "SP_oxidized",
+    "suffix_fred": "SP_reduced",
+    "suffix_fox": "SP_oxidized",
     "suffix_ad_ie": "AD_IE",
     "suffix_ad_ea": "AD_EA",
     "suffix_sp_ie": "SP_IE",
@@ -73,7 +77,6 @@ def set_options(kwargs):
                 kwargs[key],
                 "] provided but no option exists, try the online documentation to see available options for each module.",
             )
-
     return options
 
 
@@ -89,6 +92,7 @@ def command_line_args():
         "command_line",
         "all",
         "opt",
+        "spc",
         "nmr",
         "nbo",
         "fukui",
@@ -106,8 +110,10 @@ def command_line_args():
     ]
     str_args = [
         "struct",
+        "program",
         "varfile",
         "path_opt",
+        "path_spc",
         "path_nmr",
         "path_nbo",
         "path_fukui",
@@ -115,11 +121,12 @@ def command_line_args():
         "path_sp_ie_ea",
         "path_link",
         "substructure",
+        "suffix_spc",
         "suffix_nmr",
         "suffix_nbo",
         "suffix_fukui",
-        "suffix_fukui_n",
-        "suffix_fukui_p",
+        "suffix_fred",
+        "suffix_fox",
         "suffix_ad_ie",
         "suffix_ad_ea",
         "suffix_sp_ie",
@@ -196,6 +203,7 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
 
     # first, load default values and options manually added to the function
     self = set_options(kwargs)
+
     # this part loads variables from yaml files (if varfile is used)
     txt_yaml = ""
     if self.varfile is not None:
@@ -213,6 +221,9 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
 
             if dftdescp_module == "OPT":
                 logger_1 = "OPT"
+            
+            elif dftdescp_module == "SPC":
+                logger_1 = "SPC"
 
             elif dftdescp_module == "NBO":
                 logger_1 = "NBO"
@@ -288,5 +299,4 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
                 self.log.finalize()
                 os.chdir(self.initial_dir)
                 sys.exit()
-
     return self

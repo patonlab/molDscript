@@ -53,7 +53,7 @@ class fukui:
                 neutral_data = self.parse_cc_data(
                     file_name, self.data[file_name]["neutral"]
                 )
-                if first == False:
+                if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}")
                     first = True
@@ -61,7 +61,7 @@ class fukui:
                 oxidized_data = self.parse_cc_data(
                     file_name, self.data[file_name]["oxidized"]
                 )
-                if first == False:
+                if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {oxidized_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {oxidized_data.metadata['basis_set']}")
                     first = True
@@ -69,7 +69,7 @@ class fukui:
                 reduced_data = self.parse_cc_data(
                     file_name, self.data[file_name]["reduced"]
                 )
-                if first == False:
+                if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {reduced_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {reduced_data.metadata['basis_set']}")
                     first = True
@@ -127,43 +127,68 @@ class fukui:
             )
             cc_data = None
 
-        try:  # npa
-            start_npop = None
-            lines = open(file, "r").readlines()
-            for i, line in enumerate(lines):
-                if line.find("-    Spin") > -1:
-                    start_npop = i + 3
-            if start_npop != None:
-                nat_charges = []
-                end_npop = start_npop + len(cc_data.atomnos)
-                for i in range(start_npop, end_npop):
-                    nat_charges.append(float(lines[i].split()[2]))
-                cc_data.atomcharges["natural"] = nat_charges
-        except:
-            cc_data.atomcharges["natural"] = None
+        try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
+        except: cc_data.atomcharges["natural"] = None
 
-        try:  # hirsfeld & cm5
-            start_npop = None
-            lines = open(file, "r").readlines()
-            for i, line in enumerate(lines):
-                if (
-                    line.find(
-                        "Hirshfeld charges, spin densities, dipoles, and CM5 charges using IRadAn=      5:"
-                    )
-                    > -1
-                ):
-                    start_npop = i + 2
-            if start_npop != None:
-                hers_charges = []
-                cm5_charges = []
-                end_npop = start_npop + len(cc_data.atomnos)
-                for i in range(start_npop, end_npop):
-                    hers_charges.append(float(lines[i].split()[2]))
-                    cm5_charges.append(float(lines[i].split()[-1]))
-                cc_data.atomcharges["hirsfeld"] = hers_charges
-                cc_data.atomcharges["cm5"] = cm5_charges
-        except:
-            cc_data.atomcharges["hirsfeld"] = None
-            cc_data.atomcharges["cm5"] = None
+        if self.args.program=='orca':
+            try: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = self.orca_data(file, cc_data), None
+            except: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = None, None
 
+        if self.args.program=='gaussian':
+            try: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = self.gaussian_data(file, cc_data)
+            except: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = None, None
+        
         return cc_data
+        
+    def npa_data(self, file, cc_data):
+        start_npop = None
+        outfile = open(file, "r")
+        lines = outfile.readlines()
+        for i, line in enumerate(lines):
+            if line.find(" Summary of Natural Population Analysis:") > -1:
+                start_npop = i + 6
+
+        if start_npop != None:
+            nat_charges = []
+            end_npop = start_npop + len(cc_data.atomnos)
+            for i in range(start_npop, end_npop):
+                nat_charges.append(float(lines[i].split()[2]))
+        return nat_charges
+    
+    def gaussian_data(self, file, cc_data):
+        start_npop = None
+        lines = open(file, "r").readlines()
+        for i, line in enumerate(lines):
+            if (
+                line.find(
+                    "Hirshfeld charges, spin densities, dipoles, and CM5 charges using IRadAn=      5:"
+                )
+                > -1
+            ):
+                start_npop = i + 2
+        if start_npop != None:
+            hers_charges = []
+            cm5_charges = []
+            end_npop = start_npop + len(cc_data.atomnos)
+            for i in range(start_npop, end_npop):
+                hers_charges.append(float(lines[i].split()[2]))
+                cm5_charges.append(float(lines[i].split()[-1]))
+        return hers_charges, cm5_charges
+    
+    def orca_data(self, file, cc_data):
+        start_npop = None
+        lines = open(file, "r").readlines()
+        for i, line in enumerate(lines):
+            if (
+                line.find("HIRSHFELD ANALYSIS")
+                > -1
+            ):
+                start_npop = i + 7
+        if start_npop != None:
+            hers_charges = []
+            end_npop = start_npop + len(cc_data.atomnos)
+            for i in range(start_npop, end_npop):
+                hers_charges.append(float(lines[i].split()[2]))
+        return hers_charges
+    
+

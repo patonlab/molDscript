@@ -61,9 +61,10 @@ class opt:
             os.remove(file_name.split('.')[0]+'.mol')
             smi = Chem.MolToSmiles(mol)
             
-            if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
+            if self.args.program=='gaussian':
+                if list(self.data.keys()).index(file_name) == 0:
+                    self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
             
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
             file_name = self.file_base(file_name)
@@ -74,40 +75,21 @@ class opt:
             file_data[file_name]["opt"]["freeenergy"] = opt_data.freeenergy
             file_data[file_name]["opt"]["smiles"] = smi
             file_data[file_name]['opt']['atomnos'] = opt_data.atomnos
-
-
-
-            coords = opt_data.atomcoords[-1]
-            bond_data_matrix = []
-            for atom1 in range(len(coords)):
-                row = []
-                for atom2 in range(len(coords)):
-                    p1 = np.array(coords[atom1])
-                    p2 = np.array(coords[atom2])
-                    squared_dist = np.sum((p1-p2)**2, axis=0)
-                    dist = np.sqrt(squared_dist)
-                    row.append(dist)
-                bond_data_matrix.append(row)
+        
+            file_data[file_name]["bond_length_matrix"] = opt_data.bond_data_matrix
             
-            file_data[file_name]["bond_length_matrix"] = bond_data_matrix
-            moments = opt_data.moments
-            com = moments[0]
-            xyzdipole = moments[1]
-            scalar_dipole = np.sqrt(np.sum((com-xyzdipole)**2, axis=0))
-            file_data[file_name]["opt"]["dipole"] = scalar_dipole
-            quad_moments = moments[2]
-            file_data[file_name]["opt"]["XX_quadrupole_moment"] = quad_moments[0]
-            file_data[file_name]["opt"]["XY_quadrupole_moment"] = quad_moments[1]
-            file_data[file_name]["opt"]["XZ_quadrupole_moment"] = quad_moments[2]
-            file_data[file_name]["opt"]["YY_quadrupole_moment"] = quad_moments[3]
-            file_data[file_name]["opt"]["YZ_quadrupole_moment"] = quad_moments[4]
-            file_data[file_name]["opt"]["ZZ_quadrupole_moment"] = quad_moments[5]
-            homo = opt_data.moenergies[0][opt_data.homos[0]]
-            lumo = opt_data.moenergies[0][opt_data.homos[0]+1]
-            hl_gap = lumo - homo
-            file_data[file_name]["opt"]["HOMO"] = homo
-            file_data[file_name]["opt"]["LUMO"] = lumo
-            file_data[file_name]["opt"]["HOMO-LUMO_gap"] = hl_gap
+            file_data[file_name]["opt"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0]-opt_data.moments[1])**2, axis=0))
+            file_data[file_name]["opt"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
+            file_data[file_name]["opt"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
+            file_data[file_name]["opt"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
+            
+            if self.args.program=='gaussian':
+                file_data[file_name]["opt"]["XX_quadrupole_moment"] = opt_data.moments[2][0]
+                file_data[file_name]["opt"]["XY_quadrupole_moment"] = opt_data.moments[2][1]
+                file_data[file_name]["opt"]["XZ_quadrupole_moment"] = opt_data.moments[2][2]
+                file_data[file_name]["opt"]["YY_quadrupole_moment"] = opt_data.moments[2][3]
+                file_data[file_name]["opt"]["YZ_quadrupole_moment"] = opt_data.moments[2][4]
+                file_data[file_name]["opt"]["ZZ_quadrupole_moment"] = opt_data.moments[2][5]
                 
         return file_data
 
@@ -122,8 +104,24 @@ class opt:
                 f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
             )
             cc_data = None
+        setattr(cc_data, "bond_data_matrix", self.bond_data_matrix(cc_data))
 
         return cc_data
+    
+    def bond_data_matrix(self, opt_data):
+        coords = opt_data.atomcoords[-1]
+        bond_data_matrix_list = []
+        for atom1 in range(len(coords)):
+            row = []
+            for atom2 in range(len(coords)):
+                p1 = np.array(coords[atom1])
+                p2 = np.array(coords[atom2])
+                squared_dist = np.sum((p1-p2)**2, axis=0)
+                dist = np.sqrt(squared_dist)
+                row.append(dist)
+            bond_data_matrix_list.append(row)
+        return bond_data_matrix_list
+    
     def file_base(self, string):
         try:
             int(string[-1])
