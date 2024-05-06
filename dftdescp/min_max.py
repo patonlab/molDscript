@@ -16,6 +16,7 @@ class min_max:
         self.get_boltz_dict()
         self.get_mol_min_max()
         self.get_atom_min_max()
+        self.get_bond_min_max()
 
 
     def get_boltz_dict(self):
@@ -116,7 +117,10 @@ class min_max:
                         min_max_dict[i + '_range'].append(range)
         df = pd.DataFrame(min_max_dict)
         df.drop_duplicates(inplace=True)
+        df.sort_values(by='species', inplace=True)
         df.to_csv(mol_min_max_csv, index=False)        
+
+
 
     def get_atom_min_max(self):
         atom_min_max_csv = 'min_max_atom_level.csv'
@@ -180,9 +184,93 @@ class min_max:
                             min_max_dict[i + '_max'].append(max)
                             range = max - min
                             min_max_dict[i + '_range'].append(range)
+        df = pd.DataFrame(min_max_dict)
+        df.drop_duplicates(inplace=True)
+        df.sort_values(by=['species', 'atom_index'], inplace=True)
+        df.to_csv(atom_min_max_csv, index=False)
+
+
+
+    def get_bond_min_max(self):
+        bond_min_max_csv = 'min_max_bond_level.csv'
+        try:
+            bond_df = pd.read_csv('bond_level.csv')
+        except:
+            print('\u25A1  SKIPPING BOND LEVEL min-max-range: no atom_level.csv found')
+        else:
+            print('\u25A1  COMPILING BOND-LEVEL MIN, MAX, AND RANGE VALUES INTO {}'.format(bond_min_max_csv))
+
+        
+        filtered_df = bond_df
+        for species in self.boltz_dict.keys():
+            if self.boltz_dict[species] == False:        
+                filtered_df = filtered_df.drop(filtered_df[filtered_df['species'] == species].index)
+        columns = list(filtered_df.columns)
+        columns.remove('species')
+        columns.remove('atom1')
+        columns.remove('atom1_type')
+        columns.remove('atom2')
+        columns.remove('atom2_type')
+        params = ['species', 'atom1', 'atom1_type','atom2', 'atom2_type']
+        for i in columns:
+            params.append(i + '_min')
+            params.append(i + '_max')
+            params.append(i + '_range')
+        atom1_list = list(filtered_df['atom1'])
+        atom2_list = list(filtered_df['atom2'])
+        pair_list = []
+        for atom1, atom2 in zip(atom1_list, atom2_list):
+            pair = (atom1, atom2)
+            pair_list.append(pair)
+        pair_arr = np.array(pair_list)
+        bonds = np.unique(pair_arr, axis=0)
+
+        min_max_dict = {k: [] for k in params}
+        for bond in bonds:
+            done_list = []
+            atom1 = bond[0]
+            atom2 = bond[1]
+            spec_bond = bond_df.loc[(bond_df['atom1'] == atom1) & (bond_df['atom2'] == atom2)]
+            full_names = spec_bond['species']
+            codenames = []
+            for name in full_names:
+                ulineidx = name.find('_')
+                codename = name[:ulineidx]
+                codenames.append(codename)
+            arrnames = np.array(codenames)
+            for name in codenames:
+                if not name in done_list:
+                    
+                    idxes = np.where(arrnames == name) 
+                    tempdf = spec_bond.iloc[idxes]
+                    if len(tempdf) == 1:
+                        min_max_dict['species'].append(name)
+                        min_max_dict['atom1'].append(list(tempdf['atom1'])[0])
+                        min_max_dict['atom1_type'].append(list(tempdf['atom1_type'])[0])
+                        min_max_dict['atom2'].append(list(tempdf['atom2'])[0])
+                        min_max_dict['atom2_type'].append(list(tempdf['atom2_type'])[0])
+                        for i in columns:
+                            min_max_dict[i + '_min'].append(list(tempdf[i])[0])
+                            min_max_dict[i + '_max'].append(list(tempdf[i])[0])
+                            min_max_dict[i + '_range'].append(0)
+
+                    else:
+                        min_max_dict['species'].append(name)
+                        min_max_dict['atom1'].append(list(tempdf['atom1'])[0])
+                        min_max_dict['atom1_type'].append(list(tempdf['atom1_type'])[0])
+                        min_max_dict['atom2'].append(list(tempdf['atom2'])[0])
+                        min_max_dict['atom2_type'].append(list(tempdf['atom2_type'])[0])
+                        for i in columns:
+                            min = tempdf[i].min()
+                            min_max_dict[i + '_min'].append(min)
+                            max = tempdf[i].max()
+                            min_max_dict[i + '_max'].append(max)
+                            range = max - min
+                            min_max_dict[i + '_range'].append(range)
 
                         
 
         df = pd.DataFrame(min_max_dict)
         df.drop_duplicates(inplace=True)
-        df.to_csv(atom_min_max_csv, index=False)
+        df.sort_values(by=['species', 'atom1', 'atom2'], inplace=True)
+        df.to_csv(bond_min_max_csv, index=False)
