@@ -15,6 +15,7 @@ class min_max:
         self.temp = temp
         self.get_boltz_dict()
         self.get_mol_min_max()
+        self.get_atom_min_max()
 
 
     def get_boltz_dict(self):
@@ -64,9 +65,6 @@ class min_max:
         arrnames = np.array(codenames)
         
         done_list = []
-        weighted_df = pd.DataFrame()
-        weight_dict = {}
-        
     
         mol_df = pd.read_csv('molecule_level.csv')
         filtered_df = mol_df
@@ -119,3 +117,72 @@ class min_max:
         df = pd.DataFrame(min_max_dict)
         df.drop_duplicates(inplace=True)
         df.to_csv(mol_min_max_csv, index=False)        
+
+    def get_atom_min_max(self):
+        atom_min_max_csv = 'min_max_atom_level.csv'
+        try:
+            atom_df = pd.read_csv('atom_level.csv')
+        except:
+            print('\u25A1  SKIPPING ATOM LEVEL min-max-range: no atom_level.csv found')
+        else:
+            print('\u25A1  COMPILING ATOM-LEVEL MIN, MAX, AND RANGE VALUES INTO {}'.format(atom_min_max_csv))
+
+        filtered_df = atom_df
+        for species in self.boltz_dict.keys():
+            if self.boltz_dict[species] == False:        
+                filtered_df = filtered_df.drop(filtered_df[filtered_df['species'] == species].index)
+        done_list = []
+        columns = list(filtered_df.columns)
+        columns.remove('species')
+        columns.remove('atom_index')
+        columns.remove('atom_type')
+        params = ['species', 'atom_index', 'atom_type']
+        for i in columns:
+            params.append(i + '_min')
+            params.append(i + '_max')
+            params.append(i + '_range')
+        atoms = atom_df['atom_index'].unique()
+
+        min_max_dict = {k: [] for k in params}
+        for atom in atoms:
+            done_list = []
+            spec_atom = filtered_df.loc[filtered_df['atom_index'] == atom]
+
+            full_names = spec_atom['species']
+            codenames = []
+            for name in full_names:
+                ulineidx = name.find('_')
+                codename = name[:ulineidx]
+                codenames.append(codename)
+            arrnames = np.array(codenames)
+            for name in codenames:
+                if not name in done_list:
+                    
+                    idxes = np.where(arrnames == name) 
+                    tempdf = spec_atom.iloc[idxes]
+                    if len(tempdf) == 1:
+                        min_max_dict['species'].append(name)
+                        min_max_dict['atom_index'].append(list(tempdf['atom_index'])[0])
+                        min_max_dict['atom_type'].append(list(tempdf['atom_type'])[0])
+                        for i in columns:
+                            min_max_dict[i + '_min'].append(list(tempdf[i])[0])
+                            min_max_dict[i + '_max'].append(list(tempdf[i])[0])
+                            min_max_dict[i + '_range'].append(0)
+
+                    else:
+                        min_max_dict['species'].append(name)
+                        min_max_dict['atom_index'].append(list(tempdf['atom_index'])[0])
+                        min_max_dict['atom_type'].append(list(tempdf['atom_type'])[0])
+                        for i in columns:
+                            min = tempdf[i].min()
+                            min_max_dict[i + '_min'].append(min)
+                            max = tempdf[i].max()
+                            min_max_dict[i + '_max'].append(max)
+                            range = max - min
+                            min_max_dict[i + '_range'].append(range)
+
+                        
+
+        df = pd.DataFrame(min_max_dict)
+        df.drop_duplicates(inplace=True)
+        df.to_csv(atom_min_max_csv, index=False)
