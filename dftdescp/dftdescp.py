@@ -2,7 +2,7 @@ from dftdescp.files import files
 from dftdescp.fukui import fukui
 from dftdescp.ie_ea import ie_ea
 from dftdescp.opt import opt
-from dftdescp.spc import spc
+#from dftdescp.spc import spc
 from dftdescp.nmr import nmr
 from dftdescp.nbo import nbo
 from dftdescp.substructure import substructure
