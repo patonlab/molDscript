@@ -24,8 +24,8 @@ class files:
         self.args = load_variables(kwargs, "FILES", create_dat=create_dat)
         self.calc = calc
         self.path = path
-        
-        self.files = get_files(self.path)
+        self.program = self.args.program
+        self.files = get_files(self.path, self.program)
 
         if self.calc == "link":
             self.file_data = self.get_link()
@@ -53,6 +53,7 @@ class files:
         file_data = defaultdict(dict)
         for file in self.files:
             file_data[file] = file
+
         return file_data
     
     def get_spc(self):

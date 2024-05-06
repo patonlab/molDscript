@@ -15,9 +15,10 @@ class get_df:
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO'):
+    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO', program='gaussian'):
         self.dd = data_dicts
         self.substructure = substructure
+        self.program = program
         if data_type == "molecular":
             mol_df = self.get_mol_df()
             self.mol_df = mol_df 
@@ -153,40 +154,43 @@ class get_df:
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
                 elif category == 'fukui':
-                    dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
-                    charges = ['natural', 'cm5', 'hirsfeld']
+                    if self.program=='gaussian':
+                        dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
+                    if self.program=='orca':
+                        dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type',  'hirshfeld_charge', 'ox_hirshfeld_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}    
                     for filename in dict.keys():
-
-                        neut_nat = list(dict[filename]["neutral"]["atomcharges"]["natural"])
+                        
+                        neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         atoms = list(dict[filename]['atomnos'])
-                        for atom, num in zip(neut_nat, atoms):
+                        for atom, num in zip(neut_hirsfeld, atoms):
                             dict_df['species'].append(filename)
-                            dict_df['atom_index'].append(neut_nat.index(atom))
+                            dict_df['atom_index'].append(neut_hirsfeld.index(atom))
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
-                        neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
-                        for atom in neut_cm5:
-                            dict_df['cm5_charge'].append(atom)
-                        neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
+                        if self.program =='gaussian':
+                            neut_cm5 = list(dict[filename]["neutral"]["atomcharges"]["cm5"])
+                            for atom in neut_cm5:
+                                dict_df['cm5_charge'].append(atom)
+                            ox_nat = list(dict[filename]["oxidized"]["atomcharges"]["natural"])
+                            for atom in ox_nat:
+                                dict_df['ox_npa_charge'].append(atom)
+                            ox_cm5 = list(dict[filename]["oxidized"]["atomcharges"]["cm5"])
+                            for atom in ox_cm5:
+                                dict_df['ox_cm5_charge'].append(atom)
+                                
+                            red_nat = list(dict[filename]["reduced"]["atomcharges"]["natural"])
+                            for atom in red_nat:
+                                dict_df['red_npa_charge'].append(atom)
+                            red_cm5 = list(dict[filename]["reduced"]["atomcharges"]["cm5"])
+                            for atom in red_cm5:
+                                dict_df['red_cm5_charge'].append(atom)
+                            neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         for atom in neut_hirsfeld:
                             dict_df['hirshfeld_charge'].append(atom)
-                    
-                        ox_nat = list(dict[filename]["oxidized"]["atomcharges"]["natural"])
-                        for atom in ox_nat:
-                            dict_df['ox_npa_charge'].append(atom)
-                        ox_cm5 = list(dict[filename]["oxidized"]["atomcharges"]["cm5"])
-                        for atom in ox_cm5:
-                            dict_df['ox_cm5_charge'].append(atom)
                         ox_hirsfeld = list(dict[filename]["oxidized"]["atomcharges"]["hirsfeld"])
                         for atom in ox_hirsfeld:
                             dict_df['ox_hirshfeld_charge'].append(atom)
 
-                        red_nat = list(dict[filename]["reduced"]["atomcharges"]["natural"])
-                        for atom in red_nat:
-                            dict_df['red_npa_charge'].append(atom)
-                        red_cm5 = list(dict[filename]["reduced"]["atomcharges"]["cm5"])
-                        for atom in red_cm5:
-                            dict_df['red_cm5_charge'].append(atom)
                         red_hirsfeld = list(dict[filename]["reduced"]["atomcharges"]["hirsfeld"])
                         for atom in red_hirsfeld:
                             dict_df['red_hirshfeld_charge'].append(atom)
@@ -196,7 +200,8 @@ class get_df:
                             fminus = neutral- oxidized
                             dict_df['fukui_minus'].append(fminus)
                             frad = fplus - fminus
-                            dict_df['fukui_rad'].append(frad)       
+                            dict_df['fukui_rad'].append(frad)     
+                print(list(dict_df.keys()))
                 dict_df = pd.DataFrame(dict_df)
                 if atom_df.empty:
                     atom_df = dict_df
@@ -242,8 +247,10 @@ class get_df:
                     for file_name in dict.keys():
                         final_dict = dict[file_name]['opt']
                         basename = self.file_base(file_name)
-
-                        properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+                        if self.program == 'gaussian':
+                            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+                        if self.program == 'orca':
+                            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
                         if start == False:
                             dict_df = {k: [] for k in properties}
                             start = True
@@ -253,12 +260,13 @@ class get_df:
                         dict_df['enthalpy'].append(final_dict['enthalpy'])
                         dict_df['gibbs_energy'].append(final_dict['freeenergy'])
                         dict_df['dipole'].append(final_dict['dipole'])
-                        dict_df['XX_quadrupole_moment'].append(final_dict['XX_quadrupole_moment'])
-                        dict_df['XY_quadrupole_moment'].append(final_dict['XY_quadrupole_moment'])  
-                        dict_df['XZ_quadrupole_moment'].append(final_dict['XZ_quadrupole_moment'])    
-                        dict_df['YY_quadrupole_moment'].append(final_dict['YY_quadrupole_moment']) 
-                        dict_df['YZ_quadrupole_moment'].append(final_dict['YZ_quadrupole_moment']) 
-                        dict_df['ZZ_quadrupole_moment'].append(final_dict['ZZ_quadrupole_moment']) 
+                        if self.program == 'gaussian':
+                            dict_df['XX_quadrupole_moment'].append(final_dict['XX_quadrupole_moment'])
+                            dict_df['XY_quadrupole_moment'].append(final_dict['XY_quadrupole_moment'])  
+                            dict_df['XZ_quadrupole_moment'].append(final_dict['XZ_quadrupole_moment'])    
+                            dict_df['YY_quadrupole_moment'].append(final_dict['YY_quadrupole_moment']) 
+                            dict_df['YZ_quadrupole_moment'].append(final_dict['YZ_quadrupole_moment']) 
+                            dict_df['ZZ_quadrupole_moment'].append(final_dict['ZZ_quadrupole_moment']) 
                         dict_df['HOMO'].append(final_dict['HOMO'])
                         dict_df['LUMO'].append(final_dict['LUMO'])
                         dict_df['HOMO-LUMO_gap'].append(final_dict['HOMO-LUMO_gap'])

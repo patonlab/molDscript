@@ -26,7 +26,7 @@ var_dict = {
     "sp_ie_ea": False,
     "skip_list": [],
     "link": False,
-    "boltz": True,
+    "boltz": False,
     "min_max": True,
     "temp":298.15,
     "cut":0.95,

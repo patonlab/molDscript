@@ -80,6 +80,7 @@ class opt:
             
             file_data[file_name]["opt"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0]-opt_data.moments[1])**2, axis=0))
             file_data[file_name]["opt"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
+
             file_data[file_name]["opt"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
             file_data[file_name]["opt"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
             

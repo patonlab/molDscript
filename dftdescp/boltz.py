@@ -66,6 +66,7 @@ class boltz:
                         props = list(tempdf[i])
                         missing_values = []
                         tempweights = weights.copy()
+                        print(list(zip(props[::-1], range(len(props))[::-1])))
                         for value, idx in zip(props[::-1], range(len(props))[::-1]):
                             if math.isnan(value):
                                 missing_values.append(idx)

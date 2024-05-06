@@ -105,17 +105,31 @@ def load_from_yaml(self):
 
     return self, txt_yaml
 
-def get_files(value):
-    if value[-1]=='/':
-        value = value[:-1]
-    if (
-    Path(f"{value}").exists()
-    and os.getcwd() not in f"{value}"
-    ):
-        list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.log")
-    else:
-        list_of_val = glob.glob(value)
-    return list_of_val
+def get_files(value, program):
+    if program == 'gaussian':
+        if value[-1]=='/':
+            value = value[:-1]
+        if (
+        Path(f"{value}").exists()
+        and os.getcwd() not in f"{value}"
+        ):
+            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.log")
+        else:
+            list_of_val = glob.glob(value)
+        return list_of_val
+    if program == 'orca':
+        if value[-1]=='/':
+            value = value[:-1]
+        if (
+        Path(f"{value}").exists()
+        and os.getcwd() not in f"{value}"
+        ):
+            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.out")
+
+        else:
+            list_of_val = glob.glob(value)
+
+        return list_of_val
 
 
 
