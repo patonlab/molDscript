@@ -27,7 +27,7 @@ var_dict = {
     "skip_list": [],
     "link": False,
     "boltz": False,
-    "min_max": True,
+    "min_max": False,
     "temp":298.15,
     "cut":0.95,
     "substructure": "",
@@ -49,6 +49,7 @@ var_dict = {
     "suffix_ad_ea": "AD_EA",
     "suffix_sp_ie": "SP_IE",
     "suffix_sp_ea": "SP_EA",
+    "suffix_opt": None,
 }
 
 
@@ -131,6 +132,7 @@ def command_line_args():
         "suffix_ad_ea",
         "suffix_sp_ie",
         "suffix_sp_ea",
+        "suffix_opt"
     ]
 
     for arg in var_dict:

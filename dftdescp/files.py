@@ -52,8 +52,17 @@ class files:
     def get_opt_or_substurcture(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            file_data[file] = file
+            
+            if self.args.suffix_opt == None:
+                ftype = '.log'
+                if self.args.program == 'orca':
+                    ftype = '.out'
+                key_name = os.path.basename(file).split(ftype)
 
+                file_data[key_name[0]] = file
+            elif self.args.suffix_opt in os.path.basename(file):
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_opt}")
+                file_data[key_name[0]] = file
         return file_data
     
     def get_spc(self):

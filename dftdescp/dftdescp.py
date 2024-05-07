@@ -74,7 +74,7 @@ def main():
         if args.opt:
 
             opt_read = files(calc="opt", path=args.path_opt, 
-                             program=args.program)
+                             program=args.program, suffix_opt=args.suffix_opt)
             opt_data = opt(opt_read.file_data,
                            program=args.program)
             data_dicts["opt"] = opt_data

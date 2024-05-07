@@ -33,6 +33,7 @@ class get_df:
     # create a df of bond properties
     def get_bond_df(self):
         bond_csv = 'bond_level.csv'
+        
         calced_list = list(self.dd.keys())
         print('\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
         
@@ -42,19 +43,28 @@ class get_df:
         if all(x in calced_list for x in ['nbo', 'opt']):
             dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'atom1_type', 'atom2_type', 'wiberg_bond_order', 'bond_length']}
             nbo_dict = self.dd['nbo'].file_data
+
             opt_dict = self.dd['opt'].file_data
+
+            
+
 
             for file_name in nbo_dict.keys():
                 dict = nbo_dict[file_name]
                 bo_matrix = dict['bond_order_matrix']
                 length_dict = opt_dict[file_name]
+
                 length_matrix = length_dict['bond_length_matrix']
                 atom1 = 0
                 atoms = length_dict['opt']['atomnos']
 
+
                 for row_bo, row_length in zip(bo_matrix, length_matrix):
                     for bo, length, index in zip(row_bo, row_length, range(len(row_bo))):
+
                         if index < atom1:
+
+                            
                             dict_df['species'].append(file_name)
                             dict_df['atom1'].append(atom1)
                             num = atoms[atom1]
@@ -92,6 +102,7 @@ class get_df:
                     atom1 +=1
        
         bond_df = pd.DataFrame(dict_df)
+
         if self.substructure != '':
             print('   (Filtered by user-defined substructure)')
             final_df = pd.DataFrame()
@@ -246,7 +257,7 @@ class get_df:
                 if category == 'opt':
                     for file_name in dict.keys():
                         final_dict = dict[file_name]['opt']
-                        basename = self.file_base(file_name)
+
                         if self.program == 'gaussian':
                             properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
                         if self.program == 'orca':
@@ -254,7 +265,7 @@ class get_df:
                         if start == False:
                             dict_df = {k: [] for k in properties}
                             start = True
-                        dict_df['species'].append(basename)
+                        dict_df['species'].append(file_name)
                         dict_df['smiles'].append(final_dict['smiles'])
                         dict_df['energy'].append(final_dict['scfenergy'])
                         dict_df['enthalpy'].append(final_dict['enthalpy'])
@@ -273,7 +284,7 @@ class get_df:
                 elif category == 'sp_ieea':
                      start = False
                      for file_name in dict.keys():
-                            basename = self.file_base(file_name)
+
                             final_dict = dict[file_name]
                             neut_row = mol_df.loc[mol_df['species'] == file_name]
                             neut_e = list(neut_row['energy'])[0]
@@ -284,10 +295,9 @@ class get_df:
                             if start == False:
                                 dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
                                 start=True
-                            dict_df['species'].append(basename)
+                            dict_df['species'].append(file_name)
                             dict_df['SP_ox_energy'].append(oe)
                             dict_df['SP_red_energy'].append(re)
-                            ################THIS IS NOT RIGHT BECAUSE NO IE/EA############
                             cp = -1*(oe+re)/2
                             hardness = (oe-re)/2
                             electrophilicity = cp**2 / (2*hardness)
@@ -298,7 +308,7 @@ class get_df:
                 elif category == 'ad_ieea':
                      start = False
                      for file_name in dict.keys():
-                            basename = self.file_base(file_name)
+
                             final_dict = dict[file_name]
                             neut_row = mol_df.loc[mol_df['species'] == file_name]
                             neut_e = list(neut_row['energy'])[0]
@@ -310,7 +320,7 @@ class get_df:
                             if start == False:
                                 dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
                                 start=True
-                            dict_df['species'].append(basename)
+                            dict_df['species'].append(file_name)
                             dict_df['AD_ox_energy'].append(oe)
                             dict_df['AD_red_energy'].append(re)
                 dict_df = pd.DataFrame(dict_df)
