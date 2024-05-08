@@ -94,7 +94,6 @@ class boltz:
                 done_list.append(name)
         boltz_mol_df = weighted_df
         boltz_mol_df.drop_duplicates(inplace=True)
-        boltz_mol_df.sort(by='species', inplace=True)
         boltz_mol_df.to_csv(ensemble_mol_csv, index=False)
         mol_df['codenames'] = arrnames
     def atom_boltz(self):
