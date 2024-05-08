@@ -25,6 +25,8 @@ class boltz:
         mol_df = pd.read_csv('molecule_level.csv')
         full_names = mol_df['species']
         codenames = []
+
+
         for name in full_names:
             ulineidx = name.find('_')
             codename = name[:ulineidx]
@@ -66,7 +68,7 @@ class boltz:
                         props = list(tempdf[i])
                         missing_values = []
                         tempweights = weights.copy()
-                        print(list(zip(props[::-1], range(len(props))[::-1])))
+
                         for value, idx in zip(props[::-1], range(len(props))[::-1]):
                             if math.isnan(value):
                                 missing_values.append(idx)
@@ -92,6 +94,7 @@ class boltz:
                 done_list.append(name)
         boltz_mol_df = weighted_df
         boltz_mol_df.drop_duplicates(inplace=True)
+        boltz_mol_df.sort(by='species', inplace=True)
         boltz_mol_df.to_csv(ensemble_mol_csv, index=False)
         mol_df['codenames'] = arrnames
     def atom_boltz(self):
