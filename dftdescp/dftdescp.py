@@ -149,7 +149,7 @@ def main():
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', program=args.program)
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond', program=args.program)
     if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo, program=args.program)
-    if args.boltz: boltz(temp=args.temp)
+    if args.boltz: boltz(temp=args.temp, spc=args.spc)
     if args.min_max: min_max(temp=args.temp, cut=args.cut)
 
 if __name__ == "__main__":
