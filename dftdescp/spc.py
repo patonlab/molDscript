@@ -8,9 +8,6 @@ import time
 import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
-import numpy as np
-from openbabel import openbabel as ob
-from rdkit import Chem
 
 eV_to_hartree = 0.0367493
 
@@ -63,10 +60,9 @@ class spc:
                 
             
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
-            file_data[file_name]["spc_energy"]['SPC_energy'] = (
+            file_data[file_name]['spc_energy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
-            file_data[file_name]["spc_energy"]['species'] = file_name
-        print(file_data)
+            file_data[file_name]['species'] = file_name
         return file_data
 
     def parse_cc_data(self, file_name, file):

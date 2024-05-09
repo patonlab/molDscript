@@ -224,17 +224,13 @@ class get_df:
         print('\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}\n'.format(mol_csv))
         calced_list = list(self.dd.keys())
         opt_dict = self.dd['opt'].file_data
-        start = False
+        if self.program == 'gaussian':
+            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+        if self.program == 'orca':
+            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+        dict_df = {k: [] for k in properties}
         for file_name in opt_dict.keys():
             final_dict = opt_dict[file_name]['opt']
-
-            if self.program == 'gaussian':
-                properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
-            if self.program == 'orca':
-                properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
-            if start == False:
-                dict_df = {k: [] for k in properties}
-                start = True
             dict_df['species'].append(file_name)
             dict_df['smiles'].append(final_dict['smiles'])
             dict_df['energy'].append(final_dict['scfenergy'])
@@ -254,9 +250,8 @@ class get_df:
         mol_df = pd.DataFrame(dict_df)
         if 'sp_ieea' in calced_list:
             sp_ieea_dict = self.dd['sp_ieea'].file_data
-            start = False
+            dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
             for file_name in sp_ieea_dict.keys():
-
                 final_dict = sp_ieea_dict[file_name]
                 neut_row = mol_df.loc[mol_df['species'] == file_name]
                 neut_e = list(neut_row['energy'])[0]
@@ -264,9 +259,6 @@ class get_df:
                 reduced_e = final_dict['red']['E']
                 oe = oxidized_e - neut_e
                 re = reduced_e - neut_e
-                if start == False:
-                    dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
-                    start=True
                 dict_df['species'].append(file_name)
                 dict_df['SP_ox_energy'].append(oe)
                 dict_df['SP_red_energy'].append(re)
@@ -281,7 +273,7 @@ class get_df:
             mol_df = mol_df.merge(dict_df,how='left', on='species')
         if 'ad_ieea' in calced_list:
             ad_ieea_dict = self.dd['ad_ieea'].file_data
-            start = False
+            dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
             for file_name in ad_ieea_dict.keys():
                 final_dict = ad_ieea_dict[file_name]
                 neut_row = mol_df.loc[mol_df['species'] == file_name]
@@ -290,16 +282,23 @@ class get_df:
                 reduced_e = final_dict['red']['E']
                 oe = oxidized_e - neut_e
                 re = reduced_e - neut_e
-                if start == False:
-                    dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
-                    start=True
                 dict_df['species'].append(file_name)
                 dict_df['AD_ox_energy'].append(oe)
                 dict_df['AD_red_energy'].append(re)
             dict_df = pd.DataFrame(dict_df)
             mol_df = mol_df.merge(dict_df,how='left', on='species')
+        if 'spc' in calced_list:
+            spc_dict = self.dd['spc'].file_data
+            
+            dict_df = {k: [] for k in ['species', 'spc_energy']}
+            for file_name in spc_dict.keys():
+                final_dict = spc_dict[file_name]
+                dict_df['species'].append(file_name)
+                dict_df['spc_energy'].append(final_dict['spc_energy'])
+            dict_df = pd.DataFrame(dict_df)
+            mol_df = mol_df.merge(dict_df,how='left', on='species')
         mol_df.to_csv(mol_csv, index=False)
-        # print("Saved molecular properties to 'mol_df.csv'\n\n")
+
         return mol_df
     
     def file_base(self, string):
