@@ -32,7 +32,7 @@ var_dict = {
     "cut":0.95,
     "substructure": "",
     "path_opt": "tests/gaussian/QCALC/success",
-    "path_spc": "tests/gaussian/SP/success",
+    "path_spc": "tests/gaussian/SPC",
     "path_nmr": "tests/gaussian/NMR/success",
     "path_nbo": "tests/gaussian/NBO/success",
     "path_fukui": "tests/gaussian/FUKUI/success",
