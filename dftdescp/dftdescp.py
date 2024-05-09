@@ -86,8 +86,6 @@ def main():
                             program=args.program)
             spc_data = spc(spc_read.file_data,
                            program=args.program)
-            print(spc_data)
-            raise SystemExit
             data_dicts["spc"] = spc_data
             
 

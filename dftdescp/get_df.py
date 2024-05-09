@@ -222,90 +222,82 @@ class get_df:
     def get_mol_df(self):
         mol_csv = 'molecule_level.csv'
         print('\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}\n'.format(mol_csv))
-        mol_df = pd.DataFrame()
-        mol_list = ["opt", "sp_ieea", "ad_ieea"]
         calced_list = list(self.dd.keys())
-        # go through each of the three options for dictionaries of molecular properties
-        for category in mol_list:
-            # looks to see if these calcs were done
-            if category in calced_list:
-                dict = self.dd[category].file_data
+        opt_dict = self.dd['opt'].file_data
+        start = False
+        for file_name in opt_dict.keys():
+            final_dict = opt_dict[file_name]['opt']
 
-                start = False
-                if category == 'opt':
-                    for file_name in dict.keys():
-                        final_dict = dict[file_name]['opt']
+            if self.program == 'gaussian':
+                properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+            if self.program == 'orca':
+                properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
+            if start == False:
+                dict_df = {k: [] for k in properties}
+                start = True
+            dict_df['species'].append(file_name)
+            dict_df['smiles'].append(final_dict['smiles'])
+            dict_df['energy'].append(final_dict['scfenergy'])
+            dict_df['enthalpy'].append(final_dict['enthalpy'])
+            dict_df['gibbs_energy'].append(final_dict['freeenergy'])
+            dict_df['dipole'].append(final_dict['dipole'])
+            if self.program == 'gaussian':
+                dict_df['XX_quadrupole_moment'].append(final_dict['XX_quadrupole_moment'])
+                dict_df['XY_quadrupole_moment'].append(final_dict['XY_quadrupole_moment'])  
+                dict_df['XZ_quadrupole_moment'].append(final_dict['XZ_quadrupole_moment'])    
+                dict_df['YY_quadrupole_moment'].append(final_dict['YY_quadrupole_moment']) 
+                dict_df['YZ_quadrupole_moment'].append(final_dict['YZ_quadrupole_moment']) 
+                dict_df['ZZ_quadrupole_moment'].append(final_dict['ZZ_quadrupole_moment']) 
+            dict_df['HOMO'].append(final_dict['HOMO'])
+            dict_df['LUMO'].append(final_dict['LUMO'])
+            dict_df['HOMO-LUMO_gap'].append(final_dict['HOMO-LUMO_gap'])
+        mol_df = pd.DataFrame(dict_df)
+        if 'sp_ieea' in calced_list:
+            sp_ieea_dict = self.dd['sp_ieea'].file_data
+            start = False
+            for file_name in sp_ieea_dict.keys():
 
-                        if self.program == 'gaussian':
-                            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
-                        if self.program == 'orca':
-                            properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
-                        if start == False:
-                            dict_df = {k: [] for k in properties}
-                            start = True
-                        dict_df['species'].append(file_name)
-                        dict_df['smiles'].append(final_dict['smiles'])
-                        dict_df['energy'].append(final_dict['scfenergy'])
-                        dict_df['enthalpy'].append(final_dict['enthalpy'])
-                        dict_df['gibbs_energy'].append(final_dict['freeenergy'])
-                        dict_df['dipole'].append(final_dict['dipole'])
-                        if self.program == 'gaussian':
-                            dict_df['XX_quadrupole_moment'].append(final_dict['XX_quadrupole_moment'])
-                            dict_df['XY_quadrupole_moment'].append(final_dict['XY_quadrupole_moment'])  
-                            dict_df['XZ_quadrupole_moment'].append(final_dict['XZ_quadrupole_moment'])    
-                            dict_df['YY_quadrupole_moment'].append(final_dict['YY_quadrupole_moment']) 
-                            dict_df['YZ_quadrupole_moment'].append(final_dict['YZ_quadrupole_moment']) 
-                            dict_df['ZZ_quadrupole_moment'].append(final_dict['ZZ_quadrupole_moment']) 
-                        dict_df['HOMO'].append(final_dict['HOMO'])
-                        dict_df['LUMO'].append(final_dict['LUMO'])
-                        dict_df['HOMO-LUMO_gap'].append(final_dict['HOMO-LUMO_gap'])
-                elif category == 'sp_ieea':
-                     start = False
-                     for file_name in dict.keys():
-
-                            final_dict = dict[file_name]
-                            neut_row = mol_df.loc[mol_df['species'] == file_name]
-                            neut_e = list(neut_row['energy'])[0]
-                            oxidized_e = final_dict['ox']['E']
-                            reduced_e = final_dict['red']['E']
-                            oe = oxidized_e - neut_e
-                            re = reduced_e - neut_e
-                            if start == False:
-                                dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
-                                start=True
-                            dict_df['species'].append(file_name)
-                            dict_df['SP_ox_energy'].append(oe)
-                            dict_df['SP_red_energy'].append(re)
-                            cp = -1*(oe+re)/2
-                            hardness = (oe-re)/2
-                            electrophilicity = cp**2 / (2*hardness)
-                            electronegativity = -1 * cp
-                            dict_df['chemical_hardness'].append(hardness)
-                            dict_df['global_electrophilicity'].append(electrophilicity)
-                            dict_df['electronegativity'].append(electronegativity)
-                elif category == 'ad_ieea':
-                     start = False
-                     for file_name in dict.keys():
-
-                            final_dict = dict[file_name]
-                            neut_row = mol_df.loc[mol_df['species'] == file_name]
-                            neut_e = list(neut_row['energy'])[0]
-                            oxidized_e = final_dict['ox']['E']
-                            reduced_e = final_dict['red']['E']
-                            oe = oxidized_e - neut_e
-                            re = reduced_e - neut_e
-
-                            if start == False:
-                                dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
-                                start=True
-                            dict_df['species'].append(file_name)
-                            dict_df['AD_ox_energy'].append(oe)
-                            dict_df['AD_red_energy'].append(re)
-                dict_df = pd.DataFrame(dict_df)
-                if mol_df.empty:
-                    mol_df = dict_df
-                else:
-                    mol_df = mol_df.merge(dict_df,how='left', on='species')
+                final_dict = sp_ieea_dict[file_name]
+                neut_row = mol_df.loc[mol_df['species'] == file_name]
+                neut_e = list(neut_row['energy'])[0]
+                oxidized_e = final_dict['ox']['E']
+                reduced_e = final_dict['red']['E']
+                oe = oxidized_e - neut_e
+                re = reduced_e - neut_e
+                if start == False:
+                    dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
+                    start=True
+                dict_df['species'].append(file_name)
+                dict_df['SP_ox_energy'].append(oe)
+                dict_df['SP_red_energy'].append(re)
+                cp = -1*(oe+re)/2
+                hardness = (oe-re)/2
+                electrophilicity = cp**2 / (2*hardness)
+                electronegativity = -1 * cp
+                dict_df['chemical_hardness'].append(hardness)
+                dict_df['global_electrophilicity'].append(electrophilicity)
+                dict_df['electronegativity'].append(electronegativity)
+            dict_df = pd.DataFrame(dict_df)
+            mol_df = mol_df.merge(dict_df,how='left', on='species')
+        if 'ad_ieea' in calced_list:
+            ad_ieea_dict = self.dd['ad_ieea'].file_data
+            start = False
+            for file_name in ad_ieea_dict.keys():
+                final_dict = ad_ieea_dict[file_name]
+                neut_row = mol_df.loc[mol_df['species'] == file_name]
+                neut_e = list(neut_row['energy'])[0]
+                oxidized_e = final_dict['ox']['E']
+                reduced_e = final_dict['red']['E']
+                oe = oxidized_e - neut_e
+                re = reduced_e - neut_e
+                if start == False:
+                    dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
+                    start=True
+                dict_df['species'].append(file_name)
+                dict_df['AD_ox_energy'].append(oe)
+                dict_df['AD_red_energy'].append(re)
+            dict_df = pd.DataFrame(dict_df)
+            mol_df = mol_df.merge(dict_df,how='left', on='species')
         mol_df.to_csv(mol_csv, index=False)
         # print("Saved molecular properties to 'mol_df.csv'\n\n")
         return mol_df
