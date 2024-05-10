@@ -130,6 +130,12 @@ def get_files(value, program):
             list_of_val = glob.glob(value)
 
         return list_of_val
+def find_nth(haystack: str, needle: str, n: int) -> int:
+    start = haystack.find(needle)
+    while start >= 0 and n > 1:
+        start = haystack.find(needle, start+len(needle))
+        n -= 1
+    return start
 
 
 

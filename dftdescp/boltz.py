@@ -5,14 +5,16 @@
 import pandas as pd
 import numpy as np
 import math
+from dftdescp.utils import find_nth
 
 GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 
 class boltz:
-    def __init__(self, temp = 298.15, spc=False ):
+    def __init__(self, temp = 298.15, spc=False, syllables=1 ):
         self.spc = spc
         self.temp = temp
+        self.syllables = syllables
         self.mol_boltz()
         self.atom_boltz()
         self.bond_boltz()
@@ -28,7 +30,7 @@ class boltz:
         full_names = mol_df['species']
         codenames = []
         for name in full_names:
-            ulineidx = name.find('_')
+            ulineidx = find_nth(name, '_', self.syllables)
             codename = name[:ulineidx]
             codenames.append(codename)
         arrnames = np.array(codenames)
@@ -39,20 +41,19 @@ class boltz:
         
         for name in codenames:
             if not name in done_list:
-                
                 idxes = np.where(arrnames == name) 
                 tempdf = mol_df.iloc[idxes]
                 if len(tempdf) == 1:
                     tempdf['species'] = [name]
-                    weighted_df = pd.concat([weighted_df, tempdf])
-                    self.weight_dict[name] = 1
+                    wtrow = tempdf
+                    self.weight_dict[name] = [1]
                 else:
                     energies = tempdf['energy'] - tempdf['energy'].min()
                     columns = list(tempdf.columns)
                     wtrow = {k: [] for k in columns}
                     columns.remove('species')
                     columns.remove('smiles')
-                    wtrow['species'] = name
+                    wtrow['species'] = [name]
                     smiles = list(tempdf['smiles'])
                     wtrow['smiles'] = smiles[0]
                     boltz_sum = 0.0
@@ -89,7 +90,8 @@ class boltz:
                             contribution = val * wt
                             wt_val += contribution
                         wtrow[i] = wt_val
-                df_row = pd.DataFrame(wtrow, index=[0])
+                
+                df_row = pd.DataFrame(wtrow)
                 weighted_df = pd.concat([weighted_df, df_row])
                 done_list.append(name)
         boltz_mol_df = weighted_df
@@ -116,19 +118,17 @@ class boltz:
                 full_names = spec_atom['species']
                 codenames = []
                 for name in full_names:
-                    ulineidx = name.find('_')
+                    ulineidx = find_nth(name, '_', self.syllables)
                     codename = name[:ulineidx]
                     codenames.append(codename)
                 arrnames = np.array(codenames)
                 for name in codenames:
                     if not name in done_list:
-                        
                         idxes = np.where(arrnames == name) 
                         tempdf = spec_atom.iloc[idxes]
                         if len(tempdf) == 1:
                             tempdf['species'] = [name]
-
-                            weighted_df = pd.concat([weighted_df, tempdf])
+                            wtrow = tempdf
                         else:
                             weights = self.weight_dict[name]
                             columns = list(tempdf.columns)
@@ -137,7 +137,7 @@ class boltz:
                             columns.remove('atom_type')
                             columns.remove('atom_index')
                             atoms = list(tempdf['atom_type'])
-                            wtrow['species'] = name
+                            wtrow['species'] = [name]
                             wtrow['atom_type'] = atoms[0]
                             wtrow['atom_index'] = atom
                             for i in columns:
@@ -165,7 +165,7 @@ class boltz:
                                     contribution = val * wt
                                     wt_val += contribution
                                 wtrow[i] = wt_val
-                        df_row = pd.DataFrame(wtrow, index=[0])
+                        df_row = pd.DataFrame(wtrow)
                         weighted_df = pd.concat([weighted_df, df_row])
                     done_list.append(name)
 
@@ -180,7 +180,7 @@ class boltz:
         else:
 
             ensemble_bond_csv = 'ensemble_bond_level.csv'
-            print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_bond_csv))
+            print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}\n'.format(ensemble_bond_csv))
             bond_df = pd.read_csv('bond_level.csv')
             atom1_list = list(bond_df['atom1'])
             atom2_list = list(bond_df['atom2'])
@@ -202,7 +202,7 @@ class boltz:
                 
                 codenames = []
                 for name in full_names:
-                    ulineidx = name.find('_')
+                    ulineidx = find_nth(name, '_', self.syllables)
                     codename = name[:ulineidx]
                     codenames.append(codename)
                 arrnames = np.array(codenames)
@@ -215,8 +215,7 @@ class boltz:
 
                         if len(tempdf) == 1:
                             tempdf['species'] = [name]
-
-                            weighted_df = pd.concat([weighted_df, tempdf])
+                            wtrow = tempdf
                         else:
                             weights = self.weight_dict[name]
                             columns = list(tempdf.columns)
@@ -231,7 +230,7 @@ class boltz:
 
                             atom2_idx = list(tempdf['atom2'])
                             atom2_type = list(tempdf['atom2_type'])
-                            wtrow['species'] = name
+                            wtrow['species'] = [name]
                             wtrow['atom1_type'] = atom1_type[0]
                             wtrow['atom1'] = atom1_idx[0]
                             wtrow['atom2_type'] = atom2_type[0]
@@ -261,7 +260,7 @@ class boltz:
                                     contribution = val * wt
                                     wt_val += contribution
                                 wtrow[i] = wt_val
-                        df_row = pd.DataFrame(wtrow, index=[0])
+                        df_row = pd.DataFrame(wtrow)
                         weighted_df = pd.concat([weighted_df, df_row])
                     done_list.append(name)
 

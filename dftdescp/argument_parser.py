@@ -30,6 +30,7 @@ var_dict = {
     "min_max": False,
     "temp":298.15,
     "cut":0.95,
+    "syllables": 1,
     "substructure": "",
     "path_opt": "tests/gaussian/QCALC/success",
     "path_spc": "tests/gaussian/SPC",
@@ -39,7 +40,7 @@ var_dict = {
     "path_ad_ie_ea": "tests/gaussian/AD_IE_EA/success",
     "path_sp_ie_ea": "tests/gaussian/SP_IE_EA/success",
     "path_link": "tests/gaussian/link",
-    "suffix_spc": "SP",
+    "suffix_spc": "spc",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
     "suffix_fukui": "SP_neutral",
@@ -105,7 +106,7 @@ def command_line_args():
         "min_max"
     ]
     list_args = ["skip_list"]
-    int_args = []
+    int_args = ["syllables"]
     float_args = [
         "temp",
         "cut"

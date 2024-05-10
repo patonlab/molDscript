@@ -5,12 +5,14 @@
 import pandas as pd
 import numpy as np
 import math
+from dftdescp.utils import find_nth
 
 GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 
 class min_max:
-    def __init__(self, cut=0.95, temp = 298.15, spc=False ):
+    def __init__(self, cut=0.95, temp = 298.15, spc=False,syllables=2 ):
+        self.syllables = syllables
         self.cutoff = 1 - cut
         self.temp = temp
         self.spc = spc
@@ -25,7 +27,7 @@ class min_max:
         full_names = mol_df['species']
         codenames = []
         for name in full_names:
-            ulineidx = name.find('_')
+            ulineidx = find_nth(name, '_', self.syllables)
             codename = name[:ulineidx]
             codenames.append(codename)
         arrnames = np.array(codenames)
@@ -63,12 +65,7 @@ class min_max:
        
         mol_df = pd.read_csv('molecule_level.csv')
         full_names = mol_df['species']
-        codenames = []
-        for name in full_names:
-            ulineidx = name.find('_')
-            codename = name[:ulineidx]
-            codenames.append(codename)
-        arrnames = np.array(codenames)
+        
         
         done_list = []
     
@@ -81,7 +78,7 @@ class min_max:
         full_names = filtered_df['species']
         codenames = []
         for name in full_names:
-            ulineidx = name.find('_')
+            ulineidx = find_nth(name, '_', self.syllables)
             codename = name[:ulineidx]
             codenames.append(codename)
         arrnames = np.array(codenames)
@@ -160,7 +157,7 @@ class min_max:
             full_names = spec_atom['species']
             codenames = []
             for name in full_names:
-                ulineidx = name.find('_')
+                ulineidx = find_nth(name, '_', self.syllables)
                 codename = name[:ulineidx]
                 codenames.append(codename)
             arrnames = np.array(codenames)
@@ -239,7 +236,7 @@ class min_max:
             full_names = spec_bond['species']
             codenames = []
             for name in full_names:
-                ulineidx = name.find('_')
+                ulineidx = find_nth(name, '_', self.syllables)
                 codename = name[:ulineidx]
                 codenames.append(codename)
             arrnames = np.array(codenames)
