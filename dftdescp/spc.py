@@ -52,7 +52,7 @@ class spc:
             spc_data = self.parse_cc_data(file_name, self.data[file_name])
             file_name = self.data[file_name]
 
-            if self.args.program == 'gaussian':
+            if self.args.spc_program == 'gaussian':
                 if list(self.data.keys()).index(nickname) == 0:
                     self.args.log.write(f"   Functional used: {spc_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")

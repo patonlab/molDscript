@@ -50,6 +50,7 @@ var_dict = {
     "suffix_sp_ie": "SP_IE",
     "suffix_sp_ea": "SP_EA",
     "suffix_opt": None,
+    "spc_program": 'orca',
 }
 
 
@@ -132,7 +133,8 @@ def command_line_args():
         "suffix_ad_ea",
         "suffix_sp_ie",
         "suffix_sp_ea",
-        "suffix_opt"
+        "suffix_opt",
+        "spc_path"
     ]
 
     for arg in var_dict:

@@ -83,7 +83,7 @@ def main():
         if args.spc:
             spc_read = files(calc="spc", path=args.path_spc,
                             suffix_spc=args.suffix_spc,
-                            program=args.program)
+                            program=args.spc_program)
             spc_data = spc(spc_read.file_data,
                            program=args.program)
             data_dicts["spc"] = spc_data
