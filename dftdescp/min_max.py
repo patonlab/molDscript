@@ -10,9 +10,10 @@ GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 
 class min_max:
-    def __init__(self, cut=0.95, temp = 298.15 ):
+    def __init__(self, cut=0.95, temp = 298.15, spc=False ):
         self.cutoff = 1 - cut
         self.temp = temp
+        self.spc = spc
         self.get_boltz_dict()
         self.get_mol_min_max()
         self.get_atom_min_max()
@@ -31,7 +32,11 @@ class min_max:
         
         done_list = []
         weight_dict = {}
-        
+        if self.spc:
+            print('\n   --USING SINGLE POINT CORRECTED ENERGIES FOR MIN-MAX-RANGE CUTOFF--')
+            
+            mol_df['energy'] = mol_df['spc_energy']
+            mol_df.drop(columns=['spc_energy'])
         for name in codenames:
             if not name in done_list:
                 
@@ -54,7 +59,7 @@ class min_max:
         self.boltz_dict = weight_dict
     def get_mol_min_max(self):
         mol_min_max_csv = 'min_max_molecule_level.csv'
-        print('\n\u25A1  COMPILING MOLECULE-LEVEL MIN, MAX, AND RANGE VALUES INTO {}'.format(mol_min_max_csv))
+        print('\u25A1  COMPILING MOLECULE-LEVEL MIN, MAX, AND RANGE VALUES INTO {}'.format(mol_min_max_csv))
        
         mol_df = pd.read_csv('molecule_level.csv')
         full_names = mol_df['species']

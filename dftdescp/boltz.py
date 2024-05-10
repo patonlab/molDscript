@@ -1,5 +1,5 @@
 ######################################################.
-#        This file stores the min_max class            #
+#  This file stores the boltzmann weighting class    #
 ######################################################.
 
 import pandas as pd
@@ -19,14 +19,12 @@ class boltz:
 
     def mol_boltz(self):
         ensemble_mol_csv = 'ensemble_molecule_level.csv'
-        print('\u25A1  AVERAGING MOLECULE-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_mol_csv))
-       
         mol_df = pd.read_csv('molecule_level.csv')
         if self.spc:
-            print('\t - USING SINGLE POINT CORRECTED ENERGIES FOR BOLTZMANN WEIGHTS')
-            
+            print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN BOLTZMANN WEIGHTS--')   
             mol_df['energy'] = mol_df['spc_energy']
             mol_df.drop(columns=['spc_energy'])
+        print('\u25A1  AVERAGING MOLECULE-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_mol_csv))
         full_names = mol_df['species']
         codenames = []
         for name in full_names:
@@ -107,8 +105,6 @@ class boltz:
 
             ensemble_atom_csv = 'ensemble_atom_level.csv'
             print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
-            if self.spc:
-                print('\t - USING SINGLE POINT CORRECTED ENERGIES FOR BOLTZMANN WEIGHTS')
             atom_df = pd.read_csv('atom_level.csv')
             
             atoms = atom_df['atom_index'].unique()
@@ -185,8 +181,6 @@ class boltz:
 
             ensemble_bond_csv = 'ensemble_bond_level.csv'
             print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_bond_csv))
-            if self.spc:
-                print('\t - USING SINGLE POINT CORRECTED ENERGIES FOR BOLTZMANN WEIGHTS')
             bond_df = pd.read_csv('bond_level.csv')
             atom1_list = list(bond_df['atom1'])
             atom2_list = list(bond_df['atom2'])

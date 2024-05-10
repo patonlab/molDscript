@@ -150,7 +150,7 @@ def main():
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond', program=args.program)
     if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo, program=args.program)
     if args.boltz: boltz(temp=args.temp, spc=args.spc)
-    if args.min_max: min_max(temp=args.temp, cut=args.cut)
+    if args.min_max: min_max(temp=args.temp, cut=args.cut, spc=args.spc)
 
 if __name__ == "__main__":
     checks()
