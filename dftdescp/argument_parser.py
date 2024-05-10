@@ -51,7 +51,7 @@ var_dict = {
     "suffix_sp_ie": "SP_IE",
     "suffix_sp_ea": "SP_EA",
     "suffix_opt": None,
-    "spc_program": 'orca',
+    "spc_program": 'gaussian',
 }
 
 
