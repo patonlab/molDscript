@@ -209,7 +209,7 @@ class get_df:
                 except:
                     print(f'{basename}: substructure not found, omitting from final df\n')
                     continue
-                filtered_df = temp_df.loc[temp_df['atom'].isin(indexes)]
+                filtered_df = temp_df.loc[temp_df['atom_index'].isin(indexes)]
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv(atom_csv, index=False)
