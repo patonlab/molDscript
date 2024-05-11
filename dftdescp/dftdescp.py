@@ -9,6 +9,7 @@ from dftdescp.substructure import substructure
 from dftdescp.get_df import get_df
 from dftdescp.min_max import min_max
 from dftdescp.argument_parser import command_line_args, dftdescp_version, dftdescp_ref, time_run
+from dftdescp.boltz import boltz
 import subprocess, sys
 
 
@@ -71,8 +72,9 @@ def main():
     else:
         # OPT
         if args.opt:
+
             opt_read = files(calc="opt", path=args.path_opt, 
-                             program=args.program)
+                             program=args.program, suffix_opt=args.suffix_opt)
             opt_data = opt(opt_read.file_data,
                            program=args.program)
             data_dicts["opt"] = opt_data
@@ -81,10 +83,11 @@ def main():
         if args.spc:
             spc_read = files(calc="spc", path=args.path_spc,
                             suffix_spc=args.suffix_spc,
-                            program=args.program)
+                            program=args.spc_program)
             spc_data = spc(spc_read.file_data,
-                           program=args.program)
+                           spc_program=args.spc_program)
             data_dicts["spc"] = spc_data
+            
 
         # NMR
         if args.nmr:
@@ -139,15 +142,15 @@ def main():
         substructure_read = files(calc="substructure", path=args.path_opt)
         substructure_data = substructure(substructure_read.file_data, args.substructure)
 
-        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data)
-        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.suffix_nbo)
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data, program=args.program)
+        if args.nbo or args.opt : bond_df = get_df(data_dicts, 'bond', substructure= substructure_data.file_data, nbo_suffix=args.suffix_nbo, program=args.program)
     
     else:
-        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom')
-        if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond')
-    if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo)
-    if args.boltz: get_df(data_dicts, 'boltzmann', temp=args.temp)
-    if args.min_max: min_max(temp=args.temp, cut=args.cut)
+        if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', program=args.program)
+        if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond', program=args.program)
+    if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo, program=args.program)
+    if args.boltz: boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
+    if args.min_max: min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
 
 if __name__ == "__main__":
     checks()

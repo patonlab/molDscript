@@ -9,7 +9,7 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 import numpy as np
-import openbabel as ob
+from openbabel import openbabel as ob
 from rdkit import Chem
 
 eV_to_hartree = 0.0367493
@@ -50,24 +50,37 @@ class opt:
                 )
 
         for file_name in self.data.keys():
+            nickname = file_name
+
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
+            file_name = self.data[file_name]
+
             obConversion = ob.OBConversion()
-            obConversion.SetInAndOutFormats("log", "mol")
-            ob_mol = ob.OBMol()
-            mol = obConversion.ReadFile(ob_mol, file_name)
-            obConversion.WriteFile(ob_mol, file_name.split('.')[0]+'.mol')
-            obConversion.CloseOutFile()
-            mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
-            os.remove(file_name.split('.')[0]+'.mol')
-            smi = Chem.MolToSmiles(mol)
-            
-            if self.args.program=='gaussian':
-                if list(self.data.keys()).index(file_name) == 0:
+            if self.args.program == 'gaussian':
+                obConversion.SetInAndOutFormats("log", "mol")
+                ob_mol = ob.OBMol()
+                mol = obConversion.ReadFile(ob_mol, file_name)
+                obConversion.WriteFile(ob_mol, file_name.split('.')[0]+'.mol')
+                obConversion.CloseOutFile()
+                mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
+                os.remove(file_name.split('.')[0]+'.mol')
+                smi = Chem.MolToSmiles(mol)
+                if list(self.data.keys()).index(nickname) == 0:
                     self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
+            if self.args.program == 'orca':
+                obConversion.SetInAndOutFormats("out", "mol")
+                ob_mol = ob.OBMol()
+                mol = obConversion.ReadFile(ob_mol, file_name)
+                obConversion.WriteFile(ob_mol, file_name.split('.')[0]+'.mol')
+                obConversion.CloseOutFile()
+                mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
+                os.remove(file_name.split('.')[0]+'.mol')
+                smi = Chem.MolToSmiles(mol)
+            file_name = nickname
+                
             
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
-            file_name = self.file_base(file_name)
             file_data[file_name]["opt"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
@@ -80,6 +93,7 @@ class opt:
             
             file_data[file_name]["opt"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0]-opt_data.moments[1])**2, axis=0))
             file_data[file_name]["opt"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
+
             file_data[file_name]["opt"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
             file_data[file_name]["opt"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
             
@@ -123,6 +137,7 @@ class opt:
         return bond_data_matrix_list
     
     def file_base(self, string):
+
         try:
             int(string[-1])
         except:
