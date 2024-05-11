@@ -85,7 +85,7 @@ def main():
                             suffix_spc=args.suffix_spc,
                             program=args.spc_program)
             spc_data = spc(spc_read.file_data,
-                           program=args.program)
+                           spc_program=args.spc_program)
             data_dicts["spc"] = spc_data
             
 

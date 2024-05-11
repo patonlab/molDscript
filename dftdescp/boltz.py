@@ -25,7 +25,7 @@ class boltz:
         if self.spc:
             print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN BOLTZMANN WEIGHTS--')   
             mol_df['energy'] = mol_df['spc_energy']
-            mol_df.drop(columns=['spc_energy'])
+            mol_df.drop(columns=['spc_energy'], inplace=True)
         print('\u25A1  AVERAGING MOLECULE-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_mol_csv))
         full_names = mol_df['species']
         codenames = []
