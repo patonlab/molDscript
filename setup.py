@@ -38,13 +38,10 @@ setup(
         "PyYAML",
         "pandas>=2.0.2",
         "progress",
-        "ase",
         "numpy==1.26.3",
         "cclib==1.7.2",
         "matplotlib",
         "seaborn",
-        "cffi",
-        "py3Dmol",
         "ipywidgets",
         "dbstep"
     ],

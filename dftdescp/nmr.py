@@ -9,7 +9,6 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 
-
 class nmr:
     """
     Class containing all the functions for the NMR module related to Gaussian output files

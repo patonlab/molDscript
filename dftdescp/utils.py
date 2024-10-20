@@ -9,6 +9,10 @@ from pathlib import Path
 import glob
 import yaml
 
+GAS_CONSTANT = 8.3144621  # J / K / mol
+J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
+eV_to_hartree = 0.0367493
+
 # class for logging
 class Logger:
     """

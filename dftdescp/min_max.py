@@ -6,9 +6,7 @@ import pandas as pd
 import numpy as np
 import math
 from dftdescp.utils import find_nth
-
-GAS_CONSTANT = 8.3144621  # J / K / mol
-J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
+from dftdescp.utils import find_nth, GAS_CONSTANT, J_TO_AU
 
 class min_max:
     def __init__(self, cut=0.95, temp = 298.15, spc=False,syllables=2 ):

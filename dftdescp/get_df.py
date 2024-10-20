@@ -2,7 +2,6 @@
 #        This file stores the get_df class            #
 ######################################################.
 
-
 import pandas as pd
 import numpy as np
 import scipy.constants as sc

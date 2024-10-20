@@ -11,9 +11,7 @@ from dftdescp.argument_parser import load_variables
 import numpy as np
 from openbabel import openbabel as ob
 from rdkit import Chem
-
-eV_to_hartree = 0.0367493
-
+from dftdescp.utils import eV_to_hartree
 
 class opt:
     """

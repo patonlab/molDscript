@@ -8,9 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
-
-eV_to_hartree = 0.0367493
-
+from dftdescp.utils import eV_to_hartree
 
 class spc:
     """

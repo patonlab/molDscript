@@ -11,7 +11,6 @@ from rdkit import Chem
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 
-
 class substructure:
     """
     Class containing all the functions for the substructure module related to Gaussian output files

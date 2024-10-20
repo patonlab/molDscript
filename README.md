@@ -52,21 +52,21 @@ For further information, see the separate [documentation](https:/XXX).
 
 # Features
 
-## Molecule level parameters
+### Molecule level parameters
 
 * Dipole and quadrupole moments
 * Molecular apolarizabilities and hyperpolarizabilities
 * Orbital energies: HOMO energy, LUMO energy, HOMO-LUMO gap
 * Global reactivity descriptors: electronegativity, hardness, softness, global electrophilicity index
 * Ionization Potential and Electron Affinity
-* Molecular volumee, Van der Waals volume, Solvent-accessible volume
+* Molecular volume, Van der Waals volume, Solvent-accessible volume
 * Surface Area: Van der Waals surface area, Solvent-accessible surface area (SASA), Polar surface area (PSA)
 
-## Bond level parameters
+### Bond level parameters
 
 * Bond Orders: Wiberg bond indices
 
-## Atom level parameters
+### Atom level parameters
 
 * Partial charges: Mulliken charges, Natural Population Analysis (NPA) charges, Hirshfeld charges
 * Atomic apolarizabilities and hyperpolarizabilities

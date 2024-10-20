@@ -9,7 +9,6 @@ import cclib as cc
 from collections import defaultdict
 from dftdescp.argument_parser import load_variables
 
-
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
