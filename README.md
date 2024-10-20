@@ -1,4 +1,4 @@
-# Quantum Mechanical Derived Descriptors: QMDSCRIPT
+# Quantum Mechanical Derived Descriptors: MOLDSCRIPT
 [//]: # (Badges)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

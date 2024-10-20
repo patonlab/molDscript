@@ -9,7 +9,7 @@ import time
 from openbabel import openbabel as ob
 from rdkit import Chem
 from collections import defaultdict
-from dftdescp.argument_parser import load_variables
+from moldscript.argument_parser import load_variables
 
 class substructure:
     """

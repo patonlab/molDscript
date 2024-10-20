@@ -7,11 +7,11 @@ import sys, os
 import time
 import cclib as cc
 from collections import defaultdict
-from dftdescp.argument_parser import load_variables
+from moldscript.argument_parser import load_variables
 import numpy as np
 from openbabel import openbabel as ob
 from rdkit import Chem
-from dftdescp.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree
 
 class opt:
     """

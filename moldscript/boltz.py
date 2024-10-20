@@ -5,7 +5,7 @@
 import pandas as pd
 import numpy as np
 import math
-from dftdescp.utils import find_nth, GAS_CONSTANT, J_TO_AU
+from moldscript.utils import find_nth, GAS_CONSTANT, J_TO_AU
 
 class boltz:
     def __init__(self, temp = 298.15, spc=False, syllables=1 ):

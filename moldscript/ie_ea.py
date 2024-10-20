@@ -7,8 +7,8 @@ import sys, os
 import time
 import cclib as cc
 from collections import defaultdict
-from dftdescp.argument_parser import load_variables
-from dftdescp.utils import eV_to_hartree
+from moldscript.argument_parser import load_variables
+from moldscript.utils import eV_to_hartree
 
 class ie_ea:
     """

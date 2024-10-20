@@ -86,7 +86,7 @@ def load_from_yaml(self):
     does nothing.
     """
 
-    txt_yaml = f"\no  Importing DFTDESCP parameters from {self.varfile}"
+    txt_yaml = f"\no  Importing MOLDSCRIPT parameters from {self.varfile}"
     error_yaml = False
     # Variables will be updated from YAML file
     try:

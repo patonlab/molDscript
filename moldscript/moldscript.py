@@ -1,29 +1,25 @@
-from dftdescp.files import files
-from dftdescp.fukui import fukui
-from dftdescp.ie_ea import ie_ea
-from dftdescp.opt import opt
-from dftdescp.spc import spc
-from dftdescp.nmr import nmr
-from dftdescp.nbo import nbo
-from dftdescp.substructure import substructure
-from dftdescp.get_df import get_df
-from dftdescp.min_max import min_max
-from dftdescp.argument_parser import command_line_args, dftdescp_version, dftdescp_ref, time_run
-from dftdescp.boltz import boltz
+from moldscript.files import files
+from moldscript.fukui import fukui
+from moldscript.ie_ea import ie_ea
+from moldscript.opt import opt
+from moldscript.spc import spc
+from moldscript.nmr import nmr
+from moldscript.nbo import nbo
+from moldscript.substructure import substructure
+from moldscript.get_df import get_df
+from moldscript.min_max import min_max
+from moldscript.argument_parser import command_line_args, moldscript_version, moldscript_ref, time_run
+from moldscript.boltz import boltz
 import subprocess, sys
 
 
 header = """
-   ▓█████▄   ██████  ▄████▄   ██▀███   ██▓ ██▓███  ▄▄▄█████▓
-   ▒██▀ ██▌▒██    ▒ ▒██▀ ▀█  ▓██ ▒ ██▒▓██▒▓██░  ██▒▓  ██▒ ▓▒
-   ░██   █▌░ ▓██▄   ▒▓█    ▄ ▓██ ░▄█ ▒▒██▒▓██░ ██▓▒▒ ▓██░ ▒░
-   ░▓█▄   ▌  ▒   ██▒▒▓▓▄ ▄██▒▒██▀▀█▄  ░██░▒██▄█▓▒ ▒░ ▓██▓ ░
-   ░▒████▓ ▒██████▒▒▒ ▓███▀ ░░██▓ ▒██▒░██░▒██▒ ░  ░  ▒██▒ ░ 
-    ▒▒▓  ▒ ▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░░ ▒▓ ░▒▓░░▓  ▒▓▒░ ░  ░  ▒ ░░   
-    ░ ▒  ▒ ░ ░▒  ░ ░  ░  ▒     ░▒ ░ ▒░ ▒ ░░▒ ░         ░    
-    ░ ░  ░ ░  ░  ░  ░          ░░   ░  ▒ ░░░         ░      
-      ░          ░  ░ ░         ░      ░                    
-    ░               ░    Paton Research Group, Colorado 2024                              
+   • ▌ ▄ ·.       ▄▄▌  ·▄▄▄▄  .▄▄ ·  ▄▄· ▄▄▄  ▪   ▄▄▄·▄▄▄▄▄
+   ·██ ▐███▪▪     ██•  ██▪ ██ ▐█ ▀. ▐█ ▌▪▀▄ █·██ ▐█ ▄█•██  
+   ▐█ ▌▐▌▐█· ▄█▀▄ ██▪  ▐█· ▐█▌▄▀▀▀█▄██ ▄▄▐▀▀▄ ▐█· ██▀· ▐█.▪
+   ██ ██▌▐█▌▐█▌.▐▌▐█▌▐▌██. ██ ▐█▄▪▐█▐███▌▐█•█▌▐█▌▐█▪·• ▐█▌·
+   ▀▀  █▪▀▀▀ ▀█▄▀▪.▀▀▀ ▀▀▀▀▀•  ▀▀▀▀ ·▀▀▀ .▀  ▀▀▀▀.▀    ▀▀▀ 
+                             Paton Research Group, CO 2024                              
 """
 
 def checks():
@@ -54,7 +50,7 @@ def main():
     data_dicts = {}
     
     print(header)
-    print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
+    print("   MOLDSCRIPT v {} {} \n   Citation: {}\n".format(moldscript_version, time_run, moldscript_ref))
     print(f'   Arguments passed to program: \n   {sys.argv[1:]}\n')
 
     if args.path_opt is not None and not args.opt: args.opt = True

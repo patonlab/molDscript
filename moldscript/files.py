@@ -5,11 +5,11 @@
 
 import sys, os
 import time
-from dftdescp.utils import (
+from moldscript.utils import (
     get_files,
 )
 from collections import defaultdict
-from dftdescp.argument_parser import load_variables
+from moldscript.argument_parser import load_variables
 
 
 class files:
