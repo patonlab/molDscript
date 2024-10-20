@@ -88,7 +88,6 @@ def main():
                            spc_program=args.spc_program)
             data_dicts["spc"] = spc_data
             
-
         # NMR
         if args.nmr:
             nmr_read = files(calc="nmr", path=args.path_nmr, 
