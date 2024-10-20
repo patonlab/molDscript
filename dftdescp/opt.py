@@ -29,7 +29,7 @@ class opt:
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
-                f"\nx  Could not find files to obtain information optimization"
+                f"\nx  Could not find files to obtain optimization information. Exiting program"
             )
             self.args.log.finalize()
             sys.exit()

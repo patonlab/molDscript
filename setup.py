@@ -44,7 +44,6 @@ setup(
         "matplotlib",
         "seaborn",
         "cffi",
-        "goodvibes",
         "py3Dmol",
         "ipywidgets",
         "dbstep"

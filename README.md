@@ -1,33 +1,81 @@
 # Quantum Mechanical Derived Descriptors: QMDSCRIPT
 [//]: # (Badges)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 A Python package for ...
 
-## Features
-* TBD 
-* TBD
-* TBD 
-
 ## Requirements
 
-* Python 3.7, 3.8, 3.9, or 3.10
-* Other packages
-* More packages
+* cclib
+* DBSTEP
+* rdkit
+* yaml
 
-## Usage
+# Installation
 
-With D-SCRIPT installed, execute the following command:
+## pip
 
-```bash
-python -m qmdscript blah blah blah
+```shell
+$ pip install XXX
 ```
 
-Which does some things.
+## conda
 
-### Local installation
+```shell
+$ conda install -c conda-forge XXX
+```
 
-instructions about conda pipy
+# Usage
+
+XXX can be imported as a Python module that is easily integrated into
+workflows. Here is an example for ...
+
+```shell
+>>> from XXX import YYY
+>>> etc
+```
+
+It can also be used from the command line.
+
+```console
+$ python -m XXX etc
+```
+For further information, see the separate [documentation](https:/XXX).
+
+# Packages Supported
+
+* Gaussian
+* Orca
+* xTB
+
+# Features
+
+## Molecule level parameters
+
+* Dipole and quadrupole moments
+* Molecular apolarizabilities and hyperpolarizabilities
+* Orbital energies: HOMO energy, LUMO energy, HOMO-LUMO gap
+* Global reactivity descriptors: electronegativity, hardness, softness, global electrophilicity index
+* Ionization Potential and Electron Affinity
+* Molecular volumee, Van der Waals volume, Solvent-accessible volume
+* Surface Area: Van der Waals surface area, Solvent-accessible surface area (SASA), Polar surface area (PSA)
+
+## Bond level parameters
+
+* Bond Orders: Wiberg bond indices
+
+## Atom level parameters
+
+* Partial charges: Mulliken charges, Natural Population Analysis (NPA) charges, Hirshfeld charges
+* Atomic apolarizabilities and hyperpolarizabilities
+* Fukui indices: Nucleophilic fukui function (f-), Electrophilic fukui function (f+), Radical fukui function (f0)
+* NMR Chemical Shifts
+* Atomic Volumes
+* Buried Volumes
+* Vol2Vec parameters
+
 
 ### Testing
 details 
@@ -38,6 +86,13 @@ Tests can be run with the `pytest -v` command. There are a number of additional 
 something about readthedocs
 
 
-## Acknowledgments
+# Acknowledgements
 
-This work is developed by Shree Sowndarya, Jake King and Robert Paton and is supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/), grant number [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)
+This work was carried out in the [Paton Laboratory at Colorado State University[(https://patonlab.colostate.edu)], supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/), grant number [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)
+
+In particular, the following people have contributed significantly to developing its functionality:
+
+* [Shree Sowndarya](https://github.com/shreesowndarya)
+* [Jake King](https://github.com/j77king)
+* [Robert Paton](https://github.com/bobbypaton)
+

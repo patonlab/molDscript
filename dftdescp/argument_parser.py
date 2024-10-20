@@ -10,6 +10,7 @@ dftdescp_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
 dftdescp_ref = "XXX"
 
+# default variables
 var_dict = {
     "struc": "",
     "program": "gaussian",
@@ -32,14 +33,17 @@ var_dict = {
     "cut":0.95,
     "syllables": 1,
     "substructure": "",
-    "path_opt": "tests/gaussian/QCALC/success",
-    "path_spc": "tests/gaussian/SPC",
-    "path_nmr": "tests/gaussian/NMR/success",
-    "path_nbo": "tests/gaussian/NBO/success",
-    "path_fukui": "tests/gaussian/FUKUI/success",
-    "path_ad_ie_ea": "tests/gaussian/AD_IE_EA/success",
-    "path_sp_ie_ea": "tests/gaussian/SP_IE_EA/success",
-    "path_link": "tests/gaussian/link",
+    
+    "path_opt": None,
+    "path_spc": None,
+    "path_nmr": None,
+    "path_nbo": None,
+    "path_fukui": None,
+    "path_ad_ie_ea": None,
+    "path_sp_ie_ea": None,
+    "path_link": None,
+    
+    "suffix_opt": None,
     "suffix_spc": "spc",
     "suffix_nmr": "SP_NMR",
     "suffix_nbo": "SP_NBO",
@@ -50,7 +54,6 @@ var_dict = {
     "suffix_ad_ea": "AD_EA",
     "suffix_sp_ie": "SP_IE",
     "suffix_sp_ea": "SP_EA",
-    "suffix_opt": None,
     "spc_program": 'gaussian',
 }
 

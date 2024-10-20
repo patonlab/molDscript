@@ -56,6 +56,11 @@ def main():
     print(header)
     print("   DFTDESCP v {} {} \n   Citation: {}\n".format(dftdescp_version, time_run, dftdescp_ref))
     print(f'   Arguments passed to program: \n   {sys.argv[1:]}\n')
+
+    if args.path_opt is not None and not args.opt: args.opt = True
+    if args.path_nmr is not None and not args.nmr: args.nmr = True
+    if args.path_nbo is not None and not args.nbo: args.nbo = True
+
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.path_link, program=args.program)
