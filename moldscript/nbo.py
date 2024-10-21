@@ -5,9 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
+from moldscript.utils import add_cpu_times
 
 class nbo:
     """
@@ -32,7 +34,11 @@ class nbo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- NBO Parameter Collection complete in {elapsed_time} seconds\n")
+            try:
+                total_cpu = add_cpu_times(self.file_data)
+                self.args.log.write(f"\n   NBO calculations complete in {total_cpu} seconds")
+            except: pass
+            self.args.log.write(f"-- NBO Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
@@ -40,18 +46,25 @@ class nbo:
         file_data = mydict()
 
         self.args.log.write(
-                    f"   --- NBO Parameter Collection starting"
+                    f"-- NBO Parameter Collection starting"
                 )
 
-        for file_name in self.data.keys():
+        for i, file_name in enumerate(self.data.keys()):
 
             try:
                 nbo_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nbo_data = None
-            if list(self.data.keys()).index(file_name) == 0 and self.args.program=='gaussian':
+            
+            if i == 0:
+                self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
+                try:
+                    nbo_version = self.parse_nbo_version(self.data[file_name])
+                    self.args.log.write(f"   NBO version used: {nbo_version}")
+                except: 
+                    pass
                 self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}")
+                self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}\n")
             if nbo_data != None:
 
                 self.args.log.write(
@@ -67,8 +80,24 @@ class nbo:
                     f"Skipping file {file_name} as NBO data didnt exist\n"
                 )
 
+            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            for time in nbo_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time
+
         return file_data
 
+    def parse_nbo_version(self, file):
+        start_version = None
+        outfile = open(file, "r")
+        lines = outfile.readlines()
+        for i, line in enumerate(lines):
+            if line.find("******* NBO") > -1:
+                start_version = i
+
+        if start_version != None:
+            version = ' '.join(lines[start_version].split()[1:3])
+        return version
+    
     def parse_cc_data(self, file_name, file):
 
         ### parse data

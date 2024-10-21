@@ -36,7 +36,7 @@ class substructure:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"--- Substructure Matching complete in {elapsed_time} seconds\n"
+                f"\n-- Substructure [{self.substructure}] matching complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
@@ -49,9 +49,10 @@ class substructure:
             index = self.get_mol(self.data[file_name])
             basename = self.file_base(file_name)
             self.args.log.write(
-                f"o  Parsing substructe data from {basename}"
+                f"o  Parsing substructure data from {basename}"
             )
             file_data[file_name][self.substructure]["index"] = index
+
         return file_data
 
     def get_mol(self, file):

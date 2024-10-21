@@ -24,7 +24,7 @@ class fukui:
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
-                f"\nx  Could not find files to obtain information for calculating Fukui Coefficients"
+                f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
             )
             self.args.log.finalize()
             sys.exit()
@@ -34,7 +34,7 @@ class fukui:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(
-                f"   --- Fukui Parameter Collection complete in {elapsed_time} seconds\n"
+                f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
@@ -44,7 +44,7 @@ class fukui:
         first = False
 
         self.args.log.write(
-                    f"   --- Fukui Parameter Collection starting"
+                    f"-- Fukui Parameter Collection starting"
                 )
 
         for file_name in self.data.keys():
@@ -54,8 +54,9 @@ class fukui:
                     file_name, self.data[file_name]["neutral"]
                 )
                 if first == False and self.args.program=='gaussian':
+                    self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
                     self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}")
+                    self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
                     first = True
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(

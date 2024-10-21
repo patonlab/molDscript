@@ -64,6 +64,14 @@ class Logger:
         except AttributeError:
             pass
 
+def add_cpu_times(file_data):
+    ''' add cpu times for all files'''
+    total_cpu = datetime.timedelta(0)
+    for filename in file_data.keys():
+        total_cpu += file_data[filename]['cpu_time']
+    
+    return total_cpu
+
 def format_lists(value):
     '''
     Transforms strings into a list

@@ -67,7 +67,7 @@ class files:
     
     def get_spc(self):
         file_data = defaultdict(dict)
-        for file in self.files:
+        for file in self.files:            
             if self.args.suffix_spc in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_spc}")
                 file_data[key_name[0]] = file
@@ -75,7 +75,7 @@ class files:
 
     def get_nmr(self):
         file_data = defaultdict(dict)
-        for file in self.files:
+        for file in self.files:         
             if self.args.suffix_nmr in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_nmr}")
                 file_data[key_name[0]] = file

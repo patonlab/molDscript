@@ -34,12 +34,13 @@ class get_df:
         bond_csv = 'bond_level.csv'
         
         calced_list = list(self.dd.keys())
-        print('\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
+        print('\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))
         
         dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'wiberg_bond_order']}
         
-            
+        print('   - Bond distances (Angstrom)')    
         if all(x in calced_list for x in ['nbo', 'opt']):
+            print('   - Wiberg Bond Orders')
             dict_df = {k: [] for k in ['species', 'atom1', 'atom2', 'atom1_type', 'atom2_type', 'wiberg_bond_order', 'bond_length']}      
             nbo_dict = self.dd['nbo'].file_data
             nbo_data=True
@@ -81,8 +82,9 @@ class get_df:
         bond_df = pd.DataFrame(dict_df)
 
         if self.substructure != '':
-            print('   (Filtered by user-defined substructure)')
+            print('   ! Filtered by user-defined substructure')
             final_df = pd.DataFrame()
+            
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
                 struc = list(dict.keys())[0]
@@ -98,6 +100,7 @@ class get_df:
                 
             final_df.to_csv(bond_csv, index=False)
             return bond_df
+        
         bond_df.to_csv(bond_csv, index=False)
         # print("Saved bond properties to 'bond_df.csv'")
         return bond_df
@@ -114,6 +117,8 @@ class get_df:
             if category in calced_list:
                 dict = self.dd[category].file_data
                 if category == 'nbo':
+                    print('   - NPA charges (au)')
+                    print('   - Wiberg bond orders/atom')
                     dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'npa_charge', 'wiberg_total']}
                     for filename in dict.keys():
                         
@@ -130,6 +135,7 @@ class get_df:
                             dict_df['atom_type'].append(element.symbol)
                             
                 elif category == 'nmr':
+                    print('   - Chemical Shifts')
                     dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'nmr_shielding']}
                     for filename in dict.keys():
                         
@@ -196,7 +202,7 @@ class get_df:
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['species','atom_index', 'atom_type'])
         if self.substructure != '':
-            print('   (Filtered by user-defined substructure)')
+            print('   ! Filtered by user-defined substructure')
             final_df = pd.DataFrame()
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
@@ -220,10 +226,21 @@ class get_df:
     # create a df of mol properties
     def get_mol_df(self):
         mol_csv = 'molecule_level.csv'
-        print('\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}\n'.format(mol_csv))
+        print('\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}'.format(mol_csv))
         calced_list = list(self.dd.keys())
         opt_dict = self.dd['opt'].file_data
+       
+        print('   - SMILES')
+        print('   - Energy (Hartree)')
+        print('   - Enthalpy (Hartree)')
+        print('   - Gibbs Free Energy (Hartree)')
+        print('   - Dipole Moment (Debye)')
+        print('   - HOMO (eV)')
+        print('   - LUMO (eV)')
+        print('   - HOMO-LUMO gap (eV)')
+
         if self.program == 'gaussian':
+            print('   - Quadrupole moments (Debeye Angstrom)')
             properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'XX_quadrupole_moment', 'XY_quadrupole_moment', 'XZ_quadrupole_moment', 'YY_quadrupole_moment', 'YZ_quadrupole_moment', 'ZZ_quadrupole_moment', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
         if self.program == 'orca':
             properties = ['species', 'smiles', 'energy', 'enthalpy', 'gibbs_energy', 'dipole', 'HOMO', 'LUMO', 'HOMO-LUMO_gap']
@@ -297,7 +314,8 @@ class get_df:
             dict_df = pd.DataFrame(dict_df)
             mol_df = mol_df.merge(dict_df,how='left', on='species')
         mol_df.to_csv(mol_csv, index=False)
-
+        
+        print()
         return mol_df
     
     def file_base(self, string):

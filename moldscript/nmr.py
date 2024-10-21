@@ -5,9 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
+from moldscript.utils import add_cpu_times
 
 class nmr:
     """
@@ -32,7 +34,11 @@ class nmr:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- NMR Parameter Collection complete in {elapsed_time} seconds\n")
+            try:
+                total_cpu = add_cpu_times(self.file_data)
+                self.args.log.write(f"\n   NMR calculations complete in {total_cpu} seconds")
+            except: pass
+            self.args.log.write(f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
@@ -40,17 +46,18 @@ class nmr:
         file_data = mydict()
 
         self.args.log.write(
-                    f"   --- NMR Parameter Collection starting"
+                    f"-- NMR Parameter Collection starting"
                 )
-        for file_name in self.data.keys():
+        for i, file_name in enumerate(self.data.keys()):
             try:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nmr_data = None
 
-            if list(self.data.keys()).index(file_name) == 0 and self.args.program=='gaussian':
+            if i == 0:
+                self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
                 self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}")
+                self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
             if nmr_data != None:
                 self.args.log.write(
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
@@ -61,7 +68,13 @@ class nmr:
                 self.args.log.write(
                     f"!  Skipping {file_name} as NMR data not found"
                 )
+            
+            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            for time in nmr_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time
+
         return file_data
+
 
     def parse_cc_data(self, file_name, file):
         ### parse data

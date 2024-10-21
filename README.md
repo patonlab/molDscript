@@ -59,8 +59,8 @@ For further information, see the separate [documentation](https:/XXX).
 * Orbital energies: HOMO energy, LUMO energy, HOMO-LUMO gap
 * Global reactivity descriptors: electronegativity, hardness, softness, global electrophilicity index
 * Ionization Potential and Electron Affinity
-* Molecular volume, Van der Waals volume, Solvent-accessible volume
-* Surface Area: Van der Waals surface area, Solvent-accessible surface area (SASA), Polar surface area (PSA)
+* Molecular volume, Van der Waals volume, Solvent-accessible volume (not yet implemented)
+* Surface Area: Van der Waals surface area, Solvent-accessible surface area (SASA), Polar surface area (PSA) (not yet implemented)
 
 ### Bond level parameters
 
@@ -68,13 +68,13 @@ For further information, see the separate [documentation](https:/XXX).
 
 ### Atom level parameters
 
-* Partial charges: Mulliken charges, Natural Population Analysis (NPA) charges, Hirshfeld charges
-* Atomic apolarizabilities and hyperpolarizabilities
+* Partial charges: Natural Population Analysis (NPA) charges, Hirshfeld charges
+* Atomic apolarizabilities and hyperpolarizabilities (not yet implemented)
 * Fukui indices: Nucleophilic fukui function (f-), Electrophilic fukui function (f+), Radical fukui function (f0)
 * NMR Chemical Shifts
-* Atomic Volumes
-* Buried Volumes
-* Vol2Vec parameters
+* Atomic Volumes (not yet implemented)
+* Buried Volumes (not yet implemented)
+* Vol2Vec parameters (not yet implemented)
 
 
 ### Testing
@@ -88,7 +88,7 @@ something about readthedocs
 
 # Acknowledgements
 
-This work was carried out in the [Paton Laboratory at Colorado State University[(https://patonlab.colostate.edu)], supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/), grant number [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)
+This work was carried out in the [Paton Laboratory at Colorado State University](https://patonlab.colostate.edu), supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/), grant number [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)
 
 In particular, the following people have contributed significantly to developing its functionality:
 

@@ -50,12 +50,14 @@ def main():
     data_dicts = {}
     
     print(header)
-    print("   MOLDSCRIPT v {} {} \n   Citation: {}\n".format(moldscript_version, time_run, moldscript_ref))
+    print("   MOLDSCRIPT v {} {} \n   {}\n".format(moldscript_version, time_run, moldscript_ref))
     print(f'   Arguments passed to program: \n   {sys.argv[1:]}\n')
 
     if args.path_opt is not None and not args.opt: args.opt = True
     if args.path_nmr is not None and not args.nmr: args.nmr = True
     if args.path_nbo is not None and not args.nbo: args.nbo = True
+    if args.path_fukui is not None and not args.fukui: args.fukui = True
+    if args.path_sp_ie_ea is not None and not args.sp_ie_ea: args.sp_ie_ea = True
 
     if args.link:
         # ALL DATA
@@ -120,6 +122,8 @@ def main():
 
         # SP IE & EA
         if args.sp_ie_ea:
+            print(args.path_sp_ie_ea, args.suffix_sp_ie,args.suffix_sp_ea)
+
             sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea, 
                                   suffix_sp_ie=args.suffix_sp_ie,
                                   suffix_sp_ea=args.suffix_sp_ea,
@@ -148,9 +152,13 @@ def main():
     else:
         if args.fukui or args.nmr or args.nbo: atom_df = get_df(data_dicts, 'atom', program=args.program)
         if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond', program=args.program)
-    if args.opt: mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo, program=args.program)
-    if args.boltz: boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
-    if args.min_max: min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
+
+    if args.opt: 
+        mol_df = get_df(data_dicts, 'molecular', nbo_suffix=args.suffix_nbo, program=args.program)
+    if args.boltz: 
+        boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
+    if args.min_max: 
+        min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
 
 if __name__ == "__main__":
     checks()

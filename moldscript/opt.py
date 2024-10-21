@@ -5,13 +5,15 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
 from openbabel import openbabel as ob
 from rdkit import Chem
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, add_cpu_times
+
 
 class opt:
     """
@@ -33,10 +35,14 @@ class opt:
             sys.exit()
         else:
             self.file_data = self.get_data()
-
+                
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
+            try:
+                total_cpu = add_cpu_times(self.file_data)
+                self.args.log.write(f"\n   QM optimizations complete in {total_cpu} seconds")
+            except: pass
+            self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
@@ -44,16 +50,17 @@ class opt:
         file_data = mydict()
 
         self.args.log.write(
-                    f"   --- Optimization Parameter Collection starting"
+                    f"-- Optimization Parameter Collection starting"
                 )
 
-        for file_name in self.data.keys():
+        for i, file_name in enumerate(self.data.keys()):
             nickname = file_name
 
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             file_name = self.data[file_name]
 
             obConversion = ob.OBConversion()
+            
             if self.args.program == 'gaussian':
                 obConversion.SetInAndOutFormats("log", "mol")
                 ob_mol = ob.OBMol()
@@ -63,9 +70,12 @@ class opt:
                 mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
                 os.remove(file_name.split('.')[0]+'.mol')
                 smi = Chem.MolToSmiles(mol)
-                if list(self.data.keys()).index(nickname) == 0:
+                
+                if i == 0:
+                    self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
                     self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}")
+                    self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}\n")
+            
             if self.args.program == 'orca':
                 obConversion.SetInAndOutFormats("out", "mol")
                 ob_mol = ob.OBMol()
@@ -75,6 +85,7 @@ class opt:
                 mol = Chem.MolFromMolFile(file_name.split('.')[0]+'.mol', removeHs=False)
                 os.remove(file_name.split('.')[0]+'.mol')
                 smi = Chem.MolToSmiles(mol)
+            
             file_name = nickname
                 
             
@@ -102,7 +113,11 @@ class opt:
                 file_data[file_name]["opt"]["YY_quadrupole_moment"] = opt_data.moments[2][3]
                 file_data[file_name]["opt"]["YZ_quadrupole_moment"] = opt_data.moments[2][4]
                 file_data[file_name]["opt"]["ZZ_quadrupole_moment"] = opt_data.moments[2][5]
-                
+
+            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            for time in opt_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time
+              
         return file_data
 
     def parse_cc_data(self, file_name, file):

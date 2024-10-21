@@ -4,11 +4,11 @@
 
 import os, time, getopt, sys
 from pathlib import Path
-from dftdescp.utils import format_lists, load_from_yaml, Logger
+from moldscript.utils import format_lists, load_from_yaml, Logger
 
-dftdescp_version = "0.1"
+moldscript_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
-dftdescp_ref = "XXX"
+moldscript_ref = "King, J.; Sowndarya, S. V. S.; Paton, R. S. MOLDSCRIPT: A General-Purpose Workflow for Quantum Chemical Molecular Descriptors"
 
 # default variables
 var_dict = {
@@ -34,7 +34,7 @@ var_dict = {
     "syllables": 1,
     "substructure": "",
     
-    "path_opt": None,
+    "path_opt": '.',
     "path_spc": None,
     "path_nmr": None,
     "path_nbo": None,
@@ -44,16 +44,17 @@ var_dict = {
     "path_link": None,
     
     "suffix_opt": None,
-    "suffix_spc": "spc",
-    "suffix_nmr": "SP_NMR",
-    "suffix_nbo": "SP_NBO",
-    "suffix_fukui": "SP_neutral",
-    "suffix_fred": "SP_reduced",
-    "suffix_fox": "SP_oxidized",
-    "suffix_ad_ie": "AD_IE",
-    "suffix_ad_ea": "AD_EA",
-    "suffix_sp_ie": "SP_IE",
-    "suffix_sp_ea": "SP_EA",
+    "suffix_spc": None,
+    "suffix_nmr": None,
+    "suffix_nbo": None,
+    "suffix_ad_ie": None,
+    "suffix_ad_ea": None,
+    "suffix_sp_ie": None,
+    "suffix_sp_ea": None,
+    "suffix_fukui": None,
+    "suffix_fred": None,
+    "suffix_fox": None,
+
     "spc_program": 'gaussian',
 }
 
@@ -161,7 +162,7 @@ def command_line_args():
 
         if arg_name in ("h", "help"):
             print(
-                f"o  DFTDESCP v {dftdescp_version} is installed correctly! For more information about the available options, see the documentation in XXX"
+                f"o  MOLDSCRIPT v {moldscript_version} is installed correctly! For more information about the available options, see the documentation in XXX"
             )
             sys.exit()
         else:
@@ -204,7 +205,7 @@ def command_line_args():
     return args
 
 
-def load_variables(kwargs, dftdescp_module, create_dat=True):
+def load_variables(kwargs, moldscript_module, create_dat=True):
     """
     Load default and user-defined variables
     """
@@ -217,44 +218,44 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
     if self.varfile is not None:
         self, txt_yaml = load_from_yaml(self)
 
-    if dftdescp_module != "command":
+    if moldscript_module != "command":
         self.initial_dir = Path(os.getcwd())
 
         error_setup = False
 
         # start a log file to track the  module
         if create_dat:
-            if dftdescp_module == "FILES":
+            if moldscript_module == "FILES":
                 logger_1 = "FILES"
 
-            if dftdescp_module == "OPT":
+            if moldscript_module == "OPT":
                 logger_1 = "OPT"
             
-            elif dftdescp_module == "SPC":
+            elif moldscript_module == "SPC":
                 logger_1 = "SPC"
 
-            elif dftdescp_module == "NBO":
+            elif moldscript_module == "NBO":
                 logger_1 = "NBO"
 
-            elif dftdescp_module == "NMR":
+            elif moldscript_module == "NMR":
                 logger_1 = "NMR"
 
-            elif dftdescp_module == "IE_EA":
+            elif moldscript_module == "IE_EA":
                 logger_1 = "IE_EA"
 
-            elif dftdescp_module == "FUKUI":
+            elif moldscript_module == "FUKUI":
                 logger_1 = "FUKUI"
 
-            if dftdescp_module == "SUBSTRUCTURE":
+            if moldscript_module == "SUBSTRUCTURE":
                 logger_1 = "SUBSTRUCTURE"
 
             if txt_yaml not in [
                 "",
-                f"\no  Importing DFTDESCP parameters from {self.varfile}",
+                f"\no  Importing MOLDSCRIPT parameters from {self.varfile}",
                 "\nx  The specified yaml file containing parameters was not found! Make sure that the valid params file is in the folder where you are running the code.\n",
             ]:
                 self.log = Logger(
-                    f"{self.initial_dir}/DFTDESCP", logger_1, verbose=self.verbose
+                    f"{self.initial_dir}/MOLDSCRIPT", logger_1, verbose=self.verbose
                 )
                 self.log.write(txt_yaml)
                 error_setup = True
@@ -262,17 +263,17 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
             if not error_setup:
                 if not self.command_line:
                     self.log = Logger(
-                        f"{self.initial_dir}/DFTDESCP", logger_1, verbose=self.verbose
+                        f"{self.initial_dir}/MOLDSCRIPT", logger_1, verbose=self.verbose
                     )
                 else:
                     # prevents errors when using command lines and running to remote directories
                     path_command = Path(f"{os.getcwd()}")
                     self.log = Logger(
-                        f"{path_command}/DFTDESCP", logger_1, verbose=self.verbose
+                        f"{path_command}/MOLDSCRIPT", logger_1, verbose=self.verbose
                     )
 
                 self.log.write_only(
-                    f"   DFTDESCP v {dftdescp_version} {time_run} \n   Citation: {dftdescp_ref}\n"
+                    f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
                 )
 
                 if self.command_line:
@@ -299,7 +300,7 @@ def load_variables(kwargs, dftdescp_module, create_dat=True):
                             cmd_print += " "
 
                     self.log.write(
-                        f"Command line used in DFTDESCP: python -m dftdescp {cmd_print}\n"
+                        f"Command line used in MOLDSCRIPT: python -m moldscript {cmd_print}\n"
                     )
 
             if error_setup:
