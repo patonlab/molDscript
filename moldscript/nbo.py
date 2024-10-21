@@ -45,10 +45,6 @@ class nbo:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        self.args.log.write(
-                    f"-- NBO Parameter Collection starting"
-                )
-
         for i, file_name in enumerate(self.data.keys()):
 
             try:
@@ -57,6 +53,12 @@ class nbo:
                 nbo_data = None
             
             if i == 0:
+                rel_dir = self.data[file_name].split(os.getcwd()+'/')[1].split(file_name)[0]
+                    
+                self.args.log.write(
+                    f"-- NBO Parameter Collection from {rel_dir}"
+                )
+
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
                 try:
                     nbo_version = self.parse_nbo_version(self.data[file_name])

@@ -58,6 +58,7 @@ def main():
     if args.path_nbo is not None and not args.nbo: args.nbo = True
     if args.path_fukui is not None and not args.fukui: args.fukui = True
     if args.path_sp_ie_ea is not None and not args.sp_ie_ea: args.sp_ie_ea = True
+    if args.path_ad_ie_ea is not None and not args.ad_ie_ea: args.ad_ie_ea = True
 
     if args.link:
         # ALL DATA
@@ -122,8 +123,6 @@ def main():
 
         # SP IE & EA
         if args.sp_ie_ea:
-            print(args.path_sp_ie_ea, args.suffix_sp_ie,args.suffix_sp_ea)
-
             sp_ie_ea_read = files(calc="sp_ie_ea", path=args.path_sp_ie_ea, 
                                   suffix_sp_ie=args.suffix_sp_ie,
                                   suffix_sp_ea=args.suffix_sp_ea,

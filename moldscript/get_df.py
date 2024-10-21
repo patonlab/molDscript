@@ -148,6 +148,9 @@ class get_df:
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
                 elif category == 'fukui':
+                    print('   - CM5 charges (au)')
+                    print('   - Hirshfeld charges (au)')
+                    print('   - Electrophilic, nucleophilic and radical Fukui functions (au)')
                     if self.program=='gaussian':
                         dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
                     if self.program=='orca':
@@ -264,20 +267,28 @@ class get_df:
             dict_df['LUMO'].append(final_dict['LUMO'])
             dict_df['HOMO-LUMO_gap'].append(final_dict['HOMO-LUMO_gap'])
         mol_df = pd.DataFrame(dict_df)
+        
         if 'sp_ieea' in calced_list:
+            print('   - Electronegativity (eV)')
+            print('   - Hardness (eV)')
+            print('   - Global Electrophilicity Index: GEI (eV)')
+            print('   - Vertical ionization Potential (eV)')
+            print('   - Vertical electron Affinity (eV)')
             sp_ieea_dict = self.dd['sp_ieea'].file_data
-            dict_df = {k: [] for k in ['species', 'SP_ox_energy','SP_red_energy', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
+            dict_df = {k: [] for k in ['species', 'IE_vertical','EA_vertical', 'chemical_hardness', 'global_electrophilicity', 'electronegativity']}
             for file_name in sp_ieea_dict.keys():
                 final_dict = sp_ieea_dict[file_name]
                 neut_row = mol_df.loc[mol_df['species'] == file_name]
                 neut_e = list(neut_row['energy'])[0]
                 oxidized_e = final_dict['ox']['E']
                 reduced_e = final_dict['red']['E']
-                oe = oxidized_e - neut_e
-                re = reduced_e - neut_e
+                
+                oe = (oxidized_e - neut_e) 
+                re = (reduced_e - neut_e)
+                
                 dict_df['species'].append(file_name)
-                dict_df['SP_ox_energy'].append(oe)
-                dict_df['SP_red_energy'].append(re)
+                dict_df['IE_vertical'].append(oe)
+                dict_df['EA_vertical'].append(re)
                 cp = -1*(oe+re)/2
                 hardness = (oe-re)/2
                 electrophilicity = cp**2 / (2*hardness)
@@ -287,22 +298,32 @@ class get_df:
                 dict_df['electronegativity'].append(electronegativity)
             dict_df = pd.DataFrame(dict_df)
             mol_df = mol_df.merge(dict_df,how='left', on='species')
+        
         if 'ad_ieea' in calced_list:
+            print('   - Electronegativity (eV)')
+            print('   - Hardness (eV)')
+            print('   - Global Electrophilicity Index: GEI (eV)')
+            print('   - Adiabatic ionization Potential (eV)')
+            print('   - Adiabatic electron Affinity (eV)')
+
             ad_ieea_dict = self.dd['ad_ieea'].file_data
-            dict_df = {k: [] for k in ['species', 'AD_ox_energy','AD_red_energy']}
+            dict_df = {k: [] for k in ['species', 'IE_adiabatic','EA_adiabatic']}
             for file_name in ad_ieea_dict.keys():
                 final_dict = ad_ieea_dict[file_name]
                 neut_row = mol_df.loc[mol_df['species'] == file_name]
                 neut_e = list(neut_row['energy'])[0]
                 oxidized_e = final_dict['ox']['E']
                 reduced_e = final_dict['red']['E']
-                oe = oxidized_e - neut_e
-                re = reduced_e - neut_e
+                
+                oe = (oxidized_e - neut_e)
+                re = (reduced_e - neut_e)
+                
                 dict_df['species'].append(file_name)
-                dict_df['AD_ox_energy'].append(oe)
-                dict_df['AD_red_energy'].append(re)
+                dict_df['IE_adiabatic'].append(oe)
+                dict_df['EA_adiabatic'].append(re)
             dict_df = pd.DataFrame(dict_df)
             mol_df = mol_df.merge(dict_df,how='left', on='species')
+        
         if 'spc' in calced_list:
             spc_dict = self.dd['spc'].file_data
             

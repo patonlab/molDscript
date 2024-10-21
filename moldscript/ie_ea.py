@@ -5,10 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, add_cpu_times
 
 class ie_ea:
     """
@@ -33,45 +34,55 @@ class ie_ea:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
+            try:
+                total_cpu = add_cpu_times(self.file_data)
+                self.args.log.write(f"\n   IE & EA calculations complete in {total_cpu} seconds")
+            except: pass
+  
             self.args.log.write(
-                f"   --- IE & EA Parameter Collection complete in {elapsed_time} seconds\n"
+                f"-- IE & EA Parameter Collection complete in {elapsed_time} seconds\n"
             )
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
-        first = False
-        self.args.log.write(
-                    f"   --- IE & EA Parameter Collection starting"
-                )
 
-        for file_name in self.data.keys():
+        for i, file_name in enumerate(self.data.keys()):
             ie_data, ea_data = None, None
 
             if "ie" in self.data[file_name].keys():
                 ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {ie_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {ie_data.metadata['basis_set']}")
-                    first = True
+
             if "ea" in self.data[file_name].keys():
                 ea_data = self.parse_cc_data(file_name, self.data[file_name]["ea"])
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {ea_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {ea_data.metadata['basis_set']}")
-                    first = True
+            
+            if i == 0:
+                rel_dir = self.data[file_name]["ie"].split(os.getcwd()+'/')[1].split(file_name)[0]    
+                self.args.log.write(
+                    f"-- IE & EA Parameter Collection from {rel_dir}"
+                )
+                self.args.log.write(f"   Package used: {ea_data.metadata['package']} {ea_data.metadata['package_version']}")
+                self.args.log.write(f"   Functional used: {ea_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {ea_data.metadata['basis_set']}\n")
+            
             if ie_data != None and ea_data != None:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"
                 )
-                file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1]*eV_to_hartree
-                file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1]*eV_to_hartree
+                file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1] *eV_to_hartree
+                file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1] *eV_to_hartree
                 
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
                 )
+
+            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            for time in ie_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time from IE
+            for time in ea_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time from EA
 
         return file_data
 

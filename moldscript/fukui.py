@@ -5,10 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-
+from moldscript.utils import add_cpu_times
 
 class fukui:
     """
@@ -33,6 +34,10 @@ class fukui:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
+            try:
+                total_cpu = add_cpu_times(self.file_data)
+                self.args.log.write(f"\n   Fukui calculations complete in {total_cpu} seconds")
+            except: pass
             self.args.log.write(
                 f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n"
             )
@@ -43,37 +48,31 @@ class fukui:
         file_data = mydict()
         first = False
 
-        self.args.log.write(
-                    f"-- Fukui Parameter Collection starting"
-                )
-
-        for file_name in self.data.keys():
+        for i, file_name in enumerate(self.data.keys()):
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(
                     file_name, self.data[file_name]["neutral"]
                 )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                    self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
-                    first = True
+                
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(
                     file_name, self.data[file_name]["oxidized"]
                 )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {oxidized_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {oxidized_data.metadata['basis_set']}")
-                    first = True
+                
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(
                     file_name, self.data[file_name]["reduced"]
                 )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {reduced_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {reduced_data.metadata['basis_set']}")
-                    first = True
+            
+            if i==0:
+                rel_dir = self.data[file_name]["neutral"].split(os.getcwd()+'/')[1].split(file_name)[0]    
+                self.args.log.write(
+                    f"-- Fukui Parameter Collection from {rel_dir}"
+                )
+                self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
+                self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
 
             if neutral_data != None and oxidized_data != None and reduced_data != None:
                 self.args.log.write(
@@ -113,6 +112,14 @@ class fukui:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
                 )
+
+            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            for time in neutral_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time from IE
+            for time in oxidized_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time from EA
+            for time in reduced_data.metadata['cpu_time']:
+                file_data[file_name]['cpu_time'] += time # add cpu time from EA
 
         return file_data
 

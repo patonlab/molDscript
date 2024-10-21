@@ -49,13 +49,9 @@ class opt:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        self.args.log.write(
-                    f"-- Optimization Parameter Collection starting"
-                )
-
         for i, file_name in enumerate(self.data.keys()):
             nickname = file_name
-
+            
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             file_name = self.data[file_name]
 
@@ -72,6 +68,11 @@ class opt:
                 smi = Chem.MolToSmiles(mol)
                 
                 if i == 0:
+                    rel_dir = self.data[nickname].split(os.getcwd()+'/')[1].split(nickname)[0]
+                    
+                    self.args.log.write(
+                    f"-- Optimization Parameter Collection from {rel_dir}"
+                )
                     self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
                     self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}\n")

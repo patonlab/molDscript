@@ -45,9 +45,6 @@ class nmr:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        self.args.log.write(
-                    f"-- NMR Parameter Collection starting"
-                )
         for i, file_name in enumerate(self.data.keys()):
             try:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
@@ -55,6 +52,11 @@ class nmr:
                 nmr_data = None
 
             if i == 0:
+                rel_dir = self.data[file_name].split(os.getcwd()+'/')[1].split(file_name)[0]
+                    
+                self.args.log.write(
+                    f"-- NMR Parameter Collection from {rel_dir}"
+                )
                 self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
                 self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
                 self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
