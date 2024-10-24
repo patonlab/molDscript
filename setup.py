@@ -3,7 +3,7 @@ version = "0.0.1"
 setup(
     name="moldscript",
     packages=find_packages(exclude=["tests"]),
-    package_data={"moldscript": ["templates/*"]},
+    package_data={"molDscript": ["templates/*"]},
     version=version,
     license="MIT",
     description="An Automated Workflow for Quantum Mechanical Derived Descriptors: MOLDSCRIPT",
@@ -22,8 +22,8 @@ setup(
         "DFT",
         "automated",
     ],
-    url="https://github.com/patonlab/moldscript",
-    download_url=f"https://github.com/patonlab/moldscript/archive/refs/tags/{version}.tar.gz",
+    url="https://github.com/patonlab/molDscript",
+    download_url=f"https://github.com/patonlab/molDscript/archive/refs/tags/{version}.tar.gz",
     classifiers=[
         "Development Status :: 3 - Alpha",  # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
         "Intended Audience :: Developers",  # Define that your audience are developers
