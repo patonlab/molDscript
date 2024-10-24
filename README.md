@@ -1,5 +1,5 @@
-# Quantum Mechanical Derived Descriptors: molDscript
-[//]: # (Badges)
+![molDscript](https://github.com/patonlab/molDscript/blob/main/moldscript/molDscript.png)
+===
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
