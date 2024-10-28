@@ -19,7 +19,7 @@ var_dict = {
     "verbose": True,
     "all": False,
     "opt": True,
-    "volume": True,
+    "volume": False,
     "spc": False,
     "nmr": False,
     "nbo": False,

@@ -78,9 +78,9 @@ def main():
             
             opt_read = files(calc="opt", path=args.path_opt, 
                              program=args.program, suffix_opt=args.suffix_opt)
-            opt_data = opt(opt_read.file_data,
+            opt_data = opt(opt_read.file_data, data_dicts
                            program=args.program, volume=args.volume)
-            data_dicts["opt"] = opt_data
+            data_dicts = opt_data
 
         # SPC
         if args.spc:

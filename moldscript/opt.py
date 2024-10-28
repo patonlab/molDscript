@@ -21,12 +21,13 @@ class opt:
     Class containing all the functions for the opt module related to Gaussian output files
     """
 
-    def __init__(self, data, create_dat=True, **kwargs):
+    def __init__(self, data, data_dict, create_dat=True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "OPT", create_dat=create_dat)
         self.data = data
+        self.data_dict = data_dict
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -61,10 +62,10 @@ class opt:
             file_name = self.data[file_name]
 
             obConversion = ob.OBConversion()
-            if self.args.volume:
-                steric_data = sterics(file=file_name, vbur=True, smol=False)
-                file_data[file_name]["vbur"] = steric_data.volumes
-                file_data[file_name]["vbur_atom_type"] = steric_data.numbers
+            # if self.args.volume:
+            #     steric_data = sterics(file=file_name, vbur=True, smol=False)
+            #     file_data[file_name]["atom"][' = steric_data.volumes
+            #     file_data[file_name]["vbur_atom_type"] = steric_data.numbers
             if self.args.program == 'gaussian':
                 obConversion.SetInAndOutFormats("log", "mol")
                 ob_mol = ob.OBMol()
@@ -94,29 +95,31 @@ class opt:
                 
             
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
-            file_data[file_name]["opt"]["scfenergy"] = (
+            self.data_dict[file_name]["mol"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
-            file_data[file_name]["opt"]["enthalpy"] = opt_data.enthalpy
-            file_data[file_name]["opt"]["freeenergy"] = opt_data.freeenergy
-            file_data[file_name]["opt"]["smiles"] = smi
-            file_data[file_name]['opt']['atomnos'] = opt_data.atomnos
+            self.data_dict[file_name]["mol"]["enthalpy"] = opt_data.enthalpy
+            self.data_dict[file_name]["mol"]["freeenergy"] = opt_data.freeenergy
+            self.data_dict[file_name]["mol"]["smiles"] = smi
+            self.data_dict[file_name]["atom"]["smiles"] = smi
+            self.data_dict[file_name]["bond"]["smiles"] = smi
+            self.data_dict[file_name]['atom']['atomnos'] = opt_data.atomnos
         
-            file_data[file_name]["bond_length_matrix"] = opt_data.bond_data_matrix
+            self.data_dict[file_name]['bond']["bond_length_matrix"] = opt_data.bond_data_matrix
             
-            file_data[file_name]["opt"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0]-opt_data.moments[1])**2, axis=0))
-            file_data[file_name]["opt"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
+            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0]-opt_data.moments[1])**2, axis=0))
+            self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
 
-            file_data[file_name]["opt"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
-            file_data[file_name]["opt"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
+            self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
+            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
             
             if self.args.program=='gaussian':
-                file_data[file_name]["opt"]["XX_quadrupole_moment"] = opt_data.moments[2][0]
-                file_data[file_name]["opt"]["XY_quadrupole_moment"] = opt_data.moments[2][1]
-                file_data[file_name]["opt"]["XZ_quadrupole_moment"] = opt_data.moments[2][2]
-                file_data[file_name]["opt"]["YY_quadrupole_moment"] = opt_data.moments[2][3]
-                file_data[file_name]["opt"]["YZ_quadrupole_moment"] = opt_data.moments[2][4]
-                file_data[file_name]["opt"]["ZZ_quadrupole_moment"] = opt_data.moments[2][5]
+                self.data_dict[file_name]["mol"]["XX_quadrupole_moment"] = opt_data.moments[2][0]
+                self.data_dict[file_name]["mol"]["XY_quadrupole_moment"] = opt_data.moments[2][1]
+                self.data_dict[file_name]["mol"]["XZ_quadrupole_moment"] = opt_data.moments[2][2]
+                self.data_dict[file_name]["mol"]["YY_quadrupole_moment"] = opt_data.moments[2][3]
+                self.data_dict[file_name]["mol"]["YZ_quadrupole_moment"] = opt_data.moments[2][4]
+                self.data_dict[file_name]["mol"]["ZZ_quadrupole_moment"] = opt_data.moments[2][5]
 
             file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
             for time in opt_data.metadata['cpu_time']:

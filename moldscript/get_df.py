@@ -14,8 +14,9 @@ class get_df:
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure='', nbo_suffix='SP_NBO', program='gaussian', volume=False):
+    def __init__(self, data_dicts, data_type, substructure='', program='gaussian', volume=False):
         self.dd = data_dicts
+        print(self.dd)
         self.substructure = substructure
         self.program = program
         self.volume = volume
