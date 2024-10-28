@@ -15,14 +15,13 @@ class spc:
     Class containing all the functions for the opt module related to Gaussian output files
     """
 
-    def __init__(self, data, data_dict, create_dat=True, spc_program='gaussian', **kwargs):
+    def __init__(self, data, create_dat=True, spc_program='gaussian', **kwargs):
         
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
         self.spc_program = spc_program
-        self.data_dict = data_dict
 
         if len(self.data.keys()) == 0:
             self.args.log.write(

@@ -57,7 +57,11 @@ class opt:
 
         for i, file_name in enumerate(self.data.keys()):
             nickname = file_name
-
+            self.data_dict[file_name] = dict()
+            self.data_dict[file_name]['mol'] = dict()
+            self.data_dict[file_name]['atom'] = dict()
+            self.data_dict[file_name]['bond'] = dict()
+            
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             file_name = self.data[file_name]
 
@@ -111,7 +115,7 @@ class opt:
             self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
 
             self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0]+1]
-            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = file_data[file_name]["opt"]["LUMO"] - file_data[file_name]["opt"]["HOMO"]
+            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = self.data_dict[file_name]["mol"]["LUMO"] - self.data_dict[file_name]["mol"]["HOMO"]
             
             if self.args.program=='gaussian':
                 self.data_dict[file_name]["mol"]["XX_quadrupole_moment"] = opt_data.moments[2][0]
@@ -121,11 +125,11 @@ class opt:
                 self.data_dict[file_name]["mol"]["YZ_quadrupole_moment"] = opt_data.moments[2][4]
                 self.data_dict[file_name]["mol"]["ZZ_quadrupole_moment"] = opt_data.moments[2][5]
 
-            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            self.data_dict[file_name]['mol']['cpu_time'] = datetime.timedelta(0) # initialize cpu time
             for time in opt_data.metadata['cpu_time']:
-                file_data[file_name]['cpu_time'] += time # add cpu time
+                self.data_dict[file_name]['mol']['cpu_time'] += time # add cpu time
               
-        return file_data
+        return self.data_dict
 
     def parse_cc_data(self, file_name, file):
 
