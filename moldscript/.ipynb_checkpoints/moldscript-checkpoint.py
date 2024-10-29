@@ -80,16 +80,16 @@ def main():
                              program=args.program, suffix_opt=args.suffix_opt)
             opt_data = opt(opt_read.file_data, data_dicts,
                            program=args.program, volume=args.volume)
-            data_dicts = opt_data
+            data_dicts = opt_data.file_data
             
         # SPC
         if args.spc:
             spc_read = files(calc="spc", path=args.path_spc,
                             suffix_spc=args.suffix_spc,
                             program=args.spc_program)
-            spc_data = spc(spc_read.file_data,
+            spc_data = spc(spc_read.file_data, data_dicts,
                            spc_program=args.spc_program)
-            data_dicts["spc"] = spc_data
+            data_dicts = spc_data.file_data
             
         # NMR
         if args.nmr:

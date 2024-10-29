@@ -47,6 +47,7 @@ class opt:
             self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
+
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
@@ -128,7 +129,7 @@ class opt:
             self.data_dict[file_name]['mol']['cpu_time'] = datetime.timedelta(0) # initialize cpu time
             for time in opt_data.metadata['cpu_time']:
                 self.data_dict[file_name]['mol']['cpu_time'] += time # add cpu time
-              
+            
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
