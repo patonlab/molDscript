@@ -96,16 +96,16 @@ def main():
             nmr_read = files(calc="nmr", path=args.path_nmr, 
                              suffix_nmr=args.suffix_nmr,
                              program=args.program)
-            nmr_data = nmr(nmr_read.file_data,
+            nmr_data = nmr(nmr_read.file_data, data_dicts,
                            program=args.program)
-            data_dicts["nmr"] = nmr_data
+            data_dicts = nmr_data.file_data
 
         # NBO
         if args.nbo:
             nbo_read = files(calc="nbo", path=args.path_nbo,
                             suffix_nbo=args.suffix_nbo,
                             program=args.program)
-            nbo_data = nbo(nbo_read.file_data,
+            nbo_data = nbo(nbo_read.file_data, data_dicts,
                            program=args.program)
             data_dicts["nbo"] = nbo_data
 

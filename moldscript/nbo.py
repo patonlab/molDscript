@@ -16,12 +16,13 @@ class nbo:
     Class containing all the functions for the NBO module related to Gaussian output files
     """
 
-    def __init__(self, data, create_dat=True, **kwargs):
+    def __init__(self, data, data_dict, create_dat=True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "NBO", create_dat=create_dat)
         self.data = data
+        self.data_dict = data_dict
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -70,21 +71,21 @@ class nbo:
                 self.args.log.write(
                     f"o  Parsing NBO & NPA data from {file_name}"
                 )
-                file_data[file_name]["charges"]["npa"] = nbo_data.atomcharges["natural"]
-                file_data[file_name]["bond_orders"] = nbo_data.bondorders
-                file_data[file_name]["bond_order_matrix"] = nbo_data.bondorders_matrix
-                file_data[file_name]['atomnos'] = nbo_data.atomnos
+                self.data_dict[file_name]['atom']["npa"] = nbo_data.atomcharges["natural"]
+                self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
+                self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
+                self.data_dict[file_name]['atom']['nbo_atomnos'] = nbo_data.atomnos
                 
             else:
                 self.args.log.write(
                     f"Skipping file {file_name} as NBO data didnt exist\n"
                 )
 
-            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            self.data_dict[file_name]['mol']['nbo_cpu_time'] = datetime.timedelta(0) # initialize cpu time
             for time in nbo_data.metadata['cpu_time']:
-                file_data[file_name]['cpu_time'] += time
+                self.data_dict[file_name]['mol']['nbo_cpu_time'] += time
 
-        return file_data
+        return self.data_dict
 
     def parse_nbo_version(self, file):
         start_version = None

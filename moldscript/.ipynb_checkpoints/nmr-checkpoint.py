@@ -16,12 +16,13 @@ class nmr:
     Class containing all the functions for the NMR module related to Gaussian output files
     """
 
-    def __init__(self, data, create_dat=True, **kwargs):
+    def __init__(self, data, data_dicts, create_dat=True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "NMR", create_dat=create_dat)
         self.data = data
+        self.data_dict = data_dicts
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -62,18 +63,18 @@ class nmr:
                 self.args.log.write(
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
                 )
-                file_data[file_name]["nmr_shielding"] = nmr_data.nmr_shielding
-                file_data[file_name]['atomnos'] = nmr_data.atomnos
+                self.data_dict[file_name]['atom']["nmr_shielding"] = nmr_data.nmr_shielding
+                self.data_dict[file_name]['atom']['nmr_atomnos'] = nmr_data.atomnos
             else:
                 self.args.log.write(
                     f"!  Skipping {file_name} as NMR data not found"
                 )
             
-            file_data[file_name]['cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            self.data_dict[file_name]['mol']['nmr_cpu_time'] = datetime.timedelta(0) # initialize cpu time
             for time in nmr_data.metadata['cpu_time']:
-                file_data[file_name]['cpu_time'] += time # add cpu time
+                self.data_dict[file_name]['mol']['nmr_cpu_time'] += time # add cpu time
 
-        return file_data
+        return self.data_dict
 
 
     def parse_cc_data(self, file_name, file):
