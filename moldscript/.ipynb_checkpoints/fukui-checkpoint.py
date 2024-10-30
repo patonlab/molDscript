@@ -122,7 +122,7 @@ class fukui:
                     f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
                 )
 
-        return self.data_dict
+        return file_data
 
     def parse_cc_data(self, file_name, file):
 

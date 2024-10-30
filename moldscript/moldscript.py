@@ -107,7 +107,7 @@ def main():
                             program=args.program)
             nbo_data = nbo(nbo_read.file_data, data_dicts,
                            program=args.program)
-            data_dicts["nbo"] = nbo_data
+            data_dicts = nbo_data.file_data
 
         # FUKUI
         if args.fukui:
@@ -116,9 +116,9 @@ def main():
                                suffix_fred=args.suffix_fred,
                                suffix_fox=args.suffix_fox,
                                program=args.program)
-            fukui_data = fukui(fukui_read.file_data,
+            fukui_data = fukui(fukui_read.file_data, data_dicts
                                program=args.program)
-            data_dicts["fukui"] = fukui_data
+            data_dicts = fukui_data.file_data
 
         # SP IE & EA
         if args.sp_ie_ea:
