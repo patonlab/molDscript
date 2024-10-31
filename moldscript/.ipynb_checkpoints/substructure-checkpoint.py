@@ -16,13 +16,14 @@ class substructure:
     Class containing all the functions for the substructure module related to Gaussian output files
     """
 
-    def __init__(self, data, substructure, create_dat=True, **kwargs):
+    def __init__(self, data, data_dict, substructure, create_dat=True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SUBSTRUCTURE", create_dat=create_dat)
         self.data = data
         self.substructure = substructure
+        self.data_dict = data_dict
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -41,8 +42,7 @@ class substructure:
             self.args.log.finalize()
 
     def get_data(self):
-        mydict = lambda: defaultdict(mydict)
-        file_data = mydict()
+
 
         for file_name in self.data.keys():
             index = ()
@@ -51,9 +51,9 @@ class substructure:
             self.args.log.write(
                 f"o  Parsing substructure data from {basename}"
             )
-            file_data[file_name][self.substructure]["index"] = index
+            self.data_dict[file_name]['substructure']["index"] = index
 
-        return file_data
+        return self.data_dict
 
     def get_mol(self, file):
         # obabel convert

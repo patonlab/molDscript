@@ -143,7 +143,7 @@ def main():
             data_dicts = ad_ie_ea_data.file_data
     
     if args.substructure != "":
-        substructure_read = files(calc="substructure", path=args.path_opt)
+        substructure_read = files(calc="substructure", data_dicts, path=args.path_opt)
         substructure_data = substructure(substructure_read.file_data, args.substructure)
 
         if args.fukui or args.nmr or args.nbo or args.volume: atom_df = get_df(data_dicts, 'atom', substructure= substructure_data.file_data, program=args.program)

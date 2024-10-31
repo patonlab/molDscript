@@ -77,7 +77,7 @@ class ie_ea:
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
                 )
 
-        return data_dict
+        return self.data_dict
 
     def parse_cc_data(self, file_name, file):
 
