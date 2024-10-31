@@ -15,12 +15,14 @@ class ie_ea:
     Class containing all the functions for the  vertical ie and ea module related to Gaussian output files
     """
 
-    def __init__(self, data, create_dat=True, **kwargs):
+    def __init__(self, calc, data, data_dict, create_dat=True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "IE_EA", create_dat=create_dat)
         self.data = data
+        self.calc = calc 
+        self.data_dict = data_dict
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -65,15 +67,17 @@ class ie_ea:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"
                 )
-                file_data[file_name]["ox"]["E"] = ie_data.scfenergies[-1]*eV_to_hartree
-                file_data[file_name]["red"]["E"] = ea_data.scfenergies[-1]*eV_to_hartree
+                ox_label =  'oxidized_' + self.calc.split('_')[0] + '_E'
+                red_label =  'reduced_' + self.calc.split('_')[0] + '_E'
+                self.data_dict[file_name]['mol'][ox_label] = ie_data.scfenergies[-1]*eV_to_hartree
+                self.data_dict[file_name]['mol'][red_label] = ea_data.scfenergies[-1]*eV_to_hartree
                 
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
                 )
 
-        return file_data
+        return data_dict
 
     def parse_cc_data(self, file_name, file):
 

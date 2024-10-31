@@ -116,7 +116,7 @@ def main():
                                suffix_fred=args.suffix_fred,
                                suffix_fox=args.suffix_fox,
                                program=args.program)
-            fukui_data = fukui(fukui_read.file_data, data_dicts
+            fukui_data = fukui(fukui_read.file_data, data_dicts,
                                program=args.program)
             data_dicts = fukui_data.file_data
 
@@ -128,9 +128,9 @@ def main():
                                   suffix_sp_ie=args.suffix_sp_ie,
                                   suffix_sp_ea=args.suffix_sp_ea,
                                   program=args.program)
-            sp_ie_ea_data = ie_ea(sp_ie_ea_read.file_data,
+            sp_ie_ea_data = ie_ea("sp_ie_ea", sp_ie_ea_read.file_data, data_dicts,
                                   program=args.program)
-            data_dicts["sp_ieea"] = sp_ie_ea_data
+            data_dicts = sp_ie_ea_data.file_data
 
         # AD IE & EA
         if args.ad_ie_ea:
@@ -138,9 +138,9 @@ def main():
                                   suffix_ad_ie=args.suffix_ad_ie,
                                   suffix_ad_ea=args.suffix_ad_ea,
                                   program=args.program)
-            ad_ie_ea_data = ie_ea(ad_ie_ea_read.file_data,
+            ad_ie_ea_data = ie_ea("ad_ie_ea", ad_ie_ea_read.file_data, data_dicts,
                                   program=args.program)
-            data_dicts["ad_ieea"] = ad_ie_ea_data
+            data_dicts = ad_ie_ea_data.file_data
     
     if args.substructure != "":
         substructure_read = files(calc="substructure", path=args.path_opt)
