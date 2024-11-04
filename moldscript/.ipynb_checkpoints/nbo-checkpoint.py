@@ -16,7 +16,7 @@ class nbo:
     Class containing all the functions for the NBO module related to Gaussian output files
     """
 
-    def __init__(self, data, data_dict, create_dat=True, **kwargs):
+    def __init__(self, data, data_dict: dict, create_dat=True, **kwargs) -> None:
 
         start_time_overall = time.time()
         # load default and user-specified variables
@@ -75,7 +75,7 @@ class nbo:
                 self.data_dict[file_name]['atom']["npa"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
                 self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
-                self.data_dict[file_name]['atom']['nbo_atomnos'] = nbo_data.atomnos
+                # self.data_dict[file_name]['atom']['nbo_atomnos'] = nbo_data.atomnos
                 
             else:
                 self.args.log.write(
