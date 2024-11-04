@@ -149,7 +149,7 @@ class nbo:
             for i in range(start_wiberg, end_wiberg):
                 wiberg_bos.append(float(lines[i].split()[2]))
         return wiberg_bos
-    
+
     def bondorders_matrix(self, file, cc_data):
         
         start_wiberg_ind, end_wiberg_ind = None, None
@@ -171,7 +171,6 @@ class nbo:
                             for k in range(i + 2, i + 2 + len(cc_data.bondorders)):
                                 wbo_ind.append(lines[k].split()[j + 1])
                             wiberg_bos_matrix.append(wbo_ind)
-        
         return wiberg_bos_matrix
 
     def npa_data(self, file, cc_data):
