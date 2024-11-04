@@ -106,8 +106,6 @@ class opt:
             self.data_dict[file_name]["mol"]["enthalpy"] = opt_data.enthalpy
             self.data_dict[file_name]["mol"]["freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi
-            self.data_dict[file_name]["atom"]["smiles"] = smi
-            self.data_dict[file_name]["bond"]["smiles"] = smi
             self.data_dict[file_name]['atom']['atomnos'] = opt_data.atomnos
         
             self.data_dict[file_name]['bond']["bond_length_matrix"] = opt_data.bond_data_matrix

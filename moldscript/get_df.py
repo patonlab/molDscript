@@ -14,25 +14,84 @@ class get_df:
     Class to create a dataframe of parameters.
     """
 
-    def __init__(self, data_dicts, data_type, substructure='', program='gaussian', volume=False):
+    def __init__(self, data_dicts, substructure='', program='gaussian', volume=False):
         self.dd = data_dicts
-        print(self.dd)
+
         self.substructure = substructure
         self.program = program
         self.volume = volume
-        if data_type == "molecular":
-            mol_df = self.get_mol_df()
-            self.mol_df = mol_df 
-        if data_type == "bond":
-            bond_df = self.get_bond_df()
-            self.bond_df = bond_df
-        if data_type == "atom":
-            atom_df = self.get_atom_df()
-            self.atom_df = atom_df
+        ###
+        mol_df = self.get_mol_df()
+        self.mol_df = mol_df 
+        ###
+        bond_df = self.get_bond_df()
+        self.bond_df = bond_df
+        ####
+        # atom_df = self.get_atom_df()
+        # self.atom_df = atom_df
+    def get_mol_df(self):
+        mol_csv = 'molecule_level.csv'
+        print('\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}'.format(mol_csv))
+        filenames = list(self.dd.keys())
+        data = self.dd
 
-
-    # create a df of bond properties
+        for fname in filenames:
+            mol_level_data = data[fname]['mol']
+            mol_level_data['filename'] = fname
+            tmpdf = pd.DataFrame([mol_level_data])
+            try: moldf = pd.concat([moldf, tmpdf])
+            except: moldf = tmpdf
+        col = moldf.pop('filename')
+        moldf.insert(0, 'filename', col)
+        moldf.to_csv(mol_csv, index=False)
+        
+        
     def get_bond_df(self):
+      
+        bond_csv = 'bond_level.csv'
+        
+        print('\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}'.format(bond_csv))   
+        filenames = list(self.dd.keys())
+        data = self.dd
+        props = list(data[filenames[0]]['bond'].keys())
+        ll_dict = {k: [] for k in ['filename', 'atom1', 'atom1_type', 'atom2', 'atom2_type', 'property']}
+        bond_data = {k: ll_dict for k in props}
+
+        for fname in filenames:
+            bond_level_data = data[fname]['bond']
+            atoms = data[fname]['atom']['atomnos']
+            for prop in list(bond_level_data.keys()):
+                matrix = data[fname]['bond'][prop]
+                atom1 = 0
+                for row in matrix:
+                    for value, index in zip(row, range(len(row))):
+                        if index < atom1:
+                            bond_data[prop]['filename'].append(fname)
+                            bond_data[prop]['atom1'].append(atom1)
+                            num = atoms[atom1]
+                            element = periodictable.elements[num]
+                            bond_data[prop]['atom1_type'].append(element.symbol)
+                            bond_data[prop]['atom2'].append(index)
+                            num = atoms[index]
+                            element = periodictable.elements[num]
+                            bond_data[prop]['atom2_type'].append(element.symbol)
+                            bond_data[prop]['property'].append(value)
+                    atom1 +=1
+        print(bond_data)
+        for prop in props:
+
+            tempdf = pd.DataFrame(bond_data[prop])
+            print(tempdf)
+            col = tempdf.pop('property')
+            tempdf.insert(len(tempdf.columns), prop, col)
+            try: 
+                bond_df= bond_df.insert(len(bond_df.columns), prop, col)
+            except:
+                bond_df = tempdf
+            print(bond_df)
+        
+    # create a df of bond properties
+    def old_get_bond_df(self):
         bond_csv = 'bond_level.csv'
         
         calced_list = list(self.dd.keys())
@@ -109,7 +168,7 @@ class get_df:
             
 
     # create a df of atom properties
-    def get_atom_df(self):
+    def old_get_atom_df(self):
         atom_csv = 'atom_level.csv'
         print('\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}'.format(atom_csv))
         atom_df = pd.DataFrame()
@@ -243,7 +302,8 @@ class get_df:
         return atom_df
     
     # create a df of mol properties
-    def get_mol_df(self):
+
+    def old_get_mol_df(self):
         mol_csv = 'molecule_level.csv'
         print('\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}'.format(mol_csv))
         calced_list = list(self.dd.keys())

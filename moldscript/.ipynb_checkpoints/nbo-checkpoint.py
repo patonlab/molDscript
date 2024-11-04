@@ -23,6 +23,7 @@ class nbo:
         self.args = load_variables(kwargs, "NBO", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.fnames = self.data_dict.keys()
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -98,7 +99,9 @@ class nbo:
         if start_version != None:
             version = ' '.join(lines[start_version].split()[1:3])
         return version
-    
+    def get_filename(self):
+        pass
+        
     def parse_cc_data(self, file_name, file):
 
         ### parse data
