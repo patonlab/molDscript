@@ -11,6 +11,7 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 from moldscript.utils import add_cpu_times
 
+
 class nmr:
     """
     Class containing all the functions for the NMR module related to Gaussian output files
@@ -23,6 +24,7 @@ class nmr:
         self.args = load_variables(kwargs, "NMR", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -37,45 +39,56 @@ class nmr:
             elapsed_time = round(time.time() - start_time_overall, 2)
             try:
                 total_cpu = add_cpu_times(self.file_data)
-                self.args.log.write(f"\n   NMR calculations complete in {total_cpu} seconds")
-            except: pass
-            self.args.log.write(f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n")
+                self.args.log.write(
+                    f"\n   NMR calculations complete in {total_cpu} seconds"
+                )
+            except:
+                pass
+            self.args.log.write(
+                f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n"
+            )
             self.args.log.finalize()
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        self.args.log.write(
-                    f"-- NMR Parameter Collection starting"
-                )
+        self.args.log.write(f"-- NMR Parameter Collection starting")
         for i, file_name in enumerate(self.data.keys()):
             try:
+                file_name = self.get_filename(file_name)
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nmr_data = None
 
             if i == 0:
-                self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
-                self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
+                self.args.log.write(
+                    f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}"
+                )
+                self.args.log.write(
+                    f"   Functional used: {nmr_data.metadata['functional']}"
+                )
+                self.args.log.write(
+                    f"   Basis set used: {nmr_data.metadata['basis_set']}\n"
+                )
             if nmr_data != None:
                 self.args.log.write(
                     f"o  Parsing NMR Shielding Tensors from {file_name}"
                 )
-                self.data_dict[file_name]['atom']["nmr_shielding"] = nmr_data.nmr_shielding
-                self.data_dict[file_name]['atom']['nmr_atomnos'] = nmr_data.atomnos
+                self.data_dict[file_name]["atom"][
+                    "nmr_shielding"
+                ] = nmr_data.nmr_shielding
+                self.data_dict[file_name]["atom"]["nmr_atomnos"] = nmr_data.atomnos
             else:
-                self.args.log.write(
-                    f"!  Skipping {file_name} as NMR data not found"
-                )
-            
-            self.data_dict[file_name]['mol']['nmr_cpu_time'] = datetime.timedelta(0) # initialize cpu time
-            for time in nmr_data.metadata['cpu_time']:
-                self.data_dict[file_name]['mol']['nmr_cpu_time'] += time # add cpu time
+                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
+
+            self.data_dict[file_name]["mol"]["nmr_cpu_time"] = datetime.timedelta(
+                0
+            )  # initialize cpu time
+            for time in nmr_data.metadata["cpu_time"]:
+                self.data_dict[file_name]["mol"]["nmr_cpu_time"] += time  # add cpu time
 
         return self.data_dict
-
 
     def parse_cc_data(self, file_name, file):
         ### parse data
@@ -89,13 +102,21 @@ class nmr:
             )
             cc_data = None
 
-        if self.args.program=='gaussian':
-            try: setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
-            except: setattr(cc_data, "nmr_shielding", None)
-        
-        if self.args.program=='orca':
-            try: setattr(cc_data, "nmr_shielding", self.orca_nmr_shielding(file, cc_data.natom))
-            except: setattr(cc_data, "nmr_shielding", None)
+        if self.args.program == "gaussian":
+            try:
+                setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
+            except:
+                setattr(cc_data, "nmr_shielding", None)
+
+        if self.args.program == "orca":
+            try:
+                setattr(
+                    cc_data,
+                    "nmr_shielding",
+                    self.orca_nmr_shielding(file, cc_data.natom),
+                )
+            except:
+                setattr(cc_data, "nmr_shielding", None)
 
         return cc_data
 
@@ -119,11 +140,25 @@ class nmr:
         for i in range(0, len(lines)):
             if lines[i].find("CHEMICAL SHIELDING SUMMARY (ppm)") > -1:
                 start = i + 6
-        
+
         end = start + natoms
         nmr_shielding = []
         for j in range(start, end):
             nmr = lines[j].split()[2]
             nmr_shielding.append(nmr)
         return nmr_shielding
-        
+
+    def get_filename(self, fullname):
+        flist = list(self.data_dict.keys())
+        tempname = fullname
+        for i in range(fullname.count("_")):
+            try:
+                findex = flist.index(tempname)
+                keyname = flist[findex]
+                return keyname
+            except:
+                tempname = tempname.rsplit("_", 1)[0]
+        print(
+            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
+        )
+        raise SystemExit

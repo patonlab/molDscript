@@ -17,7 +17,7 @@ class files:
     Class containing all the functions from the files module related to output files
     """
 
-    def __init__(self, calc, path, create_dat=False, **kwargs):
+    def __init__(self, calc, path, data_dict, create_dat=False, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
@@ -26,6 +26,7 @@ class files:
         self.path = path
         self.program = self.args.program
         self.files = get_files(self.path, self.program)
+        self.data_dict = data_dict
 
         if self.calc == "link":
             self.file_data = self.get_link()
@@ -52,40 +53,37 @@ class files:
     def get_opt_or_substurcture(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            
+
             if self.args.suffix_opt == None:
-                ftype = '.log'
-                if self.args.program == 'orca':
-                    ftype = '.out'
+                ftype = ".log"
+                if self.args.program == "orca":
+                    ftype = ".out"
                 key_name = os.path.basename(file).split(ftype)
                 file_data[key_name[0]] = file
             elif self.args.suffix_opt in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_opt}")
                 file_data[key_name[0]] = file
         return file_data
-    
+
     def get_spc(self):
         file_data = defaultdict(dict)
-        for file in self.files:            
-            if self.args.suffix_spc in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_spc}")
-                file_data[key_name[0]] = file
+        for file in self.files:
+            key_name = self.get_filename(file)
+            file_data[key_name] = file
         return file_data
 
     def get_nmr(self):
         file_data = defaultdict(dict)
-        for file in self.files:         
-            if self.args.suffix_nmr in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_nmr}")
-                file_data[key_name[0]] = file
+        for file in self.files:
+            key_name = self.get_filename(file)
+            file_data[key_name] = file
         return file_data
 
     def get_nbo(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            if self.args.suffix_nbo in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_nbo}")
-                file_data[key_name[0]] = file
+            key_name = self.get_filename(file)
+            file_data[key_name] = file
         return file_data
 
     def get_fukui(self):
@@ -95,9 +93,7 @@ class files:
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui}")
                 file_data[key_name[0]]["neutral"] = file
             if self.args.suffix_fred in os.path.basename(file):
-                key_name = os.path.basename(file).split(
-                    f"_{self.args.suffix_fred}"
-                )
+                key_name = os.path.basename(file).split(f"_{self.args.suffix_fred}")
                 file_data[key_name[0]]["reduced"] = file
             if self.args.suffix_fox in os.path.basename(file):
                 key_name = os.path.basename(file).split(f"_{self.args.suffix_fox}")
@@ -131,3 +127,21 @@ class files:
         for file in self.files:
             file_data[file] = file
         return file_data
+
+    def get_filename(self, fullname):
+        flist = list(self.data_dict.keys())
+        try:
+            fullname = fullname.split("/")[-1]
+        except:
+            pass
+        tempname = fullname
+        for i in range(fullname.count("_")):
+            try:
+                findex = flist.index(tempname)
+                keyname = flist[findex]
+                return keyname
+            except:
+                tempname = tempname.rsplit("_", 1)[0]
+        print(
+            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
+        )
