@@ -172,33 +172,11 @@ def main():
 
     if args.substructure != "":
         substructure_read = files(data_dicts, calc="substructure", path=args.path_opt)
-        substructure_data = substructure(substructure_read.file_data, args.substructure)
+        data_dicts = substructure(
+            substructure_read.file_data, args.substructure
+        ).file_data
 
-        if args.fukui or args.nmr or args.nbo or args.volume:
-            atom_df = get_df(
-                data_dicts,
-                "atom",
-                substructure=substructure_data.file_data,
-                program=args.program,
-            )
-        if args.nbo or args.opt:
-            bond_df = get_df(
-                data_dicts,
-                "bond",
-                substructure=substructure_data.file_data,
-                nbo_suffix=args.suffix_nbo,
-                program=args.program,
-            )
-
-    else:
-        if args.fukui or args.nmr or args.nbo or args.volume:
-            atom_df = get_df(
-                data_dicts, "atom", program=args.program, volume=args.volume
-            )
-        # if args.nbo or args.opt: bond_df = get_df(data_dicts, 'bond', program=args.program)
-
-    if args.opt:
-        mol_df = get_df(data_dicts, program=args.program)
+    df = get_df(data_dicts, program=args.program, substructure=args.substructure)
     if args.boltz:
         boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
     if args.min_max:

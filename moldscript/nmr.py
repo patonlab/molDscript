@@ -78,7 +78,7 @@ class nmr:
                 self.data_dict[file_name]["atom"][
                     "nmr_shielding"
                 ] = nmr_data.nmr_shielding
-                self.data_dict[file_name]["atom"]["nmr_atomnos"] = nmr_data.atomnos
+                # self.data_dict[file_name]["atom"]["nmr_atomnos"] = nmr_data.atomnos
             else:
                 self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
@@ -158,6 +158,7 @@ class nmr:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
+                print(tempname)
         print(
             f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
         )
