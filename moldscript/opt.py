@@ -120,21 +120,13 @@ class opt:
             self.data_dict[file_name]["mol"]["freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi
             self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
-            self.data_dict[file_name]["atom"]["apt_charges"] = opt_data.atomcharges[
-                "apt"
-            ]
+            self.data_dict[file_name]["atom"]["apt_charges"] = opt_data.atomcharges["apt"]
             self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
 
-            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(
-                np.sum((opt_data.moments[0] - opt_data.moments[1]) ** 2, axis=0)
-            )
-            self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][
-                opt_data.homos[0]
-            ]
+            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0] - opt_data.moments[1]) ** 2, axis=0))
+            self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
 
-            self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][
-                opt_data.homos[0] + 1
-            ]
+            self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0] + 1]
             self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (
                 self.data_dict[file_name]["mol"]["LUMO"]
                 - self.data_dict[file_name]["mol"]["HOMO"]
@@ -160,9 +152,7 @@ class opt:
                     opt_data.moments[2][5]
                 )
 
-            self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(
-                0
-            )  # initialize cpu time
+            self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
             for time in opt_data.metadata["cpu_time"]:
                 self.data_dict[file_name]["mol"]["cpu_time"] += time  # add cpu time
 

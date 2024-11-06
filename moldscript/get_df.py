@@ -1,11 +1,9 @@
 ######################################################.
 #        This file stores the get_df class            #
 ######################################################.
-
 import pandas as pd
 import numpy as np
 import scipy.constants as sc
-
 pd.options.mode.chained_assignment = None
 import math
 import periodictable
@@ -56,12 +54,10 @@ class get_df:
         print("")
         bonddf = pd.DataFrame()
         for fname in filenames:
-            bond_level_data = data[fname]["bond"]
             atoms = data[fname]["atom"]["atomnos"]
             filedf = pd.DataFrame()
             for prop in props:
                 matrix = np.array(data[fname]["bond"][prop])
-                n = matrix.shape[0]
                 atom1_idx, atom2_idx = np.tril_indices_from(matrix, k=-1)
                 values = matrix[atom1_idx, atom2_idx]
                 fnames = np.array(fname for i in range(len(values)))
