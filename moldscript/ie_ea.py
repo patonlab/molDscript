@@ -51,14 +51,14 @@ class ie_ea:
         for file_name in self.data.keys():
             ie_data, ea_data = None, None
 
-            if "ie" in self.data[file_name].keys():
-                ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
+            if "oxidized" in self.data[file_name].keys():
+                ie_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
                 if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {ie_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {ie_data.metadata['basis_set']}")
                     first = True
-            if "ea" in self.data[file_name].keys():
-                ea_data = self.parse_cc_data(file_name, self.data[file_name]["ea"])
+            if "reduced" in self.data[file_name].keys():
+                ea_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
                 if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {ea_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {ea_data.metadata['basis_set']}")
@@ -67,10 +67,8 @@ class ie_ea:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"
                 )
-                ox_label =  'oxidized_' + self.calc.split('_')[0] + '_E'
-                red_label =  'reduced_' + self.calc.split('_')[0] + '_E'
-                self.data_dict[file_name]['mol'][ox_label] = ie_data.scfenergies[-1]*eV_to_hartree
-                self.data_dict[file_name]['mol'][red_label] = ea_data.scfenergies[-1]*eV_to_hartree
+                self.data_dict[file_name]['mol']['oxidized_energy'] = ie_data.scfenergies[-1]*eV_to_hartree
+                self.data_dict[file_name]['mol']['reduced_energy'] = ea_data.scfenergies[-1]*eV_to_hartree
                 
             else:
                 self.args.log.write(

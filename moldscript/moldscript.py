@@ -66,12 +66,6 @@ def main():
     )
     print(f"   Arguments passed to program: \n   {sys.argv[1:]}\n")
 
-    try:
-        check_redox_vars(args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized, 'fukui')
-    except ValueError as e:
-        print(e)
-        sys.exit()
-
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
@@ -123,35 +117,18 @@ def main():
             fukui_read = files(
                 calc="fukui",
                 data_dict=data_dicts,
-                path=[args.fukui_neutral, args.fukui_reduced, args.fukui_reduced],
+                path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized],
                 program=args.program,
             )
             fukui_data = fukui(fukui_read.file_data, data_dicts, program=args.program)
             data_dicts = fukui_data.file_data
 
-        # SP IE & EA
-        if args.sp_ie_ea:
-            print(args.sp_ie_ea, args.suffix_sp_ie, args.suffix_sp_ea)
-
-            sp_ie_ea_read = files(
-                calc="sp_ie_ea",
-                path=args.sp_ie_ea,
-                suffix_sp_ie=args.suffix_sp_ie,
-                suffix_sp_ea=args.suffix_sp_ea,
-                program=args.program,
-            )
-            sp_ie_ea_data = ie_ea(
-                "sp_ie_ea", sp_ie_ea_read.file_data, data_dicts, program=args.program
-            )
-            data_dicts = sp_ie_ea_data.file_data
-
         # AD IE & EA
-        if args.ad_ie_ea:
+        if args.ad_reduced and args.ad_oxidized:
             ad_ie_ea_read = files(
                 calc="ad_ie_ea",
-                path=args.ad_ie_ea,
-                suffix_ad_ie=args.suffix_ad_ie,
-                suffix_ad_ea=args.suffix_ad_ea,
+                data_dict = data_dicts,
+                path=[args.ad_reduced, args.ad_oxidized],
                 program=args.program,
             )
             ad_ie_ea_data = ie_ea(
@@ -170,12 +147,7 @@ def main():
         boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
     if args.min_max:
         min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
-def check_redox_vars(var1, var2, var3, calc):
-    # Count how many variables are strings
-    string_count = sum(isinstance(var, str) for var in [var1, var2, var3])
-    # Raise an error if only one or two variables are strings
-    if 1 <= string_count <= 2:
-        raise ValueError(f"Specify a neutral, reduced, AND oxidized {calc} path, or specify none of them.")
+
 
 
 if __name__ == "__main__":

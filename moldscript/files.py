@@ -104,26 +104,16 @@ class files:
                 file_data[key_name]["oxidized"] = file
         return file_data
 
-    def get_sp_ie_ea(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            if self.args.suffix_sp_ie in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ie}")
-                file_data[key_name[0]]["ie"] = file
-            elif self.args.suffix_sp_ea in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_sp_ea}")
-                file_data[key_name[0]]["ea"] = file
-        return file_data
-
     def get_ad_ie_ea(self):
         file_data = defaultdict(dict)
+        red = self.path[0]
+        ox = self.path[1]
         for file in self.files:
-            if self.args.suffix_ad_ie in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_ad_ie}")
-                file_data[key_name[0]]["ie"] = file
-            if self.args.suffix_ad_ea in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_ad_ea}")
-                file_data[key_name[0]]["ea"] = file
+            key_name = self.get_filename(file)
+            if red in file:
+                file_data[key_name]["reduced"] = file
+            if ox in file:
+                file_data[key_name]["oxidized"] = file
         return file_data
 
     def get_link(self):

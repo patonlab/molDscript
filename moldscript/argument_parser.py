@@ -25,8 +25,8 @@ var_dict = {
     "fukui_neutral": False,
     "fukui_oxidized": False,
     "fukui_reduced": False,
-    "ad_ie_ea": False,
-    "sp_ie_ea": False,
+    "ad_oxidized": False,
+    "ad_reduced": False,
     "skip_list": [],
     "link": False,
     "boltz": False,
@@ -99,8 +99,8 @@ def command_line_args():
         "fukui_neutral",
         "fukui_oxidized",
         "fukui_reduced",
-        "ad_ie_ea",
-        "sp_ie_ea",
+        "ad_reduced",
+        "ad_oxidized",
         "link",
         "substructure"
     ]
