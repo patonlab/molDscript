@@ -133,24 +133,14 @@ class opt:
             )
 
             if self.args.program == "gaussian":
-                self.data_dict[file_name]["mol"]["XX_quadrupole_moment"] = (
-                    opt_data.moments[2][0]
-                )
-                self.data_dict[file_name]["mol"]["XY_quadrupole_moment"] = (
-                    opt_data.moments[2][1]
-                )
-                self.data_dict[file_name]["mol"]["XZ_quadrupole_moment"] = (
-                    opt_data.moments[2][2]
-                )
-                self.data_dict[file_name]["mol"]["YY_quadrupole_moment"] = (
-                    opt_data.moments[2][3]
-                )
-                self.data_dict[file_name]["mol"]["YZ_quadrupole_moment"] = (
-                    opt_data.moments[2][4]
-                )
-                self.data_dict[file_name]["mol"]["ZZ_quadrupole_moment"] = (
-                    opt_data.moments[2][5]
-                )
+                quadrupole_moments = opt_data.moments[2]
+                quadrupole_matrix = np.array([
+    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
+    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
+    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]]
+])
+                trace = np.trace(quadrupole_matrix)
+                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
 
             self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
             for time in opt_data.metadata["cpu_time"]:

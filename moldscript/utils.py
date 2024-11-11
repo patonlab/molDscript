@@ -118,7 +118,6 @@ def load_from_yaml(self):
     return self, txt_yaml
 
 def get_files(value, program):
-    print(value)
     if program == 'gaussian':
         if value[-1]=='/':
             value = value[:-1]

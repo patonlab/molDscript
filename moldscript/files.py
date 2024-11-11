@@ -32,7 +32,6 @@ class files:
             for i in self.path:
                 for j in get_files(i, self.program):
                     self.files.append(j)
-        print(type(self.files))
         self.data_dict = data_dict
 
         if self.calc == "link":

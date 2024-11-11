@@ -35,7 +35,7 @@ var_dict = {
     "cut":0.95,
     "syllables": 1,
     "substructure": "",
-    
+    "varfile" : '',
     "spc_program": 'gaussian',
 }
 
@@ -44,6 +44,35 @@ var_dict = {
 class options_add:
     pass
 
+def load_arguments_from_file(filename):
+    """
+    Load arguments from a .txt file where arguments are in the format 'arg : value'.
+    """
+    kwargs = {}
+    with open(filename, 'r') as file:
+        for line in file:
+            # Skip empty lines and comments
+            if not line.strip() or line.startswith("#"):
+                continue
+            
+            # Split the line into argument and value
+            arg, value = map(str.strip, line.split(":", 1))
+            
+            # Convert the value to the appropriate type
+            if value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
+            elif value.isdigit():
+                value = int(value)
+            else:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass  # Keep value as a string if it can't be converted
+            
+            kwargs[arg] = value
+    return kwargs
 
 def set_options(kwargs):
     # set default options and options provided
@@ -102,7 +131,8 @@ def command_line_args():
         "ad_reduced",
         "ad_oxidized",
         "link",
-        "substructure"
+        "substructure",
+        "varfile"
     ]
 
     for arg in var_dict:
@@ -130,6 +160,10 @@ def command_line_args():
             sys.exit()
         else:
             # this converts the string parameters to lists
+            if arg_name == "varfile" and value:
+                # Load arguments from the .txt file
+                file_kwargs = load_arguments_from_file(value)
+                kwargs.update(file_kwargs)
             if arg_name in bool_args:
                 value = True
             elif arg_name.lower() in list_args:
@@ -201,17 +235,6 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
 
             if moldscript_module == "SUBSTRUCTURE":
                 logger_1 = "SUBSTRUCTURE"
-
-            if txt_yaml not in [
-                "",
-                f"\no  Importing MOLDSCRIPT parameters from {self.varfile}",
-                "\nx  The specified yaml file containing parameters was not found! Make sure that the valid params file is in the folder where you are running the code.\n",
-            ]:
-                self.log = Logger(
-                    f"{self.initial_dir}/MOLDSCRIPT", logger_1, verbose=self.verbose
-                )
-                self.log.write(txt_yaml)
-                error_setup = True
 
             if not error_setup:
                 if not self.command_line:
