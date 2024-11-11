@@ -17,13 +17,14 @@ var_dict = {
     "varfile": None,
     "command_line": False,
     "verbose": True,
-    "all": False,
-    "opt": True,
+    "opt": False,
     "volume": False,
     "spc": False,
     "nmr": False,
     "nbo": False,
-    "fukui": False,
+    "fukui_neutral": False,
+    "fukui_oxidized": False,
+    "fukui_reduced": False,
     "ad_ie_ea": False,
     "sp_ie_ea": False,
     "skip_list": [],
@@ -35,27 +36,6 @@ var_dict = {
     "syllables": 1,
     "substructure": "",
     
-    "path_opt": '.',
-    "path_spc": None,
-    "path_nmr": None,
-    "path_nbo": None,
-    "path_fukui": None,
-    "path_ad_ie_ea": None,
-    "path_sp_ie_ea": None,
-    "path_link": None,
-    
-    "suffix_opt": None,
-    "suffix_spc": None,
-    "suffix_nmr": None,
-    "suffix_nbo": None,
-    "suffix_ad_ie": None,
-    "suffix_ad_ea": None,
-    "suffix_sp_ie": None,
-    "suffix_sp_ea": None,
-    "suffix_fukui": None,
-    "suffix_fred": None,
-    "suffix_fox": None,
-
     "spc_program": 'gaussian',
 }
 
@@ -98,16 +78,6 @@ def command_line_args():
     available_args = ["help"]
     bool_args = [
         "command_line",
-        "all",
-        "opt",
-        "volume",
-        "spc",
-        "nmr",
-        "nbo",
-        "fukui",
-        "ad_ie_ea",
-        "sp_ie_ea",
-        "link",
         "boltz",
         "min_max"
     ]
@@ -121,27 +91,18 @@ def command_line_args():
         "struct",
         "program",
         "varfile",
-        "path_opt",
-        "path_spc",
-        "path_nmr",
-        "path_nbo",
-        "path_fukui",
-        "path_ad_ie_ea",
-        "path_sp_ie_ea",
-        "path_link",
-        "substructure",
-        "suffix_spc",
-        "suffix_nmr",
-        "suffix_nbo",
-        "suffix_fukui",
-        "suffix_fred",
-        "suffix_fox",
-        "suffix_ad_ie",
-        "suffix_ad_ea",
-        "suffix_sp_ie",
-        "suffix_sp_ea",
-        "suffix_opt",
-        "spc_path"
+        "opt",
+        "volume",
+        "spc",
+        "nmr",
+        "nbo",
+        "fukui_neutral",
+        "fukui_oxidized",
+        "fukui_reduced",
+        "ad_ie_ea",
+        "sp_ie_ea",
+        "link",
+        "substructure"
     ]
 
     for arg in var_dict:
@@ -191,15 +152,6 @@ def command_line_args():
     # Second, load all the default variables as an "add_option" object
     args = load_variables(kwargs, "command")
 
-    # reassinging properties based on all or specific ones
-    if args.all:
-        vars(args)["opt"] = True
-        vars(args)["nmr"] = True
-        vars(args)["nbo"] = True
-        vars(args)["fukui"] = True
-        vars(args)["sp_ie_ea"] = True
-        vars(args)["ad_ie_ea"] = True
-
     if len(args.skip_list) != 0:
         for prop in args.skip_list:
             vars(args)[prop] = False
@@ -211,7 +163,6 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
     """
     Load default and user-defined variables
     """
-
     # first, load default values and options manually added to the function
     self = set_options(kwargs)
 

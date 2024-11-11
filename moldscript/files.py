@@ -25,7 +25,14 @@ class files:
         self.calc = calc
         self.path = path
         self.program = self.args.program
-        self.files = get_files(self.path, self.program)
+        if type(self.path) == str:
+            self.files = get_files(self.path, self.program)
+        elif type(self.path) == list:
+            self.files = []
+            for i in self.path:
+                for j in get_files(i, self.program):
+                    self.files.append(j)
+        print(type(self.files))
         self.data_dict = data_dict
 
         if self.calc == "link":
@@ -53,16 +60,11 @@ class files:
     def get_opt_or_substurcture(self):
         file_data = defaultdict(dict)
         for file in self.files:
-
-            if self.args.suffix_opt == None:
-                ftype = ".log"
-                if self.args.program == "orca":
-                    ftype = ".out"
-                key_name = os.path.basename(file).split(ftype)
-                file_data[key_name[0]] = file
-            elif self.args.suffix_opt in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_opt}")
-                file_data[key_name[0]] = file
+            ftype = ".log"
+            if self.args.program == "orca":
+                ftype = ".out"
+            key_name = os.path.basename(file).split(ftype)
+            file_data[key_name[0]] = file
         return file_data
 
     def get_spc(self):
@@ -88,16 +90,18 @@ class files:
 
     def get_fukui(self):
         file_data = defaultdict(dict)
+        neut = self.path[0]
+        red = self.path[1]
+        ox = self.path[2]
         for file in self.files:
-            if self.args.suffix_fukui in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_fukui}")
-                file_data[key_name[0]]["neutral"] = file
-            if self.args.suffix_fred in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_fred}")
-                file_data[key_name[0]]["reduced"] = file
-            if self.args.suffix_fox in os.path.basename(file):
-                key_name = os.path.basename(file).split(f"_{self.args.suffix_fox}")
-                file_data[key_name[0]]["oxidized"] = file
+            key_name = self.get_filename(file)
+
+            if neut in file:
+                file_data[key_name]["neutral"] = file
+            if red in file:
+                file_data[key_name]["reduced"] = file
+            if ox in file:
+                file_data[key_name]["oxidized"] = file
         return file_data
 
     def get_sp_ie_ea(self):

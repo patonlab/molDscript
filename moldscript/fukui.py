@@ -23,14 +23,17 @@ class fukui:
         self.data = data
         self.data_dict = data_dicts
 
-        if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
-            )
-            self.args.log.finalize()
-            sys.exit()
-        else:
-            self.file_data = self.get_data()
+        try:
+            if len(self.data.keys()) == 0:
+                self.args.log.write(
+                    f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
+                )
+                self.args.log.finalize()
+                sys.exit()
+            else:
+                self.file_data = self.get_data()
+        except:
+            print('')
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
@@ -90,7 +93,7 @@ class fukui:
                 self.data_dict[file_name]['atom']['neutral_hirsfeld_charges'] = (
                     neutral_data.atomcharges["hirsfeld"]
                 )
-                self.data_dict[file_name]['atom']['fukui_atomnos'] = neutral_data.atomnos
+                # self.data_dict[file_name]['atom']['fukui_atomnos'] = neutral_data.atomnos
                 ###oxidized molecule
                 
                 self.data_dict[file_name]['atom']['oxidized_natural_charges'] = (

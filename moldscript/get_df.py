@@ -108,7 +108,10 @@ class get_df:
             atoms = data[fname]["atom"]["atomnos"]
             tempdic = {}
             for prop in props:
-                values = atom_level_data[prop]
+                try:
+                    values = atom_level_data[prop]
+                except:
+                    values = ['' for i in range(len(atoms))]
                 tempdic[str(prop)] = values
             fnames = [fname for i in range(len(values))]
             tempdic["filename"] = fnames
@@ -120,7 +123,10 @@ class get_df:
             tempdic["atom_type"] = a_labs
             tempdf = pd.DataFrame(tempdic)
             if not atomdf.empty:
-                atomdf = pd.concat([atomdf, tempdf])
+                try:
+                    atomdf = pd.concat([atomdf, tempdf])
+                except:
+                    pass
             else:
                 atomdf = tempdf
         col = atomdf.pop("filename")

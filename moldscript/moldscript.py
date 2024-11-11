@@ -55,6 +55,7 @@ def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
 
+
     data_dicts = {}
 
     print(header)
@@ -65,20 +66,15 @@ def main():
     )
     print(f"   Arguments passed to program: \n   {sys.argv[1:]}\n")
 
-    if args.path_opt is not None and not args.opt:
-        args.opt = True
-    if args.path_nmr is not None and not args.nmr:
-        args.nmr = True
-    if args.path_nbo is not None and not args.nbo:
-        args.nbo = True
-    if args.path_fukui is not None and not args.fukui:
-        args.fukui = True
-    if args.path_sp_ie_ea is not None and not args.sp_ie_ea:
-        args.sp_ie_ea = True
+    try:
+        check_redox_vars(args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized, 'fukui')
+    except ValueError as e:
+        print(e)
+        sys.exit()
 
     if args.link:
         # ALL DATA
-        all_read = files(calc="link", path=args.path_link, program=args.program)
+        all_read = files(calc="link", path=args.link, program=args.program)
         if args.opt:
             opt_data = opt(all_read.file_data, program=args.program)
             data_dicts["opt"] = opt_data
@@ -93,7 +89,7 @@ def main():
         # OPT
         if args.opt:
 
-            opt_read = files("opt", args.path_opt, data_dicts, program=args.program)
+            opt_read = files("opt", args.opt, data_dicts, program=args.program)
             opt_data = opt(
                 opt_read.file_data, data_dicts, program=args.program, volume=args.volume
             )
@@ -103,7 +99,7 @@ def main():
         if args.spc:
             spc_read = files(
                 calc="spc",
-                path=args.path_spc,
+                path=args.spc,
                 suffix_spc=args.suffix_spc,
                 program=args.spc_program,
             )
@@ -112,24 +108,22 @@ def main():
 
         # NMR
         if args.nmr:
-            nmr_read = files("nmr", args.path_nmr, data_dicts, program=args.program)
+            nmr_read = files("nmr", args.nmr, data_dicts, program=args.program)
             nmr_data = nmr(nmr_read.file_data, data_dicts, program=args.program)
             data_dicts = nmr_data.file_data
 
         # NBO
         if args.nbo:
-            nbo_read = files("nbo", args.path_nbo, data_dicts, program=args.program)
+            nbo_read = files("nbo", args.nbo, data_dicts, program=args.program)
             nbo_data = nbo(nbo_read.file_data, data_dicts, program=args.program)
             data_dicts = nbo_data.file_data
 
         # FUKUI
-        if args.fukui:
+        if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
             fukui_read = files(
                 calc="fukui",
-                path=args.path_fukui,
-                suffix_fukui=args.suffix_fukui,
-                suffix_fred=args.suffix_fred,
-                suffix_fox=args.suffix_fox,
+                data_dict=data_dicts,
+                path=[args.fukui_neutral, args.fukui_reduced, args.fukui_reduced],
                 program=args.program,
             )
             fukui_data = fukui(fukui_read.file_data, data_dicts, program=args.program)
@@ -137,11 +131,11 @@ def main():
 
         # SP IE & EA
         if args.sp_ie_ea:
-            print(args.path_sp_ie_ea, args.suffix_sp_ie, args.suffix_sp_ea)
+            print(args.sp_ie_ea, args.suffix_sp_ie, args.suffix_sp_ea)
 
             sp_ie_ea_read = files(
                 calc="sp_ie_ea",
-                path=args.path_sp_ie_ea,
+                path=args.sp_ie_ea,
                 suffix_sp_ie=args.suffix_sp_ie,
                 suffix_sp_ea=args.suffix_sp_ea,
                 program=args.program,
@@ -155,7 +149,7 @@ def main():
         if args.ad_ie_ea:
             ad_ie_ea_read = files(
                 calc="ad_ie_ea",
-                path=args.path_ad_ie_ea,
+                path=args.ad_ie_ea,
                 suffix_ad_ie=args.suffix_ad_ie,
                 suffix_ad_ea=args.suffix_ad_ea,
                 program=args.program,
@@ -166,7 +160,7 @@ def main():
             data_dicts = ad_ie_ea_data.file_data
 
     if args.substructure != "":
-        substructure_read = files(data_dicts, calc="substructure", path=args.path_opt)
+        substructure_read = files(data_dicts, calc="substructure", path=args.opt)
         data_dicts = substructure(
             substructure_read.file_data, args.substructure
         ).file_data
@@ -176,6 +170,12 @@ def main():
         boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
     if args.min_max:
         min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
+def check_redox_vars(var1, var2, var3, calc):
+    # Count how many variables are strings
+    string_count = sum(isinstance(var, str) for var in [var1, var2, var3])
+    # Raise an error if only one or two variables are strings
+    if 1 <= string_count <= 2:
+        raise ValueError(f"Specify a neutral, reduced, AND oxidized {calc} path, or specify none of them.")
 
 
 if __name__ == "__main__":
