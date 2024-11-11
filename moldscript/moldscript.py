@@ -137,10 +137,8 @@ def main():
             data_dicts = ad_ie_ea_data.file_data
 
     if args.substructure != "":
-        substructure_read = files(data_dicts, calc="substructure", path=args.opt)
-        data_dicts = substructure(
-            substructure_read.file_data, args.substructure
-        ).file_data
+        substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt)
+        data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
 
     df = get_df(data_dicts, program=args.program, substructure=args.substructure)
     if args.boltz:

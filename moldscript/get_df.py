@@ -51,7 +51,6 @@ class get_df:
         props = list(data[filenames[0]]["bond"].keys())
         for prop in props:
             print(f"\t- {prop}")
-        print("")
         bonddf = pd.DataFrame()
         for fname in filenames:
             atoms = data[fname]["atom"]["atomnos"]
@@ -91,11 +90,20 @@ class get_df:
                 bonddf = pd.concat([bonddf, filedf], axis=0)
             else:
                 bonddf = filedf
+        if self.substructure != '':
+            print(f'!!Filtering bond data by user defined substructure: {self.substructure}')
+            final_df = pd.DataFrame()
+            for filename in filenames:
+                idx = self.dd[filename]['substructure']
+                temp_df = bonddf.loc[bonddf['filename'] == filename]
+                filtered_df = temp_df.loc[temp_df['atom1_idx'].isin(idx) | temp_df['atom2_idx'].isin(idx)]
+                final_df = pd.concat([final_df, filtered_df])
+            bonddf = final_df    
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
         atom_csv = "atom_level.csv"
-        print("\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
+        print("\n\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
         filenames = list(self.dd.keys())
         data = self.dd
         props = list(data[filenames[0]]["atom"].keys())
@@ -131,6 +139,15 @@ class get_df:
                 atomdf = tempdf
         col = atomdf.pop("filename")
         atomdf.insert(0, "filename", col)
+        if self.substructure != '':
+            print(f'!!Filtering atom data by user defined substructure: {self.substructure}\n')
+            final_df = pd.DataFrame()
+            for filename in filenames:
+                idx = self.dd[filename]['substructure']
+                temp_df = atomdf.loc[atomdf['filename'] == filename]
+                filtered_df = temp_df.loc[temp_df['atom_index'].isin(idx)]
+                final_df = pd.concat([final_df, filtered_df])
+            atomdf = final_df    
         atomdf.to_csv(atom_csv, index=False)
 
     def get_atom_lab(self, num):

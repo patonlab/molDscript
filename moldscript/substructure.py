@@ -45,13 +45,12 @@ class substructure:
 
 
         for file_name in self.data.keys():
-            index = ()
-            index = self.get_mol(self.data[file_name])
+            index = self.get_mol(self.data[file_name])[0]
             basename = self.file_base(file_name)
             self.args.log.write(
                 f"o  Parsing substructure data from {basename}"
             )
-            self.data_dict[file_name]['substructure']["index"] = index
+            self.data_dict[file_name]['substructure'] = index
 
         return self.data_dict
 
