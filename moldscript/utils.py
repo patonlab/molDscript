@@ -149,6 +149,20 @@ def find_nth(haystack: str, needle: str, n: int) -> int:
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
-
+def get_filename(fullname, dd):
+    flist = list(dd.keys())
+    tempname = fullname
+    for i in range(fullname.count("_")):
+        try:
+            findex = flist.index(tempname)
+            keyname = flist[findex]
+            return keyname
+        except:
+            tempname = tempname.rsplit("_", 1)[0]
+            print(tempname)
+    print(
+        f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
+    )
+    raise SystemExit
 
 

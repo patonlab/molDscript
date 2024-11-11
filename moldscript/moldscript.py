@@ -118,12 +118,7 @@ def main():
 
         # NBO
         if args.nbo:
-            nbo_read = files(
-                calc="nbo",
-                path=args.path_nbo,
-                suffix_nbo=args.suffix_nbo,
-                program=args.program,
-            )
+            nbo_read = files("nbo", args.path_nbo, data_dicts, program=args.program)
             nbo_data = nbo(nbo_read.file_data, data_dicts, program=args.program)
             data_dicts = nbo_data.file_data
 
