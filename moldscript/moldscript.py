@@ -121,7 +121,7 @@ def main():
                 program=args.program,
             )
             fukui_data = fukui(fukui_read.file_data, data_dicts, program=args.program)
-            data_dicts = fukui_data.file_data
+            data_dicts = fukui_data.data_dict
 
         # AD IE & EA
         if args.ad_reduced and args.ad_oxidized:

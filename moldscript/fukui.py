@@ -8,7 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-
+import numpy as np
 
 class fukui:
     """
@@ -50,7 +50,6 @@ class fukui:
         self.args.log.write(
                     f"-- Fukui Parameter Collection starting"
                 )
-
         for file_name in self.data.keys():
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
@@ -117,9 +116,15 @@ class fukui:
                 self.data_dict[file_name]['atom']['reduced_hirsfeld_charges'] = (
                     reduced_data.atomcharges["hirsfeld"]
                 )
-                
-                
-                
+                reduced_charges = np.array(reduced_data.atomcharges["hirsfeld"])
+                neutral_charges = np.array(neutral_data.atomcharges["hirsfeld"])
+                oxidized_charges = np.array(oxidized_data.atomcharges["hirsfeld"])
+                nuc_fukui = reduced_charges - neutral_charges
+                ele_fukui = neutral_charges - oxidized_charges
+                rad_fukui = (nuc_fukui + ele_fukui)/2
+                self.data_dict[file_name]['atom']['nucleophilic_fukui_index'] = (nuc_fukui)
+                self.data_dict[file_name]['atom']['electrophilic_fukui_index'] = (ele_fukui)
+                self.data_dict[file_name]['atom']['radical_fukui_index'] = (rad_fukui)
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
