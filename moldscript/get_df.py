@@ -131,10 +131,8 @@ class get_df:
             tempdic["atom_type"] = a_labs
             tempdf = pd.DataFrame(tempdic)
             if not atomdf.empty:
-                try:
-                    atomdf = pd.concat([atomdf, tempdf])
-                except:
-                    pass
+                try:atomdf = pd.concat([atomdf, tempdf])
+                except:pass
             else:
                 atomdf = tempdf
         col = atomdf.pop("filename")

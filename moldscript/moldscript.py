@@ -135,14 +135,13 @@ def main():
                 "ad_ie_ea", ad_ie_ea_read.file_data, data_dicts, program=args.program
             )
             data_dicts = ad_ie_ea_data.file_data
-
     if args.substructure != "":
         substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt)
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
-
+        
     df = get_df(data_dicts, program=args.program, substructure=args.substructure)
     if args.boltz:
-        boltz(temp=args.temp, spc=args.spc, syllables=args.syllables)
+        boltz(temp=args.temp, spc=args.spc)
     if args.min_max:
         min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
 

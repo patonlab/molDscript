@@ -142,9 +142,9 @@ class opt:
                 trace = np.trace(quadrupole_matrix)
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
 
-            self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
-            for time in opt_data.metadata["cpu_time"]:
-                self.data_dict[file_name]["mol"]["cpu_time"] += time  # add cpu time
+            # self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
+            # for time in opt_data.metadata["cpu_time"]:
+            #     self.data_dict[file_name]["mol"]["cpu_time"] += time  # add cpu time
 
         return self.data_dict
 

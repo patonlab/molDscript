@@ -9,7 +9,7 @@ from pathlib import Path
 import glob
 import yaml
 
-GAS_CONSTANT = 8.3144621  # J / K / mol
+k_B_hartree = 3.1668114e-6  # hartree/K
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 eV_to_hartree = 0.0367493
 
