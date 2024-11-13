@@ -46,8 +46,7 @@ class files:
             self.file_data = self.get_nbo()
         if self.calc == "fukui":
             self.file_data = self.get_fukui()
-        if self.calc == "sp_ie_ea":
-            self.file_data = self.get_sp_ie_ea()
+
         if self.calc == "ad_ie_ea":
             self.file_data = self.get_ad_ie_ea()
         if self.calc == "substructure":
@@ -59,10 +58,7 @@ class files:
     def get_opt_or_substurcture(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            ftype = ".log"
-            if self.args.program == "orca":
-                ftype = ".out"
-            key_name = os.path.basename(file).split(ftype)
+            key_name = os.path.basename(file).rsplit('.', 1)
             file_data[key_name[0]] = file
         return file_data
 

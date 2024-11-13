@@ -47,14 +47,11 @@ class opt:
                 )
             except:
                 pass
-            self.args.log.write(
-                f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n"
-            )
-            self.args.log.finalize()
+            self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
+
 
     def get_data(self):
         mydict = lambda: defaultdict(mydict)
-        file_data = mydict()
 
         self.args.log.write(f"-- Optimization Parameter Collection starting")
 

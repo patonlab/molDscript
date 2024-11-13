@@ -19,6 +19,7 @@ var_dict = {
     "verbose": True,
     "opt": False,
     "volume": False,
+    "vall": False,
     "spc": False,
     "nmr": False,
     "nbo": False,
@@ -37,6 +38,7 @@ var_dict = {
     "substructure": "",
     "varfile" : '',
     "spc_program": 'gaussian',
+    "radius": 3
 }
 
 
@@ -108,7 +110,9 @@ def command_line_args():
     bool_args = [
         "command_line",
         "boltz",
-        "min_max"
+        "min_max",
+        "vall",
+        "volume"
     ]
     list_args = ["skip_list"]
     int_args = ["syllables"]
@@ -121,7 +125,6 @@ def command_line_args():
         "program",
         "varfile",
         "opt",
-        "volume",
         "spc",
         "nmr",
         "nbo",
@@ -132,7 +135,8 @@ def command_line_args():
         "ad_oxidized",
         "link",
         "substructure",
-        "varfile"
+        "varfile",
+        "radius"
     ]
 
     for arg in var_dict:

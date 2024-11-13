@@ -8,6 +8,7 @@ from moldscript.nbo import nbo
 from moldscript.substructure import substructure
 from moldscript.get_df import get_df
 from moldscript.min_max import min_max
+from moldscript.sterics import sterics
 from moldscript.argument_parser import (
     command_line_args,
     moldscript_version,
@@ -91,12 +92,7 @@ def main():
 
         # SPC
         if args.spc:
-            spc_read = files(
-                calc="spc",
-                path=args.spc,
-                suffix_spc=args.suffix_spc,
-                program=args.spc_program,
-            )
+            spc_read = files(calc="spc", path=args.spc, data_dict=data_dicts)
             spc_data = spc(spc_read.file_data, data_dicts, spc_program=args.spc_program)
             data_dicts = spc_data.file_data
 
@@ -138,7 +134,9 @@ def main():
     if args.substructure != "":
         substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt)
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
-        
+    if args.volume != False or args.vall != False:
+        data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
+            
     df = get_df(data_dicts, program=args.program, substructure=args.substructure)
     if args.boltz:
         boltz(temp=args.temp, spc=args.spc)

@@ -79,11 +79,7 @@ class get_df:
                     }
                 )
                 if not filedf.empty:
-                    filedf = pd.merge(
-                        filedf,
-                        tempdf,
-                        on=list(filedf.columns.intersection(tempdf.columns)),
-                    )
+                    filedf = pd.merge(filedf, tempdf, on=list(filedf.columns.intersection(tempdf.columns)))
                 else:
                     filedf = tempdf
             if not bonddf.empty:
@@ -91,7 +87,7 @@ class get_df:
             else:
                 bonddf = filedf
         if self.substructure != '':
-            print(f'!!Filtering bond data by user defined substructure: {self.substructure}')
+            print(f'  Filtering bond data by user defined substructure: {self.substructure}')
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -138,14 +134,35 @@ class get_df:
         col = atomdf.pop("filename")
         atomdf.insert(0, "filename", col)
         if self.substructure != '':
-            print(f'!!Filtering atom data by user defined substructure: {self.substructure}\n')
+            print(f'  Filtering atom data by user defined substructure: {self.substructure}\n')
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
                 temp_df = atomdf.loc[atomdf['filename'] == filename]
                 filtered_df = temp_df.loc[temp_df['atom_index'].isin(idx)]
                 final_df = pd.concat([final_df, filtered_df])
-            atomdf = final_df    
+            atomdf = final_df  
+        try:
+            list(self.dd[filename]['sterics'].keys())
+            print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
+            steric_df = pd.DataFrame()
+            for filename in filenames:
+                props = list(self.dd[filename]['sterics'].keys())
+                props.remove('atom_index')
+                idxes = self.dd[filename]['sterics']['atom_index']
+                fnames = [filename for i in idxes]
+                tempdic = {}
+                tempdic['filename'] = fnames
+                tempdic['atom_index'] = idxes
+                for prop in props:
+                    values =  self.dd[filename]['sterics'][prop]
+                    tempdic[str(prop)] = values
+                temp_df = pd.DataFrame(tempdic)
+                steric_df = pd.concat([steric_df, temp_df])
+            for prop in props:
+                    print(f"\t- {prop}")
+            atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
+        except:pass
         atomdf.to_csv(atom_csv, index=False)
 
     def get_atom_lab(self, num):

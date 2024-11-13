@@ -15,13 +15,12 @@ class spc:
     Class containing all the functions for the opt module related to Gaussian output files
     """
 
-    def __init__(self, data, data_dict, create_dat=True, spc_program='gaussian', **kwargs):
+    def __init__(self, data, data_dict, create_dat=True,  **kwargs):
         
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
-        self.spc_program = spc_program
         self.data_dict = data_dict
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -38,16 +37,18 @@ class spc:
             self.args.log.finalize()
 
     def get_data(self):
-        mydict = lambda: defaultdict(mydict)
-        file_data = mydict()
 
         self.args.log.write(
                     f"   --- Single Point Energy Collection starting"
                 )
 
         for file_name in self.data.keys():
-
+            if self.data[file_name].rsplit('.',1)[1] == 'log':
+                self.spc_program = 'gaussian'
+            elif self.data[file_name].rsplit('.', 1)[1] =='out':
+                self.spc_program = 'orca'
             spc_data = self.parse_cc_data(file_name, self.data[file_name])
+            
             full_filename = self.data[file_name]
             file_end = full_filename.split('/')[-1]
             filename = file_end.rsplit('_', 1)[0]
@@ -56,9 +57,8 @@ class spc:
                 if list(self.data.keys()).index(file_name) == 0:
                     self.args.log.write(f"   Functional used: {spc_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
-            
+            spc_data.scfenergies[-1] * eV_to_hartree
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
-            print(self.data_dict.keys())
             self.data_dict[filename]['mol']['spc_energy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
             self.data_dict[filename]['mol']['species'] = filename
@@ -68,6 +68,7 @@ class spc:
 
         ### parse data
         parser = cc.io.ccopen(file)
+
         try:
             cc_data = parser.parse()
         except:
