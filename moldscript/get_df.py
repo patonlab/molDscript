@@ -163,6 +163,8 @@ class get_df:
                     print(f"\t- {prop}")
             atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
         except:pass
+        columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in atomdf.columns if col not in ['filename', 'atom_index', 'atom_type']]
+        atomdf = atomdf[columns_order]
         atomdf.to_csv(atom_csv, index=False)
 
     def get_atom_lab(self, num):
