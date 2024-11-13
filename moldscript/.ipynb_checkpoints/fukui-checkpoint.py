@@ -8,7 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-import numpy as np
+
 
 class fukui:
     """
@@ -23,17 +23,14 @@ class fukui:
         self.data = data
         self.data_dict = data_dicts
 
-        try:
-            if len(self.data.keys()) == 0:
-                self.args.log.write(
-                    f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
-                )
-                self.args.log.finalize()
-                sys.exit()
-            else:
-                self.file_data = self.get_data()
-        except:
-            print('')
+        if len(self.data.keys()) == 0:
+            self.args.log.write(
+                f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
+            )
+            self.args.log.finalize()
+            sys.exit()
+        else:
+            self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
@@ -50,6 +47,7 @@ class fukui:
         self.args.log.write(
                     f"-- Fukui Parameter Collection starting"
                 )
+
         for file_name in self.data.keys():
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
@@ -92,7 +90,7 @@ class fukui:
                 self.data_dict[file_name]['atom']['neutral_hirsfeld_charges'] = (
                     neutral_data.atomcharges["hirsfeld"]
                 )
-                # self.data_dict[file_name]['atom']['fukui_atomnos'] = neutral_data.atomnos
+                self.data_dict[file_name]['atom']['fukui_atomnos'] = neutral_data.atomnos
                 ###oxidized molecule
                 
                 self.data_dict[file_name]['atom']['oxidized_natural_charges'] = (
@@ -116,21 +114,15 @@ class fukui:
                 self.data_dict[file_name]['atom']['reduced_hirsfeld_charges'] = (
                     reduced_data.atomcharges["hirsfeld"]
                 )
-                reduced_charges = np.array(reduced_data.atomcharges["hirsfeld"])
-                neutral_charges = np.array(neutral_data.atomcharges["hirsfeld"])
-                oxidized_charges = np.array(oxidized_data.atomcharges["hirsfeld"])
-                nuc_fukui = reduced_charges - neutral_charges
-                ele_fukui = neutral_charges - oxidized_charges
-                rad_fukui = (nuc_fukui + ele_fukui)/2
-                self.data_dict[file_name]['atom']['nucleophilic_fukui_index'] = (nuc_fukui)
-                self.data_dict[file_name]['atom']['electrophilic_fukui_index'] = (ele_fukui)
-                self.data_dict[file_name]['atom']['radical_fukui_index'] = (rad_fukui)
+                
+                
+                
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
                 )
 
-        return self.data_dict
+        return file_data
 
     def parse_cc_data(self, file_name, file):
 

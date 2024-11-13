@@ -51,14 +51,14 @@ class ie_ea:
         for file_name in self.data.keys():
             ie_data, ea_data = None, None
 
-            if "oxidized" in self.data[file_name].keys():
-                ie_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
+            if "ie" in self.data[file_name].keys():
+                ie_data = self.parse_cc_data(file_name, self.data[file_name]["ie"])
                 if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {ie_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {ie_data.metadata['basis_set']}")
                     first = True
-            if "reduced" in self.data[file_name].keys():
-                ea_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
+            if "ea" in self.data[file_name].keys():
+                ea_data = self.parse_cc_data(file_name, self.data[file_name]["ea"])
                 if first == False and self.args.program=='gaussian':
                     self.args.log.write(f"   Functional used: {ea_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {ea_data.metadata['basis_set']}")
@@ -67,21 +67,11 @@ class ie_ea:
                 self.args.log.write(
                     f"o  Parsing IE & EA data from {file_name}"
                 )
-                oxidized_e = ie_data.scfenergies[-1]*eV_to_hartree
-                reduced_e = ea_data.scfenergies[-1]*eV_to_hartree
-                neut_e = self.data_dict[file_name]['mol']['scfenergy']
-                ie = oxidized_e - neut_e
-                ea = reduced_e - neut_e
-                electronegativity = (ie + ea) / 2
-                hardness = (ie - ea) / 2
-                electrophilicity = electronegativity**2 / (2*hardness)
-                self.data_dict[file_name]['mol']['oxidized_energy'] = oxidized_e
-                self.data_dict[file_name]['mol']['reduced_energy'] = reduced_e
-                self.data_dict[file_name]['mol']['ionization_potential'] = ie
-                self.data_dict[file_name]['mol']['electron_affinity'] = ea
-                self.data_dict[file_name]['mol']['electronegativity'] = electronegativity
-                self.data_dict[file_name]['mol']['hardness'] = hardness
-                self.data_dict[file_name]['mol']['electrophilicity'] = electrophilicity
+                ox_label =  'oxidized_' + self.calc.split('_')[0] + '_E'
+                red_label =  'reduced_' + self.calc.split('_')[0] + '_E'
+                self.data_dict[file_name]['mol'][ox_label] = ie_data.scfenergies[-1]*eV_to_hartree
+                self.data_dict[file_name]['mol'][red_label] = ea_data.scfenergies[-1]*eV_to_hartree
+                
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"

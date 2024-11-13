@@ -45,12 +45,13 @@ class substructure:
 
 
         for file_name in self.data.keys():
+            index = ()
             index = self.get_mol(self.data[file_name])
             basename = self.file_base(file_name)
             self.args.log.write(
                 f"o  Parsing substructure data from {basename}"
             )
-            self.data_dict[file_name]['substructure'] = index
+            self.data_dict[file_name]['substructure']["index"] = index
 
         return self.data_dict
 
@@ -67,7 +68,6 @@ class substructure:
         substructure = Chem.MolFromSmarts(self.substructure)
 
         indexsall = mol.GetSubstructMatches(substructure)
-        indexsall = tuple(x + 1 for x in indexsall[0])
         os.remove(file.split(".")[0] + ".mol")
 
         return indexsall

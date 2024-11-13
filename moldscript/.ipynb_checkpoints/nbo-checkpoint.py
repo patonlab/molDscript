@@ -10,7 +10,7 @@ import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 from moldscript.utils import add_cpu_times
-from moldscript.utils import get_filename
+
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
@@ -53,11 +53,10 @@ class nbo:
 
         for i, file_name in enumerate(self.data.keys()):
 
-            nbo_data = self.parse_cc_data(file_name, self.data[file_name])
-            # try:
-            #     nbo_data = self.parse_cc_data(file_name, self.data[file_name])
-            # except:
-            #     nbo_data = None
+            try:
+                nbo_data = self.parse_cc_data(file_name, self.data[file_name])
+            except:
+                nbo_data = None
             
             if i == 0:
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
@@ -71,9 +70,8 @@ class nbo:
             if nbo_data != None:
 
                 self.args.log.write(
-                    f"o  Parsing NBO data from {file_name}"
+                    f"o  Parsing NBO & NPA data from {file_name}"
                 )
-                file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["npa"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
                 self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
@@ -121,11 +119,11 @@ class nbo:
             setattr(cc_data, "bondorders", self.bondorders(file, cc_data))
         except:
             setattr(cc_data, "bondorders", None)
-        setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
-        # try:
-        #     setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
-        # except:
-        #     setattr(cc_data, "bondorders_matrix", None)
+        
+        try:
+            setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
+        except:
+            setattr(cc_data, "bondorders_matrix", None)
 
         try:
             cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
@@ -157,12 +155,12 @@ class nbo:
         start_wiberg_ind, end_wiberg_ind = None, None
         outfile = open(file, "r")
         lines = outfile.readlines()
-        
         for i, line in enumerate(lines):
             if line.find("Wiberg bond index matrix ") > -1:
                 start_wiberg_ind = i + 2
             if line.find("Wiberg bond index") > -1:
                 end_wiberg_ind = i - 1
+        
         if start_wiberg_ind != None and end_wiberg_ind != None:
             wiberg_bos_matrix = []
             for i in range(start_wiberg_ind, end_wiberg_ind):

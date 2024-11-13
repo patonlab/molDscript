@@ -9,7 +9,7 @@ from pathlib import Path
 import glob
 import yaml
 
-k_B_hartree = 3.1668114e-6  # hartree/K
+GAS_CONSTANT = 8.3144621  # J / K / mol
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 eV_to_hartree = 0.0367493
 
@@ -118,6 +118,7 @@ def load_from_yaml(self):
     return self, txt_yaml
 
 def get_files(value, program):
+    print(value)
     if program == 'gaussian':
         if value[-1]=='/':
             value = value[:-1]
@@ -148,20 +149,6 @@ def find_nth(haystack: str, needle: str, n: int) -> int:
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
-def get_filename(fullname, dd):
-    flist = list(dd.keys())
-    tempname = fullname
-    for i in range(fullname.count("_")):
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except:
-            tempname = tempname.rsplit("_", 1)[0]
-            print(tempname)
-    print(
-        f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-    )
-    raise SystemExit
+
 
 

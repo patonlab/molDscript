@@ -17,17 +17,15 @@ var_dict = {
     "varfile": None,
     "command_line": False,
     "verbose": True,
-    "opt": False,
+    "all": False,
+    "opt": True,
     "volume": False,
-    "vall": False,
     "spc": False,
     "nmr": False,
     "nbo": False,
-    "fukui_neutral": False,
-    "fukui_oxidized": False,
-    "fukui_reduced": False,
-    "ad_oxidized": False,
-    "ad_reduced": False,
+    "fukui": False,
+    "ad_ie_ea": False,
+    "sp_ie_ea": False,
     "skip_list": [],
     "link": False,
     "boltz": False,
@@ -36,9 +34,29 @@ var_dict = {
     "cut":0.95,
     "syllables": 1,
     "substructure": "",
-    "varfile" : '',
+    
+    "path_opt": '.',
+    "path_spc": None,
+    "path_nmr": None,
+    "path_nbo": None,
+    "path_fukui": None,
+    "path_ad_ie_ea": None,
+    "path_sp_ie_ea": None,
+    "path_link": None,
+    
+    "suffix_opt": None,
+    "suffix_spc": None,
+    "suffix_nmr": None,
+    "suffix_nbo": None,
+    "suffix_ad_ie": None,
+    "suffix_ad_ea": None,
+    "suffix_sp_ie": None,
+    "suffix_sp_ea": None,
+    "suffix_fukui": None,
+    "suffix_fred": None,
+    "suffix_fox": None,
+
     "spc_program": 'gaussian',
-    "radius": 3
 }
 
 
@@ -46,35 +64,6 @@ var_dict = {
 class options_add:
     pass
 
-def load_arguments_from_file(filename):
-    """
-    Load arguments from a .txt file where arguments are in the format 'arg : value'.
-    """
-    kwargs = {}
-    with open(filename, 'r') as file:
-        for line in file:
-            # Skip empty lines and comments
-            if not line.strip() or line.startswith("#"):
-                continue
-            
-            # Split the line into argument and value
-            arg, value = map(str.strip, line.split(":", 1))
-            
-            # Convert the value to the appropriate type
-            if value.lower() == "true":
-                value = True
-            elif value.lower() == "false":
-                value = False
-            elif value.isdigit():
-                value = int(value)
-            else:
-                try:
-                    value = float(value)
-                except ValueError:
-                    pass  # Keep value as a string if it can't be converted
-            
-            kwargs[arg] = value
-    return kwargs
 
 def set_options(kwargs):
     # set default options and options provided
@@ -109,10 +98,18 @@ def command_line_args():
     available_args = ["help"]
     bool_args = [
         "command_line",
+        "all",
+        "opt",
+        "volume",
+        "spc",
+        "nmr",
+        "nbo",
+        "fukui",
+        "ad_ie_ea",
+        "sp_ie_ea",
+        "link",
         "boltz",
-        "min_max",
-        "vall",
-        "volume"
+        "min_max"
     ]
     list_args = ["skip_list"]
     int_args = ["syllables"]
@@ -124,19 +121,27 @@ def command_line_args():
         "struct",
         "program",
         "varfile",
-        "opt",
-        "spc",
-        "nmr",
-        "nbo",
-        "fukui_neutral",
-        "fukui_oxidized",
-        "fukui_reduced",
-        "ad_reduced",
-        "ad_oxidized",
-        "link",
+        "path_opt",
+        "path_spc",
+        "path_nmr",
+        "path_nbo",
+        "path_fukui",
+        "path_ad_ie_ea",
+        "path_sp_ie_ea",
+        "path_link",
         "substructure",
-        "varfile",
-        "radius"
+        "suffix_spc",
+        "suffix_nmr",
+        "suffix_nbo",
+        "suffix_fukui",
+        "suffix_fred",
+        "suffix_fox",
+        "suffix_ad_ie",
+        "suffix_ad_ea",
+        "suffix_sp_ie",
+        "suffix_sp_ea",
+        "suffix_opt",
+        "spc_path"
     ]
 
     for arg in var_dict:
@@ -164,10 +169,6 @@ def command_line_args():
             sys.exit()
         else:
             # this converts the string parameters to lists
-            if arg_name == "varfile" and value:
-                # Load arguments from the .txt file
-                file_kwargs = load_arguments_from_file(value)
-                kwargs.update(file_kwargs)
             if arg_name in bool_args:
                 value = True
             elif arg_name.lower() in list_args:
@@ -190,6 +191,15 @@ def command_line_args():
     # Second, load all the default variables as an "add_option" object
     args = load_variables(kwargs, "command")
 
+    # reassinging properties based on all or specific ones
+    if args.all:
+        vars(args)["opt"] = True
+        vars(args)["nmr"] = True
+        vars(args)["nbo"] = True
+        vars(args)["fukui"] = True
+        vars(args)["sp_ie_ea"] = True
+        vars(args)["ad_ie_ea"] = True
+
     if len(args.skip_list) != 0:
         for prop in args.skip_list:
             vars(args)[prop] = False
@@ -201,6 +211,7 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
     """
     Load default and user-defined variables
     """
+
     # first, load default values and options manually added to the function
     self = set_options(kwargs)
 
@@ -239,6 +250,17 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
 
             if moldscript_module == "SUBSTRUCTURE":
                 logger_1 = "SUBSTRUCTURE"
+
+            if txt_yaml not in [
+                "",
+                f"\no  Importing MOLDSCRIPT parameters from {self.varfile}",
+                "\nx  The specified yaml file containing parameters was not found! Make sure that the valid params file is in the folder where you are running the code.\n",
+            ]:
+                self.log = Logger(
+                    f"{self.initial_dir}/MOLDSCRIPT", logger_1, verbose=self.verbose
+                )
+                self.log.write(txt_yaml)
+                error_setup = True
 
             if not error_setup:
                 if not self.command_line:
