@@ -61,7 +61,6 @@ class spc:
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
             self.data_dict[filename]['mol']['spc_energy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
-            self.data_dict[filename]['mol']['species'] = filename
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

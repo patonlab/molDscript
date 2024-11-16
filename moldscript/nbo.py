@@ -84,9 +84,9 @@ class nbo:
                     f"Skipping file {file_name} as NBO data didnt exist\n"
                 )
 
-            self.data_dict[file_name]['mol']['nbo_cpu_time'] = datetime.timedelta(0) # initialize cpu time
-            for time in nbo_data.metadata['cpu_time']:
-                self.data_dict[file_name]['mol']['nbo_cpu_time'] += time
+            # self.data_dict[file_name]['mol']['nbo_cpu_time'] = datetime.timedelta(0) # initialize cpu time
+            # for time in nbo_data.metadata['cpu_time']:
+            #     self.data_dict[file_name]['mol']['nbo_cpu_time'] += time
 
         return self.data_dict
 

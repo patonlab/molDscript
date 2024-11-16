@@ -82,11 +82,11 @@ class nmr:
             else:
                 self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
-            self.data_dict[file_name]["mol"]["nmr_cpu_time"] = datetime.timedelta(
-                0
-            )  # initialize cpu time
-            for time in nmr_data.metadata["cpu_time"]:
-                self.data_dict[file_name]["mol"]["nmr_cpu_time"] += time  # add cpu time
+            # self.data_dict[file_name]["mol"]["nmr_cpu_time"] = datetime.timedelta(
+            #     0
+            # )  # initialize cpu time
+            # for time in nmr_data.metadata["cpu_time"]:
+            #     self.data_dict[file_name]["mol"]["nmr_cpu_time"] += time  # add cpu time
 
         return self.data_dict
 

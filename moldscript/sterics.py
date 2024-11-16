@@ -55,7 +55,7 @@ class sterics:
         bv_list = []
         idx_list = []
         for i in indexes:
-            mol = db.dbstep(file_name, atom1=i, b=True, quiet=True, r=radius)
+            mol = db.dbstep(file_name, atom1=i, b=True, quiet=True, r=radius, grid=0.1, noH=True, scalevdw=1.17, exclude=str(i))
             bv = mol.bur_vol
             bv_list.append(bv)
             idx_list.append(i)

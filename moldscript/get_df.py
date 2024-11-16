@@ -41,6 +41,7 @@ class get_df:
         for prop in list(moldf.keys()):
             print(f"\t- {prop}")
         moldf.insert(0, "filename", col)
+        moldf = moldf.round(4)
         moldf.to_csv(mol_csv, index=False)
 
     def get_bond_df(self):
@@ -95,6 +96,7 @@ class get_df:
                 filtered_df = temp_df.loc[temp_df['atom1_idx'].isin(idx) | temp_df['atom2_idx'].isin(idx)]
                 final_df = pd.concat([final_df, filtered_df])
             bonddf = final_df    
+        bonddf = bonddf.round(4)
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
@@ -165,6 +167,8 @@ class get_df:
         except:pass
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in atomdf.columns if col not in ['filename', 'atom_index', 'atom_type']]
         atomdf = atomdf[columns_order]
+        atomdf = atomdf.map(lambda x: np.nan if isinstance(x, str) and x.strip() == '' else x)
+        atomdf = atomdf.round(4)
         atomdf.to_csv(atom_csv, index=False)
 
     def get_atom_lab(self, num):
