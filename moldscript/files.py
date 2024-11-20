@@ -40,6 +40,8 @@ class files:
             self.file_data = self.get_opt_or_substurcture()
         if self.calc == "spc":
             self.file_data = self.get_spc()
+        if self.calc == "charges":
+            self.file_data = self.get_chg()
         if self.calc == "nmr":
             self.file_data = self.get_nmr()
         if self.calc == "nbo":
@@ -68,7 +70,13 @@ class files:
             key_name = self.get_filename(file)
             file_data[key_name] = file
         return file_data
-
+    def get_chg(self):
+        file_data = defaultdict(dict)
+        for file in self.files:
+            key_name = self.get_filename(file)
+            file_data[key_name] = file
+        return file_data
+    
     def get_nmr(self):
         file_data = defaultdict(dict)
         for file in self.files:

@@ -4,7 +4,7 @@
 
 import os, time, getopt, sys
 from pathlib import Path
-from moldscript.utils import format_lists, load_from_yaml, Logger
+from moldscript.utils import format_lists, Logger
 
 moldscript_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
@@ -23,6 +23,7 @@ var_dict = {
     "spc": False,
     "nmr": False,
     "nbo": False,
+    "charges": False,
     "fukui_neutral": False,
     "fukui_oxidized": False,
     "fukui_reduced": False,
@@ -128,6 +129,7 @@ def command_line_args():
         "spc",
         "nmr",
         "nbo",
+        "charges",
         "fukui_neutral",
         "fukui_oxidized",
         "fukui_reduced",
@@ -203,11 +205,6 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
     """
     # first, load default values and options manually added to the function
     self = set_options(kwargs)
-
-    # this part loads variables from yaml files (if varfile is used)
-    txt_yaml = ""
-    if self.varfile is not None:
-        self, txt_yaml = load_from_yaml(self)
 
     if moldscript_module != "command":
         self.initial_dir = Path(os.getcwd())

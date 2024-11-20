@@ -3,7 +3,6 @@
 ######################################################.
 import pandas as pd
 import numpy as np
-import scipy.constants as sc
 pd.options.mode.chained_assignment = None
 import math
 import periodictable
@@ -135,6 +134,7 @@ class get_df:
                 atomdf = tempdf
         col = atomdf.pop("filename")
         atomdf.insert(0, "filename", col)
+
         if self.substructure != '':
             print(f'  Filtering atom data by user defined substructure: {self.substructure}\n')
             final_df = pd.DataFrame()
@@ -144,27 +144,27 @@ class get_df:
                 filtered_df = temp_df.loc[temp_df['atom_index'].isin(idx)]
                 final_df = pd.concat([final_df, filtered_df])
             atomdf = final_df  
-        try:
-            list(self.dd[filename]['sterics'].keys())
-            print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
-            steric_df = pd.DataFrame()
-            for filename in filenames:
-                props = list(self.dd[filename]['sterics'].keys())
-                props.remove('atom_index')
-                idxes = self.dd[filename]['sterics']['atom_index']
-                fnames = [filename for i in idxes]
-                tempdic = {}
-                tempdic['filename'] = fnames
-                tempdic['atom_index'] = idxes
+            try:
+                list(self.dd[filename]['sterics'].keys())
+                print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
+                steric_df = pd.DataFrame()
+                for filename in filenames:
+                    props = list(self.dd[filename]['sterics'].keys())
+                    props.remove('atom_index')
+                    idxes = self.dd[filename]['sterics']['atom_index']
+                    fnames = [filename for i in idxes]
+                    tempdic = {}
+                    tempdic['filename'] = fnames
+                    tempdic['atom_index'] = idxes
+                    for prop in props:
+                        values =  self.dd[filename]['sterics'][prop]
+                        tempdic[str(prop)] = values
+                    temp_df = pd.DataFrame(tempdic)
+                    steric_df = pd.concat([steric_df, temp_df])
                 for prop in props:
-                    values =  self.dd[filename]['sterics'][prop]
-                    tempdic[str(prop)] = values
-                temp_df = pd.DataFrame(tempdic)
-                steric_df = pd.concat([steric_df, temp_df])
-            for prop in props:
-                    print(f"\t- {prop}")
-            atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
-        except:pass
+                        print(f"\t- {prop}")
+                atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
+            except:pass
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in atomdf.columns if col not in ['filename', 'atom_index', 'atom_type']]
         atomdf = atomdf[columns_order]
         atomdf = atomdf.map(lambda x: np.nan if isinstance(x, str) and x.strip() == '' else x)

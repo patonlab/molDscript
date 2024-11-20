@@ -10,9 +10,9 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 from moldscript.utils import eV_to_hartree
 
-class spc:
+class charges:
     """
-    Class containing all the functions for the opt module related to Gaussian output files
+    Class containing all the functions for the charges module related to Gaussian output files
     """
 
     def __init__(self, data, data_dict, create_dat=True,  **kwargs):
@@ -33,32 +33,26 @@ class spc:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- Single Point Energy Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"   --- Charges Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
 
         self.args.log.write(
-                    f"   --- Single Point Energy Collection starting"
+                    f"   --- Charges Collection starting"
                 )
 
         for file_name in self.data.keys():
-            if self.data[file_name].rsplit('.',1)[1] == 'log':
-                self.spc_program = 'gaussian'
-            elif self.data[file_name].rsplit('.', 1)[1] =='out':
-                self.spc_program = 'orca'
-            spc_data = self.parse_cc_data(file_name, self.data[file_name])
-
+            chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
-            if self.spc_program == 'gaussian':
-                if list(self.data.keys()).index(file_name) == 0:
-                    self.args.log.write(f"   Functional used: {spc_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
-            spc_data.scfenergies[-1] * eV_to_hartree
-            self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
-            self.data_dict[filename]['mol']['spc_energy'] = (
-                spc_data.scfenergies[-1] * eV_to_hartree)
+            if list(self.data.keys()).index(file_name) == 0:
+                self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
+                self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
+            self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
+            for i in chg_data.atomcharges.keys():
+                if 'mulliken' not in i and 'sum' not in i:
+                    self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
