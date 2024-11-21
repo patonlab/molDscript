@@ -87,31 +87,12 @@ class opt:
             self.data_dict[file_name]["mol"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
-            self.data_dict[file_name]["mol"]["enthalpy"] = opt_data.enthalpy
-            self.data_dict[file_name]["mol"]["freeenergy"] = opt_data.freeenergy
+            self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
+            self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi
             self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
-            self.data_dict[file_name]["atom"]["apt_charges"] = opt_data.atomcharges["apt"]
             self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
 
-            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0] - opt_data.moments[1]) ** 2, axis=0))
-            self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
-
-            self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0] + 1]
-            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (
-                self.data_dict[file_name]["mol"]["LUMO"]
-                - self.data_dict[file_name]["mol"]["HOMO"]
-            )
-
-            if self.args.program == "gaussian":
-                quadrupole_moments = opt_data.moments[2]
-                quadrupole_matrix = np.array([
-    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
-    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
-    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]]
-])
-                trace = np.trace(quadrupole_matrix)
-                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
 
             # self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
             # for time in opt_data.metadata["cpu_time"]:

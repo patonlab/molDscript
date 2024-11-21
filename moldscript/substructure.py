@@ -5,7 +5,7 @@
 
 import sys, os
 import time
-
+from rdkit.Chem import Draw
 from openbabel import openbabel as ob
 from rdkit import Chem
 from collections import defaultdict
@@ -65,8 +65,9 @@ class substructure:
         mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
 
         substructure = Chem.MolFromSmarts(self.substructure)
-
+        Draw.MolToImage(substructure, size=(100, 100))
         indexsall = mol.GetSubstructMatches(substructure)
+        print(indexsall)
         indexsall = tuple(x + 1 for x in indexsall[0])
         os.remove(file.split(".")[0] + ".mol")
 

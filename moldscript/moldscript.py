@@ -68,6 +68,12 @@ def main():
     )
     print(f"   Arguments passed to program: \n   {sys.argv[1:]}\n")
 
+    if args.charges == False:
+        print("   No charges path provided. Charges will be pulled from the OPT files\n")
+        args.charges = args.opt
+    if args.fmo == False:
+        print("   No FMO/moment path provided. Values will be pulled from the OPT files\n")
+        args.fmo = args.opt
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
@@ -101,6 +107,11 @@ def main():
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts)
             chg_data = charges(chg_read.file_data, data_dicts, program=args.program)
             data_dicts = chg_data.file_data
+        # fmo
+        if args.fmo:
+            fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts)
+            fmo_data = charges(fmo_read.file_data, data_dicts, program=args.program)
+            data_dicts = fmo_data.file_data
         # NMR
         if args.nmr:
             nmr_read = files("nmr", args.nmr, data_dicts, program=args.program)
