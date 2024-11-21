@@ -14,6 +14,7 @@ from openbabel import openbabel as ob
 from rdkit import Chem
 from moldscript.utils import eV_to_hartree, add_cpu_times
 from moldscript.sterics import sterics
+from rdkit.Chem import AllChem
 
 
 class opt:
@@ -64,47 +65,20 @@ class opt:
 
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             file_name = self.data[file_name]
-
-            obConversion = ob.OBConversion()
-            # if self.args.volume:
-            #     steric_data = sterics(file=file_name, vbur=True, smol=False)
-            #     file_data[file_name]["atom"][' = steric_data.volumes
-            #     file_data[file_name]["vbur_atom_type"] = steric_data.numbers
-            if self.args.program == "gaussian":
-                obConversion.SetInAndOutFormats("log", "mol")
-                ob_mol = ob.OBMol()
-                mol = obConversion.ReadFile(ob_mol, file_name)
-                obConversion.WriteFile(ob_mol, file_name.split(".")[0] + ".mol")
-                obConversion.CloseOutFile()
-                mol = Chem.MolFromMolFile(
-                    file_name.split(".")[0] + ".mol", removeHs=False
+            atom_types = opt_data.atomnos  # Atomic numbers
+            coordinates = opt_data.atomcoords[-1]  # Final geometry (last set of coordinates)
+            mol = self.create_rdkit_molecule(atom_types, coordinates)
+            smi = Chem.MolToSmiles(mol)
+            if i == 0:
+                self.args.log.write(
+                    f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}"
                 )
-                os.remove(file_name.split(".")[0] + ".mol")
-                smi = Chem.MolToSmiles(mol)
-
-                if i == 0:
-                    self.args.log.write(
-                        f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}"
-                    )
-                    self.args.log.write(
-                        f"   Functional used: {opt_data.metadata['functional']}"
-                    )
-                    self.args.log.write(
-                        f"   Basis set used: {opt_data.metadata['basis_set']}\n"
-                    )
-
-            if self.args.program == "orca":
-                obConversion.SetInAndOutFormats("out", "mol")
-                ob_mol = ob.OBMol()
-                mol = obConversion.ReadFile(ob_mol, file_name)
-                obConversion.WriteFile(ob_mol, file_name.split(".")[0] + ".mol")
-                obConversion.CloseOutFile()
-                mol = Chem.MolFromMolFile(
-                    file_name.split(".")[0] + ".mol", removeHs=False
+                self.args.log.write(
+                    f"   Functional used: {opt_data.metadata['functional']}"
                 )
-                os.remove(file_name.split(".")[0] + ".mol")
-                smi = Chem.MolToSmiles(mol)
-
+                self.args.log.write(
+                    f"   Basis set used: {opt_data.metadata['basis_set']}\n"
+                )
             file_name = nickname
 
             self.args.log.write(
@@ -113,31 +87,12 @@ class opt:
             self.data_dict[file_name]["mol"]["scfenergy"] = (
                 opt_data.scfenergies[-1] * eV_to_hartree
             )
-            self.data_dict[file_name]["mol"]["enthalpy"] = opt_data.enthalpy
-            self.data_dict[file_name]["mol"]["freeenergy"] = opt_data.freeenergy
+            self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
+            self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi
             self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
-            self.data_dict[file_name]["atom"]["apt_charges"] = opt_data.atomcharges["apt"]
             self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
 
-            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((opt_data.moments[0] - opt_data.moments[1]) ** 2, axis=0))
-            self.data_dict[file_name]["mol"]["HOMO"] = opt_data.moenergies[0][opt_data.homos[0]]
-
-            self.data_dict[file_name]["mol"]["LUMO"] = opt_data.moenergies[0][opt_data.homos[0] + 1]
-            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (
-                self.data_dict[file_name]["mol"]["LUMO"]
-                - self.data_dict[file_name]["mol"]["HOMO"]
-            )
-
-            if self.args.program == "gaussian":
-                quadrupole_moments = opt_data.moments[2]
-                quadrupole_matrix = np.array([
-    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
-    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
-    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]]
-])
-                trace = np.trace(quadrupole_matrix)
-                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
 
             # self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
             # for time in opt_data.metadata["cpu_time"]:
@@ -194,3 +149,26 @@ class opt:
         startidx = string.rfind("/") + 1
 
         return string[startidx:lastidx]
+    def create_rdkit_molecule(self, atom_types, coordinates):
+        """
+        Create an RDKit molecule object from atomic types and coordinates.
+        """
+        mol = Chem.EditableMol(Chem.Mol())
+        
+        # Add atoms
+        atom_indices = []
+        for atom_type in atom_types:
+            atom = Chem.Atom(int(atom_type))
+            atom_idx = mol.AddAtom(atom)
+            atom_indices.append(atom_idx)
+        
+        # Create the molecule
+        molecule = mol.GetMol()
+        
+        # Assign 3D coordinates
+        conf = Chem.Conformer(len(atom_types))
+        for i, (x, y, z) in enumerate(coordinates):
+            conf.SetAtomPosition(i, (x, y, z))
+        molecule.AddConformer(conf)
+ 
+        return molecule

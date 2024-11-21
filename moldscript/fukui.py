@@ -86,39 +86,20 @@ class fukui:
                 self.data_dict[file_name]['atom']['neutral_natural_charges'] = (
                     neutral_data.atomcharges["natural"]
                 )
-                self.data_dict[file_name]['atom']['neutral_cm5_charges'] = (
-                    neutral_data.atomcharges["cm5"]
-                )
-                self.data_dict[file_name]['atom']['neutral_hirsfeld_charges'] = (
-                    neutral_data.atomcharges["hirsfeld"]
-                )
-                # self.data_dict[file_name]['atom']['fukui_atomnos'] = neutral_data.atomnos
-                ###oxidized molecule
-                
+
                 self.data_dict[file_name]['atom']['oxidized_natural_charges'] = (
                     oxidized_data.atomcharges["natural"]
                 )
-                self.data_dict[file_name]['atom']['oxidized_cm5_charges'] = (
-                    oxidized_data.atomcharges["cm5"]
-                )
-                self.data_dict[file_name]['atom']['oxidized_hirsfeld_charges'] = (
-                    oxidized_data.atomcharges["hirsfeld"]
-                )
-                
+
                 ##Reduced molecule
                 
                 self.data_dict[file_name]['atom']['reduced_natural_charges'] = (
                     reduced_data.atomcharges["natural"]
                 )
-                self.data_dict[file_name]['atom']['reduced_cm5_charges'] = (
-                    reduced_data.atomcharges["cm5"]
-                )
-                self.data_dict[file_name]['atom']['reduced_hirsfeld_charges'] = (
-                    reduced_data.atomcharges["hirsfeld"]
-                )
-                reduced_charges = np.array(reduced_data.atomcharges["hirsfeld"])
-                neutral_charges = np.array(neutral_data.atomcharges["hirsfeld"])
-                oxidized_charges = np.array(oxidized_data.atomcharges["hirsfeld"])
+
+                reduced_charges = np.array(reduced_data.atomcharges["natural"])
+                neutral_charges = np.array(neutral_data.atomcharges["natural"])
+                oxidized_charges = np.array(oxidized_data.atomcharges["natural"])
                 nuc_fukui = reduced_charges - neutral_charges
                 ele_fukui = neutral_charges - oxidized_charges
                 rad_fukui = (nuc_fukui + ele_fukui)/2

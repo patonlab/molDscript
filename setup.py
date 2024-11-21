@@ -35,15 +35,11 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     install_requires=[
-        "PyYAML",
         "pandas>=2.0.2",
-        "progress",
-        "numpy==1.26.3",
-        "cclib==1.7.2",
-        "matplotlib",
-        "seaborn",
-        "ipywidgets",
-        "dbstep"
+        "cclib",
+        "dbstep",
+        'rdkit',
+
     ],
     python_requires=">=3.0",
     include_package_data=True,
