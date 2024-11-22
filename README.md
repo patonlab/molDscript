@@ -13,6 +13,31 @@ A Python package for ...
 * rdkit
 * yaml
 
+## Key parameters
+
+* --varfile (str): Specify a .txt file of arguments with the following format:
+```
+parameter1: value1
+parameter2: value2
+``` 
+* --opt (str): Specify the path to a folder containing your optimization files
+* --nbo (str): Specify the path to a folder containing your nbo files
+* --nmr (str): Specify the path to a folder containing your nmr files
+* --fukui_neutral (str): Specify the path to a folder containing your neutral fukui files
+* --fukui_reduced (str): Specify the path to a folder containing your reduced fukui files
+* --fukui_oxidized (str): Specify the path to a folder containing your oxidized fukui files
+* --charges (str): Specify the path to a folder containing your charges files
+* --fmo (str): Specify the path to a folder containing your fmo and dipole files
+* --ad_reduced (str): Specify the path to a folder containing your adiabatic reduced files
+* --ad_oxidized (str): Specify the path to a folder containing your adiabatic oxidized files
+* --substructure ("str"): specify the substructure you want to search for in the molecule
+* --volume : Indicate you want the buried volume of the atoms in the substructure match
+* --vall : Indicate you want the volume of all atoms in every molecule
+* --radius (float or [float, float]): Speficy the radius/radii you want buried volume to be calculated for
+* --boltz : Indicate you want the boltzmann weighted average of the conformers
+* --temp (float): Indicate the temperature to use for boltzmann weighting
+* --min_max : Indicate you want the minimum, maximum, and range values of the parameters
+
 # Installation
 
 ## pip
@@ -40,7 +65,7 @@ workflows. Here is an example for ...
 It can also be used from the command line.
 
 ```console
-$ python -m XXX etc
+$ python -m moldscript --varfile arguments.txt
 ```
 For further information, see the separate [documentation](https:/XXX).
 
