@@ -112,6 +112,19 @@ def get_files(value, program):
             list_of_val = glob.glob(value)
 
         return list_of_val
+    if program == 'xtb':
+        if value[-1]=='/':
+            value = value[:-1]
+        if (
+        Path(f"{value}").exists()
+        and os.getcwd() not in f"{value}"
+        ):
+            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.out")
+
+        else:
+            list_of_val = glob.glob(value)
+
+        return list_of_val
 def find_nth(haystack: str, needle: str, n: int) -> int:
     start = haystack.find(needle)
     while start >= 0 and n > 1:
