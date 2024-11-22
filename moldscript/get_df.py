@@ -88,14 +88,16 @@ class get_df:
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
                 struc = list(dict.keys())[0]
-                filename = self.file_base(filename)
+                #filename = self.file_base(filename)
                 temp_df = bond_df.loc[bond_df['species'] == filename]
                 try:
                     indexes = list(dict[struc]['index'][0])
                 except:
                     print(f'{filename}: substructure not found, omitting from final bond df\n')
                     continue
-                filtered_df = temp_df.loc[temp_df['atom1'].isin(indexes) | temp_df['atom2'].isin(indexes)]
+                #print(filename, indexes)
+                filtered_df = bond_df.loc[bond_df['atom1'].isin(indexes) & bond_df['atom2'].isin(indexes) & bond_df['species'].isin([filename])]
+                #print(filtered_df)
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv(bond_csv, index=False)
@@ -116,52 +118,56 @@ class get_df:
         for category in atom_list:
             if category in calced_list:
                 dict = self.dd[category].file_data
+                
                 if category == 'nbo':
                     print('   - NPA charges (au)')
                     print('   - Wiberg bond orders/atom')
                     dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'npa_charge', 'wiberg_total']}
+                    
                     for filename in dict.keys():
-                        
                         charges = list(dict[filename]['charges']['npa'])
                         bond_orders = list(dict[filename]['bond_orders'])
-                        #print(len(charges))
                         atoms = list(dict[filename]['atomnos'])
-                        for charge, bo, num in zip(charges, bond_orders, atoms):
+                        
+                        for i, (charge, bo, num) in enumerate(zip(charges, bond_orders, atoms)):
                             dict_df['wiberg_total'].append(bo)
                             dict_df['npa_charge'].append(charge)
                             dict_df['species'].append(filename)
-                            dict_df['atom_index'].append(charges.index(charge))
+                            dict_df['atom_index'].append(i)
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
                             
                 elif category == 'nmr':
                     print('   - Chemical Shifts')
                     dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'nmr_shielding']}
+                    
                     for filename in dict.keys():
-                        
                         shields = list(dict[filename]['nmr_shielding'])
                         atoms = list(dict[filename]['atomnos'])
-                        for shield, num in zip(shields, atoms):
+                        
+                        for i, (shield, num) in enumerate(zip(shields, atoms)):
                             dict_df['nmr_shielding'].append(shield)
                             dict_df['species'].append(filename)
-                            dict_df['atom_index'].append(shields.index(shield))
+                            dict_df['atom_index'].append(i)
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
+                
                 elif category == 'fukui':
                     print('   - CM5 charges (au)')
                     print('   - Hirshfeld charges (au)')
                     print('   - Electrophilic, nucleophilic and radical Fukui functions (au)')
+                    
                     if self.program=='gaussian':
                         dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type', 'cm5_charge', 'hirshfeld_charge', 'ox_npa_charge', 'ox_cm5_charge', 'ox_hirshfeld_charge', 'red_npa_charge', 'red_cm5_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}
                     if self.program=='orca':
                         dict_df = {k: [] for k in ['species', 'atom_index', 'atom_type',  'hirshfeld_charge', 'ox_hirshfeld_charge', 'red_hirshfeld_charge', 'fukui_plus', 'fukui_minus', 'fukui_rad']}    
-                    for filename in dict.keys():
-                        
+                    
+                    for filename in dict.keys():    
                         neut_hirsfeld = list(dict[filename]["neutral"]["atomcharges"]["hirsfeld"])
                         atoms = list(dict[filename]['atomnos'])
-                        for atom, num in zip(neut_hirsfeld, atoms):
+                        for i, (atom, num) in enumerate(zip(neut_hirsfeld, atoms)):
                             dict_df['species'].append(filename)
-                            dict_df['atom_index'].append(neut_hirsfeld.index(atom))
+                            dict_df['atom_index'].append(i)
                             element = periodictable.elements[num]
                             dict_df['atom_type'].append(element.symbol)
                         if self.program =='gaussian':
@@ -204,12 +210,14 @@ class get_df:
                     atom_df = dict_df
                 else:
                     atom_df = atom_df.merge(dict_df,how='left', on=['species','atom_index', 'atom_type'])
+
         if self.substructure != '':
             print('   ! Filtered by user-defined substructure')
             final_df = pd.DataFrame()
             for filename in self.substructure.keys():
                 dict = self.substructure[filename]
                 struc = list(dict.keys())[0]
+                
                 basename = self.file_base(filename)
                 temp_df = atom_df.loc[atom_df['species'] == basename]
                 try:
@@ -217,7 +225,8 @@ class get_df:
                 except:
                     print(f'{basename}: substructure not found, omitting from final df\n')
                     continue
-                filtered_df = temp_df.loc[temp_df['atom_index'].isin(indexes)]
+                
+                filtered_df = atom_df.loc[atom_df['atom_index'].isin(indexes) & atom_df['species'].isin([filename])]
                 final_df = pd.concat([final_df, filtered_df])
                 
             final_df.to_csv(atom_csv, index=False)
