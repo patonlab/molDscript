@@ -82,11 +82,6 @@ class fukui:
                 self.args.log.write(
                     f"o  Parsing Fukui data from {file_name}"
                 )
-                ##Neutral molecule
-                self.data_dict[file_name]['atom']['neutral_natural_charges'] = (
-                    neutral_data.atomcharges["natural"]
-                )
-
                 self.data_dict[file_name]['atom']['oxidized_natural_charges'] = (
                     oxidized_data.atomcharges["natural"]
                 )

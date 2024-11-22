@@ -13,15 +13,16 @@ class get_df:
     Class to create 3 .csv files containing paramaters
     """
 
-    def __init__(self, data_dicts, substructure="", program="gaussian", volume=False):
+    def __init__(self, data_dicts, substructure="", program="gaussian", volume=False, prefix=""):
         self.dd = data_dicts
         self.substructure = substructure
+        self.prefix = prefix
         mol_df = self.get_mol_df()
         bond_df = self.get_bond_df()
         atom_df = self.get_atom_df()
 
     def get_mol_df(self):
-        mol_csv = "molecule_level.csv"
+        mol_csv = str(self.prefix) + "molecule_level.csv"
         print(
             "\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}".format(mol_csv)
         )
@@ -44,7 +45,7 @@ class get_df:
         moldf.to_csv(mol_csv, index=False)
 
     def get_bond_df(self):
-        bond_csv = "bond_level.csv"
+        bond_csv = str(self.prefix) + "bond_level.csv"
         print("\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}".format(bond_csv))
         filenames = list(self.dd.keys())
         data = self.dd
@@ -99,7 +100,7 @@ class get_df:
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
-        atom_csv = "atom_level.csv"
+        atom_csv = str(self.prefix) + "atom_level.csv"
         print("\n\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
         filenames = list(self.dd.keys())
         data = self.dd

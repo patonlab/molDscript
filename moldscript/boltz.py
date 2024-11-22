@@ -7,17 +7,18 @@ import numpy as np
 boltzmann_constant = 3.1668114e-6
 
 class boltz:
-    def __init__(self, temp = 298.15, spc=False ):
+    def __init__(self, temp = 298.15, spc=False, prefix='' ):
         self.spc = spc
         self.temp = temp
+        self.prefix = prefix
         self.weight_dict = {}
         self.mol_boltz()
         self.atom_boltz()
         self.bond_boltz()
 
     def mol_boltz(self):
-        ensemble_mol_csv = 'ensemble_molecule_level.csv'
-        mol_df = pd.read_csv('molecule_level.csv')
+        ensemble_mol_csv = str(self.prefix) + 'ensemble_molecule_level.csv'
+        mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
         if self.spc:
             print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN BOLTZMANN WEIGHTS--')   
             mol_df['scfenergy'] = mol_df['spc_energy']
@@ -67,8 +68,8 @@ class boltz:
         weighted_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_boltz(self):
-        atom_df = pd.read_csv('atom_level.csv')
-        ensemble_atom_csv = 'ensemble_atom_level.csv'
+        atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        ensemble_atom_csv =str(self.prefix) +  'ensemble_atom_level.csv'
         print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
         atom_df['Weight'] = atom_df['filename'].map(self.weight_dict)
@@ -103,8 +104,8 @@ class boltz:
 
 
     def bond_boltz(self):
-        bond_df = pd.read_csv('bond_level.csv')
-        ensemble_bond_csv = 'ensemble_bond_level.csv'
+        bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        ensemble_bond_csv =str(self.prefix) +  'ensemble_bond_level.csv'
         print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}\n'.format(ensemble_bond_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
         bond_df['Weight'] = bond_df['filename'].map(self.weight_dict)

@@ -40,7 +40,8 @@ var_dict = {
     "substructure": "",
     "varfile" : '',
     "spc_program": 'gaussian',
-    "radius": 3
+    "radius": 3,
+    "output": ""
 }
 
 
@@ -123,6 +124,7 @@ def command_line_args():
         "cut"
     ]
     str_args = [
+        "output",
         "struct",
         "program",
         "varfile",

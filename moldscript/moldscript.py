@@ -162,11 +162,11 @@ def main():
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
-    df = get_df(data_dicts, program=args.program, substructure=args.substructure)
+    get_df(data_dicts, program=args.program, substructure=args.substructure, prefix = args.output)
     if args.boltz:
-        boltz(temp=args.temp, spc=args.spc)
+        boltz(temp=args.temp, spc=args.spc, prefix=args.output)
     if args.min_max:
-        min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables)
+        min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables, prefix=args.output)
 
 
 
