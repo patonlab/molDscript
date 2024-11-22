@@ -72,16 +72,12 @@ class ie_ea:
                 neut_e = self.data_dict[file_name]['mol']['scfenergy']
                 ie = oxidized_e - neut_e
                 ea = reduced_e - neut_e
-                electronegativity = (ie + ea) / 2
-                hardness = (ie - ea) / 2
-                electrophilicity = electronegativity**2 / (2*hardness)
+
                 self.data_dict[file_name]['mol']['oxidized_energy'] = oxidized_e
                 self.data_dict[file_name]['mol']['reduced_energy'] = reduced_e
                 self.data_dict[file_name]['mol']['ionization_potential'] = ie
                 self.data_dict[file_name]['mol']['electron_affinity'] = ea
-                self.data_dict[file_name]['mol']['electronegativity'] = electronegativity
-                self.data_dict[file_name]['mol']['hardness'] = hardness
-                self.data_dict[file_name]['mol']['electrophilicity'] = electrophilicity
+
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as either IE or EA doest not exist!"
