@@ -60,10 +60,13 @@ class fmo:
             self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
             self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
             self.data_dict[file_name]["mol"]["LUMO"] = fmo_data.moenergies[0][fmo_data.homos[0] + 1]
-            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (
-                self.data_dict[file_name]["mol"]["LUMO"]
-                - self.data_dict[file_name]["mol"]["HOMO"]
-            )
+            softness = self.data_dict[file_name]["mol"]["LUMO"]- self.data_dict[file_name]["mol"]["HOMO"]
+            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (softness)
+            chemical_potential = (self.data_dict[file_name]["mol"]["LUMO"] + self.data_dict[file_name]["mol"]["HOMO"]) /2
+            self.data_dict[file_name]["mol"]["chemical_potential"] = chemical_potential
+            glob_electrophilicity = chemical_potential**2 / (2*softness)
+            self.data_dict[file_name]["mol"]["global_electrophilicity"] = glob_electrophilicity
+            self.data_dict[file_name]["mol"]["global_nucleophilicity"] = 1/glob_electrophilicity
 
             if self.fmo_program == "gaussian":
                 quadrupole_moments = fmo_data.moments[2]
