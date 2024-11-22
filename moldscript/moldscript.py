@@ -69,11 +69,19 @@ def main():
     print(f"   Arguments passed to program: \n   {sys.argv[1:]}\n")
 
     if args.charges == False:
-        print("   No charges path provided. Charges will be pulled from the OPT files\n")
-        args.charges = args.opt
+        if args.spc ==False:
+            print("   No charges path provided. Charges will be pulled from the OPT files\n")
+            args.charges = args.opt
+        else:
+            args.charges = args.spc
+            print("   No charges path provided. Charges will be pulled from the SPC files\n")
     if args.fmo == False:
-        print("   No FMO/moment path provided. Values will be pulled from the OPT files\n")
-        args.fmo = args.opt
+        if args.spc ==False:
+            print("   No fmo path provided. FMO will be pulled from the OPT files\n")
+            args.fmo = args.opt
+        else:
+            args.fmo = args.spc
+            print("   No fmo path provided. FMO will be pulled from the SPC files\n")
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
