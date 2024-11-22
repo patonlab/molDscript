@@ -6,8 +6,8 @@ import pandas as pd
 import numpy as np
 
 class min_max:
-    def __init__(self, cut=0.95, temp = 298.15, spc=False,syllables=2 ):
-        self.syllables = syllables
+    def __init__(self, cut=0.95, temp = 298.15, spc=False, prefix=''):
+        self.prefix = prefix
         self.threshold = 1 - cut
         self.temp = temp
         self.spc = spc
@@ -18,8 +18,8 @@ class min_max:
 
 
     def mol_min_max_range(self):
-        ensemble_mol_csv = 'min_max_range_molecule_level.csv'
-        mol_df = pd.read_csv('molecule_level.csv')
+        ensemble_mol_csv = str(self.prefix) + 'min_max_range_molecule_level.csv'
+        mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
         
         if self.spc:
             print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN MIN, MAX, AND RANGE--')   
@@ -88,8 +88,8 @@ class min_max:
         result_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_min_max_range(self):
-        atom_df = pd.read_csv('atom_level.csv')
-        ensemble_atom_csv = 'min_max_range_atom_level.csv'
+        atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        ensemble_atom_csv = str(self.prefix) + 'min_max_range_atom_level.csv'
         print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR ATOM-LEVEL DESCRIPTORS INTO {}'.format(ensemble_atom_csv))
         
         # Map the weights to the atomic DataFrame based on 'filename'
@@ -150,8 +150,8 @@ class min_max:
         result_df.to_csv(ensemble_atom_csv, index=False)
 
     def bond_min_max_range(self):
-        bond_df = pd.read_csv('bond_level.csv')
-        ensemble_bond_csv = 'min_max_range_bond_level.csv'
+        bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        ensemble_bond_csv =str(self.prefix) +  'min_max_range_bond_level.csv'
         print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR BOND-LEVEL DESCRIPTORS INTO {}'.format(ensemble_bond_csv))
         bond_df = bond_df[bond_df['filename'].isin(self.weight_dict.keys())].copy()
         bond_df['Weight'] = bond_df['filename'].map(self.weight_dict)

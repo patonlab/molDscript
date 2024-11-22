@@ -74,7 +74,7 @@ class nbo:
                     f"o  Parsing NBO data from {file_name}"
                 )
                 file_name = get_filename(file_name, self.data_dict)
-                self.data_dict[file_name]['atom']["npa"] = nbo_data.atomcharges["natural"]
+                self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
                 self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
                 # self.data_dict[file_name]['atom']['nbo_atomnos'] = nbo_data.atomnos
