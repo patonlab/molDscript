@@ -16,7 +16,7 @@ class fmo:
     Class containing all the functions for the FMO module related to output files
     """
 
-    def __init__(self, data, data_dict, create_dat=False,  **kwargs):
+    def __init__(self, data, data_dict, create_dat=True,  **kwargs):
         
         start_time_overall = time.time()
         # load default and user-specified variables

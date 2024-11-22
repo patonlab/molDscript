@@ -243,7 +243,8 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
 
             if moldscript_module == "SUBSTRUCTURE":
                 logger_1 = "SUBSTRUCTURE"
-
+            if moldscript_module == "FMO":
+                logger_1 = "FMO"
             if not error_setup:
                 if not self.command_line:
                     self.log = Logger(

@@ -18,6 +18,7 @@ from moldscript.argument_parser import (
 )
 from moldscript.boltz import boltz
 import subprocess, sys
+from moldscript.fmo import fmo
 
 
 header = """
@@ -118,7 +119,7 @@ def main():
         # fmo
         if args.fmo:
             fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts)
-            fmo_data = charges(fmo_read.file_data, data_dicts, program=args.program)
+            fmo_data = fmo(fmo_read.file_data, data_dicts, program=args.program)
             data_dicts = fmo_data.file_data
         # NMR
         if args.nmr:
