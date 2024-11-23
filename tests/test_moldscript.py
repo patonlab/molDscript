@@ -7,22 +7,24 @@ from moldscript.files import files
 from moldscript.opt import opt
 
 
-@pytest.mark.parametrize("path, program, energy", [
-    ('arbr/opt/', 'gaussian', 298.15),
+@pytest.mark.parametrize("path, program, species, energy, smiles", [
+    ('arbr/opt', 'gaussian', 'arbr31_wb97xd', -2996.631169953559, '[H]c1c([H])c2c(c([H])c1Br)C([H])([H])C([H])([H])C2=O'),
 ])
 
-def test_arbr_opt(path, program, energy):
+def test_arbr_opt(path, program, species, energy, smiles):
     path = datapath(path)
     data_dicts = {}
 
     opt_read = files("opt", path, data_dicts, program = program)
-    #print("printing opt_read", opt_read.file_data)
     opt_data = opt(opt_read.file_data, data_dicts, program = program)
-    #data_dicts = opt_data.file_data
+    data_dicts = opt_data.file_data
     
-    precision = 6 # if temp == 298.15 else 4e-4
+    precision = 6 # 6 decimal places for energies
     
-    print(data_dicts)
-    #assert e == round(bbe.scf_energy, precision)
+    # molecular parameters
+    assert round(data_dicts[species]['mol']['scfenergy'], precision) == round(energy, precision)
+    assert data_dicts[species]['mol']['smiles'] == smiles
+
+
     
 

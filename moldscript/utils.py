@@ -97,7 +97,8 @@ def get_files(value, program):
         ):
             list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.log")
         else:
-            list_of_val = glob.glob(value)
+            #list_of_val = glob.glob(value)
+            list_of_val = glob.glob(f"{value}/*.log")
         return list_of_val
     if program == 'orca':
         if value[-1]=='/':

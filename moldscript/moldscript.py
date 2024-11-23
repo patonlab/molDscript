@@ -100,7 +100,6 @@ def main():
         # OPT
         if args.opt:
             opt_read = files("opt", args.opt, data_dicts, program=args.program)
-            print(opt_read.file_data)
             opt_data = opt(
                 opt_read.file_data, data_dicts, program=args.program, volume=args.volume
             )
