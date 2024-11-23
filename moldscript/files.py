@@ -37,7 +37,7 @@ class files:
         if self.calc == "link":
             self.file_data = self.get_link()
         if self.calc == "opt":
-            self.file_data = self.get_opt_or_substurcture()
+            self.file_data = self.get_opt_or_substructure()
         if self.calc == "spc":
             self.file_data = self.get_spc()
         if self.calc == "charges":
@@ -54,12 +54,12 @@ class files:
         if self.calc == "ad_ie_ea":
             self.file_data = self.get_ad_ie_ea()
         if self.calc == "substructure":
-            self.file_data = self.get_opt_or_substurcture()
+            self.file_data = self.get_opt_or_substructure()
 
         if create_dat:
             self.args.log.finalize()
 
-    def get_opt_or_substurcture(self):
+    def get_opt_or_substructure(self):
         file_data = defaultdict(dict)
         for file in self.files:
             key_name = os.path.basename(file).rsplit('.', 1)

@@ -13,5 +13,5 @@ except ImportError:
 
 
 def datapath(path):
-    return os.path.join(BASEPATH, 'tests', path)
+    return os.path.join(BASEPATH, 'examples', path)
 
