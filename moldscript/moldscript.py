@@ -1,3 +1,4 @@
+import subprocess, sys
 from moldscript.files import files
 from moldscript.fukui import fukui
 from moldscript.ie_ea import ie_ea
@@ -17,9 +18,7 @@ from moldscript.argument_parser import (
     time_run,
 )
 from moldscript.boltz import boltz
-import subprocess, sys
 from moldscript.fmo import fmo
-
 
 header = """
    • ▌ ▄ ·.       ▄▄▌  ·▄▄▄▄  .▄▄ ·  ▄▄· ▄▄▄  ▪   ▄▄▄·▄▄▄▄▄
@@ -29,7 +28,6 @@ header = """
    ▀▀  █▪▀▀▀ ▀█▄▀▪.▀▀▀ ▀▀▀▀▀•  ▀▀▀▀ ·▀▀▀ .▀  ▀▀▀▀.▀    ▀▀▀ 
                              Paton Research Group, CO 2024                              
 """
-
 
 def checks():
     # this is a dummy import just to warn the user if Open babel is not installed
@@ -76,13 +74,15 @@ def main():
         else:
             args.charges = args.spc
             print("   No charges path provided. Charges will be pulled from the SPC files\n")
+    
     if args.fmo == False:
         if args.spc ==False:
-            print("   No fmo path provided. FMO will be pulled from the OPT files\n")
+            print("   No FMO path provided. FMO will be pulled from the OPT files\n")
             args.fmo = args.opt
         else:
             args.fmo = args.spc
             print("   No fmo path provided. FMO will be pulled from the SPC files\n")
+    
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
@@ -99,28 +99,30 @@ def main():
     else:
         # OPT
         if args.opt:
-
             opt_read = files("opt", args.opt, data_dicts, program=args.program)
             opt_data = opt(
                 opt_read.file_data, data_dicts, program=args.program, volume=args.volume
             )
             data_dicts = opt_data.file_data
-
+        
         # SPC
         if args.spc:
             spc_read = files(calc="spc", path=args.spc, data_dict=data_dicts)
             spc_data = spc(spc_read.file_data, data_dicts, spc_program=args.spc_program)
             data_dicts = spc_data.file_data
+        
         # charges
         if args.charges:
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts)
             chg_data = charges(chg_read.file_data, data_dicts, program=args.program)
             data_dicts = chg_data.file_data
-        # fmo
+        
+        # FMO
         if args.fmo:
             fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts)
             fmo_data = fmo(fmo_read.file_data, data_dicts, program=args.program)
             data_dicts = fmo_data.file_data
+        
         # NMR
         if args.nmr:
             nmr_read = files("nmr", args.nmr, data_dicts, program=args.program)
@@ -156,19 +158,21 @@ def main():
                 "ad_ie_ea", ad_ie_ea_read.file_data, data_dicts, program=args.program
             )
             data_dicts = ad_ie_ea_data.file_data
+    
     if args.substructure != "":
         substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt)
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
+    
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
     get_df(data_dicts, program=args.program, substructure=args.substructure, prefix = args.output)
+    
     if args.boltz:
         boltz(temp=args.temp, spc=args.spc, prefix=args.output)
+    
     if args.min_max:
         min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables, prefix=args.output)
-
-
 
 if __name__ == "__main__":
     checks()
