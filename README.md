@@ -9,7 +9,6 @@ A Python package for ...
 ## Requirements
 
 * cclib
-* openbabel
 * DBSTEP
 * rdkit
 * yaml

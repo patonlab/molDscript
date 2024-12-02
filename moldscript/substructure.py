@@ -6,10 +6,11 @@
 import sys, os
 import time
 from rdkit.Chem import Draw
-from openbabel import openbabel as ob
 from rdkit import Chem
+import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
+import moldscript.xyz2mol as xyz2mol
 
 class substructure:
     """
@@ -55,21 +56,18 @@ class substructure:
         return self.data_dict
 
     def get_mol(self, file):
-        # obabel convert
-        obConversion = ob.OBConversion()
-        obConversion.SetInAndOutFormats("log", "mol")
-        ob_mol = ob.OBMol()
-        obConversion.ReadFile(ob_mol, file)
-        obConversion.WriteFile(ob_mol, file.split(".")[0] + ".mol")
-        obConversion.CloseOutFile()
-        mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
+
+        # convert log to smiles
+        parser = cc.io.ccopen(file)
+        cc_data = parser.parse()
+        mol = xyz2mol.xyz2mol(cc_data.atomnos.tolist(), cc_data.atomcoords[-1].tolist(), charge=cc_data.charge)[0]
+        print(mol)
 
         substructure = Chem.MolFromSmarts(self.substructure)
         Draw.MolToImage(substructure, size=(100, 100))
         indexsall = mol.GetSubstructMatches(substructure)
         indexsall = tuple(x + 1 for x in indexsall[0])
-        os.remove(file.split(".")[0] + ".mol")
-
+        
         return indexsall
     
     def file_base(self, string):

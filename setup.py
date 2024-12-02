@@ -35,7 +35,6 @@ setup(
         "pandas>=2.0.2",
         "cclib @ git+https://github.com/cclib/cclib.git",
         "dbstep",
-        "openbabel",
         'rdkit',
 
     ],
