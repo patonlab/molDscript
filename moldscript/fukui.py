@@ -9,6 +9,7 @@ import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
+from moldscript.utils import eV_to_hartree
 
 class fukui:
     """
@@ -89,9 +90,9 @@ class fukui:
                 self.data_dict[file_name]['atom']['reduced_natural_charges'] = (
                     reduced_data.atomcharges["natural"]
                 )
-                neut_e = neutral_data.scfenergies[-1]
-                red_e = reduced_data.scfenergies[-1]
-                ox_e = oxidized_data.scfenergies[-1]
+                neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
+                red_e = reduced_data.scfenergies[-1] * eV_to_hartree
+                ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
                 self.data_dict[file_name]['mol']['vertical_ie'] = ox_e - neut_e
                 self.data_dict[file_name]['mol']['vertical_ea'] = red_e - neut_e
                 
