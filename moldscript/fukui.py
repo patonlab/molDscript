@@ -9,6 +9,7 @@ import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
+from moldscript.utils import eV_to_hartree
 
 class fukui:
     """
@@ -23,17 +24,14 @@ class fukui:
         self.data = data
         self.data_dict = data_dicts
 
-        try:
-            if len(self.data.keys()) == 0:
-                self.args.log.write(
-                    f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
-                )
-                self.args.log.finalize()
-                sys.exit()
-            else:
-                self.file_data = self.get_data()
-        except:
-            print('')
+        if len(self.data.keys()) == 0:
+            self.args.log.write(
+                f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
+            )
+            self.args.log.finalize()
+            sys.exit()
+        else:
+            self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
@@ -50,7 +48,8 @@ class fukui:
         self.args.log.write(
                     f"-- Fukui Parameter Collection starting"
                 )
-        for file_name in self.data.keys():
+
+        for file_name in list(self.data.keys()):
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(
@@ -91,16 +90,22 @@ class fukui:
                 self.data_dict[file_name]['atom']['reduced_natural_charges'] = (
                     reduced_data.atomcharges["natural"]
                 )
-
+                neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
+                red_e = reduced_data.scfenergies[-1] * eV_to_hartree
+                ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
+                self.data_dict[file_name]['mol']['vertical_ie'] = ox_e - neut_e
+                self.data_dict[file_name]['mol']['vertical_ea'] = red_e - neut_e
+                
                 reduced_charges = np.array(reduced_data.atomcharges["natural"])
                 neutral_charges = np.array(neutral_data.atomcharges["natural"])
                 oxidized_charges = np.array(oxidized_data.atomcharges["natural"])
-                nuc_fukui = reduced_charges - neutral_charges
-                ele_fukui = neutral_charges - oxidized_charges
-                rad_fukui = (nuc_fukui + ele_fukui)/2
-                self.data_dict[file_name]['atom']['nucleophilic_fukui_index'] = (nuc_fukui)
-                self.data_dict[file_name]['atom']['electrophilic_fukui_index'] = (ele_fukui)
-                self.data_dict[file_name]['atom']['radical_fukui_index'] = (rad_fukui)
+                #multiplied by -1 to change from charge density to electron density to meet fukui definition
+                fplus = -1 * (reduced_charges - neutral_charges)
+                fminus = -1 * (neutral_charges - oxidized_charges)
+                rad_fukui = (fplus + fminus)/2
+                self.data_dict[file_name]['atom']['fplus'] = (fplus)
+                self.data_dict[file_name]['atom']['fminus'] = (fminus)
+                self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
             else:
                 self.args.log.write(
                     f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
@@ -137,10 +142,11 @@ class fukui:
         start_npop = None
         outfile = open(file, "r")
         lines = outfile.readlines()
+        list_npop = []
         for i, line in enumerate(lines):
             if line.find(" Summary of Natural Population Analysis:") > -1:
-                start_npop = i + 6
-
+                list_npop.append(i + 6)
+        start_npop = list_npop[0]
         if start_npop != None:
             nat_charges = []
             end_npop = start_npop + len(cc_data.atomnos)
