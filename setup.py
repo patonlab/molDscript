@@ -36,7 +36,7 @@ setup(
         "cclib @ git+https://github.com/cclib/cclib.git",
         "dbstep",
         'rdkit',
-
+        'networkx',
     ],
     python_requires=">=3.0",
     include_package_data=True,
