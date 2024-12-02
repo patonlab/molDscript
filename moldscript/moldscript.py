@@ -111,7 +111,7 @@ def main():
             spc_data = spc(spc_read.file_data, data_dicts, spc_program=args.spc_program)
             data_dicts = spc_data.file_data
         
-        # charges
+        # Charges
         if args.charges:
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts)
             chg_data = charges(chg_read.file_data, data_dicts, program=args.program)
@@ -137,6 +137,7 @@ def main():
 
         # FUKUI
         if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
+            print('FUKUI PATH', [args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized])
             fukui_read = files(
                 calc="fukui",
                 data_dict=data_dicts,

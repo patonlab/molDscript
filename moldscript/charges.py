@@ -33,13 +33,13 @@ class charges:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- Charges Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- Charges Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
 
         self.args.log.write(
-                    f"   --- Charges Collection starting"
+                    f"-- Charges Collection starting"
                 )
 
         for file_name in self.data.keys():

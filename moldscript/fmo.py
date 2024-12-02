@@ -34,13 +34,13 @@ class fmo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"   --- FMO Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- FMO Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
 
         self.args.log.write(
-                    f"   --- FMO Collection starting"
+                    f"-- FMO Collection starting"
                 )
 
         for file_name in self.data.keys():

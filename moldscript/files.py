@@ -90,7 +90,6 @@ class files:
             key_name = self.get_filename(file)
             file_data[key_name] = file
         return file_data
-
     def get_nbo(self):
         file_data = defaultdict(dict)
         for file in self.files:
@@ -134,7 +133,6 @@ class files:
 
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
-
         try:
             fullname = fullname.split("/")[-1]
         except:
