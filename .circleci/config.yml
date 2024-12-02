@@ -4,48 +4,21 @@ version: 2.1
 orbs:
   python: circleci/python@2
 jobs:
-  test-python:
-    # Install dependencies and run tests
-    docker:
-      - image: cimg/python:3.8-node
+  build_and_test: # this can be any name you choose
+    executor: python/default
     steps:
       - checkout
       - python/install-packages:
-          pkg-manager: pip-dist
+          pkg-manager: pip
       - run:
           name: Run tests
-          command: pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
-      - store_test_results:
-          path: junit.xml
-  build-package:
-    # build python package
-    docker:
-      - image: cimg/python:3.8-node
-    steps:
-      - checkout
-      - run:
-          name: Create the ~/artifacts directory if it doesn't exist
-          command: mkdir -p ~/artifacts
-      - python/dist
-      - store_artifacts:
-          path: dist
-          destination: ~/artifacts
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          command: python -m pytest
+      - persist_to_workspace:
+          root: ~/project
+          paths: businessObjects
+        - .
+
 workflows:
-  build-and-test:
+  test_my_app:
     jobs:
-      - test-python
-      - build-package:
-          requires:
-            - test-python
-    # - deploy:
-    #     requires:
-    #       - build-package
+      - build_and_test     
