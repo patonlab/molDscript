@@ -8,7 +8,6 @@ from rdkit import Chem
 import os
 import cclib
 import pandas as pd
-from openbabel import openbabel as ob
 import time
 import ast
 
