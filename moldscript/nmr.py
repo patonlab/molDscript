@@ -130,7 +130,7 @@ class nmr:
                 end = i - 1
         nmr_shielding = []
         for j in range(start, end - 1, 5):
-            nmr = lines[j].split()[4]
+            nmr = float(lines[j].split()[4])
             nmr_shielding.append(nmr)
         return nmr_shielding
 
@@ -144,7 +144,7 @@ class nmr:
         end = start + natoms
         nmr_shielding = []
         for j in range(start, end):
-            nmr = lines[j].split()[2]
+            nmr = float(lines[j].split()[2])
             nmr_shielding.append(nmr)
         return nmr_shielding
 
