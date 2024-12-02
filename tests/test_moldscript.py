@@ -178,6 +178,6 @@ def test_fukui(opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_
                 
     assert round(sum(data_dicts[species]['atom']['oxidized_natural_charges']), precision) == round(1, precision)
     assert round(sum(data_dicts[species]['atom']['reduced_natural_charges']), precision) == round(-1, precision)
-    assert round(sum(data_dicts[species]['atom']['electrophilic_fukui_index']), precision) == round(1, precision)
-    assert round(sum(data_dicts[species]['atom']['nucleophilic_fukui_index']), precision) == round(1, precision)
-    assert round(sum(data_dicts[species]['atom']['radical_fukui_index']), precision) == round(1, precision)  
+    assert round(sum(data_dicts[species]['atom']['fminus']), precision) == round(1, precision)
+    assert round(sum(data_dicts[species]['atom']['fplus']), precision) == round(1, precision)
+    assert round(sum(data_dicts[species]['atom']['frad']), precision) == round(1, precision)  
