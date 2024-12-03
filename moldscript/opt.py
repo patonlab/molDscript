@@ -67,25 +67,17 @@ class opt:
             mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
             volume = AllChem.ComputeMolVolume(mol)
             smi = Chem.MolToSmiles(mol)
-            
-            if i == 0:
-                self.args.log.write(
-                    f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}"
-                )
-                self.args.log.write(
-                    f"   Functional used: {opt_data.metadata['functional']}"
-                )
-                self.args.log.write(
-                    f"   Basis set used: {opt_data.metadata['basis_set']}\n"
-                )
+            try:
+                if i == 0:
+                    self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}\n")
+            except:
+                pass
             file_name = nickname
 
-            self.args.log.write(
-                f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}"
-            )
-            self.data_dict[file_name]["mol"]["scfenergy"] = (
-                opt_data.scfenergies[-1] * eV_to_hartree
-            )
+            self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
+            self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
             self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
             self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi

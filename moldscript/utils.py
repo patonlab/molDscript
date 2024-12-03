@@ -87,45 +87,24 @@ def format_lists(value):
     return value
 
 
-def get_files(value, program):
-    if program == 'gaussian':
+def get_files(value):
+
         if value[-1]=='/':
             value = value[:-1]
-        if (
-        Path(f"{value}").exists()
-        and os.getcwd() not in f"{value}"
-        ):
-            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.log")
+        if (Path(f"{value}").exists() and os.getcwd() not in f"{value}"):
+            list_of_val_log = glob.glob(f"{os.getcwd()}/{value}/*.log")
+            list_of_val_out = glob.glob(f"{os.getcwd()}/{value}/*.out")
         else:
-            #list_of_val = glob.glob(value)
-            list_of_val = glob.glob(f"{value}/*.log")
-        return list_of_val
-    if program == 'orca':
-        if value[-1]=='/':
-            value = value[:-1]
-        if (
-        Path(f"{value}").exists()
-        and os.getcwd() not in f"{value}"
-        ):
-            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.out")
-
+            list_of_val_log = glob.glob(f"{value}/*.log")
+            list_of_val_out = glob.glob(f"{value}/*.out")
+        length_out = len(list_of_val_out)
+        length_log = len(list_of_val_log)
+        if length_log >= length_out:
+            list_of_val = list_of_val_log
         else:
-            list_of_val = glob.glob(value)
-
+            list_of_val = list_of_val_out
         return list_of_val
-    if program == 'xtb':
-        if value[-1]=='/':
-            value = value[:-1]
-        if (
-        Path(f"{value}").exists()
-        and os.getcwd() not in f"{value}"
-        ):
-            list_of_val = glob.glob(f"{os.getcwd()}/{value}/*.out")
-
-        else:
-            list_of_val = glob.glob(value)
-
-        return list_of_val
+ 
 def find_nth(haystack: str, needle: str, n: int) -> int:
     start = haystack.find(needle)
     while start >= 0 and n > 1:

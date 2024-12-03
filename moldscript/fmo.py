@@ -24,9 +24,7 @@ class fmo:
         self.data = data
         self.data_dict = data_dict
         if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"\nx  Could not find files to obtain information for FMO and moment analysis"
-            )
+            self.args.log.write(f"\nx  Could not find files to obtain information for FMO and moment analysis")
             self.args.log.finalize()
             sys.exit()
         else:
@@ -39,9 +37,7 @@ class fmo:
 
     def get_data(self):
 
-        self.args.log.write(
-                    f"-- FMO Collection starting"
-                )
+        self.args.log.write(f"-- FMO Collection starting")
 
         for file_name in self.data.keys():
             if self.data[file_name].rsplit('.',1)[1] == 'log':
@@ -49,12 +45,12 @@ class fmo:
             elif self.data[file_name].rsplit('.', 1)[1] =='out':
                 self.fmo_program = 'orca'
             fmo_data = self.parse_cc_data(file_name, self.data[file_name])
-
             file_name = self.get_filename(file_name)
-
-            if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
+            try:
+                if list(self.data.keys()).index(file_name) == 0:
+                    self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
+            except: pass
             fmo_data.scfenergies[-1] * eV_to_hartree
             self.args.log.write(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
             self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
