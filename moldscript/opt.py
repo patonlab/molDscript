@@ -12,10 +12,9 @@ from moldscript.argument_parser import load_variables
 import numpy as np
 from rdkit import Chem
 from moldscript.utils import eV_to_hartree, add_cpu_times
-from moldscript.sterics import sterics
 from rdkit.Chem import AllChem
 import moldscript.xyz2mol as xyz2mol
-
+from rdkit.Chem import rdFreeSASA
 
 class opt:
     """
@@ -66,6 +65,7 @@ class opt:
             # convert log to smiles
             opt_data = self.parse_cc_data(file_name, self.data[file_name])
             mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
+            volume = AllChem.ComputeMolVolume(mol)
             smi = Chem.MolToSmiles(mol)
             
             if i == 0:
@@ -91,6 +91,7 @@ class opt:
             self.data_dict[file_name]["mol"]["smiles"] = smi
             self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
             self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
+            self.data_dict[file_name]["mol"]["molecular_volume"] = volume
 
 
             # self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
