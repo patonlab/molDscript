@@ -142,15 +142,8 @@ def main():
 
         # AD IE & EA
         if args.ad_reduced and args.ad_oxidized:
-            ad_ie_ea_read = files(
-                calc="ad_ie_ea",
-                data_dict = data_dicts,
-                path=[args.ad_reduced, args.ad_oxidized],
-                program=args.program,
-            )
-            ad_ie_ea_data = ie_ea(
-                "ad_ie_ea", ad_ie_ea_read.file_data, data_dicts, program=args.program
-            )
+            ad_ie_ea_read = files(calc="ad_ie_ea", data_dict = data_dicts, path=[args.ad_reduced, args.ad_oxidized])
+            ad_ie_ea_data = ie_ea("ad_ie_ea", ad_ie_ea_read.file_data, data_dicts)
             data_dicts = ad_ie_ea_data.file_data
     
     if args.substructure != "":
@@ -160,7 +153,7 @@ def main():
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
-    get_df(data_dicts, program=args.program, substructure=args.substructure, prefix = args.output)
+    get_df(data_dicts, substructure=args.substructure, prefix = args.output)
     
     if args.boltz:
         boltz(temp=args.temp, spc=args.spc, prefix=args.output)

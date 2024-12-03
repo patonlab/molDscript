@@ -86,14 +86,13 @@ class nmr:
                 f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
             )
             cc_data = None
-
-        if self.args.program == "gaussian":
+        if file.rsplit(".", 1)[1] == "log":
             try:
                 setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
             except:
                 setattr(cc_data, "nmr_shielding", None)
 
-        if self.args.program == "orca":
+        elif file.rsplit(".", 1)[1] == "out":
             try:
                 setattr(
                     cc_data,

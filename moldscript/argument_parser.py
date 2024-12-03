@@ -13,7 +13,6 @@ moldscript_ref = "King, J.; Sowndarya, S. V. S.; Paton, R. S. MOLDSCRIPT: A Gene
 # default variables
 var_dict = {
     "struc": "",
-    "program": "gaussian",
     "varfile": None,
     "command_line": False,
     "verbose": True,
@@ -39,7 +38,6 @@ var_dict = {
     "syllables": 1,
     "substructure": "",
     "varfile" : '',
-    "spc_program": 'gaussian',
     "radius": 3,
     "output": ""
 }
@@ -126,7 +124,6 @@ def command_line_args():
     str_args = [
         "output",
         "struct",
-        "program",
         "varfile",
         "opt",
         "spc",

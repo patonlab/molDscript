@@ -21,7 +21,6 @@ class charges:
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
-        print(self.data.keys())
         self.data_dict = data_dict
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
