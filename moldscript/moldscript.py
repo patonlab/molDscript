@@ -99,65 +99,51 @@ def main():
     else:
         # OPT
         if args.opt:
-            opt_read = files("opt", args.opt, data_dicts, program=args.program)
-            opt_data = opt(
-                opt_read.file_data, data_dicts, program=args.program, volume=args.volume
-            )
+            opt_read = files("opt", args.opt, data_dicts)
+            opt_data = opt(opt_read.file_data, data_dicts)
             data_dicts = opt_data.file_data
         
         # SPC
         if args.spc:
             spc_read = files(calc="spc", path=args.spc, data_dict=data_dicts)
-            spc_data = spc(spc_read.file_data, data_dicts, spc_program=args.spc_program)
+            spc_data = spc(spc_read.file_data, data_dicts)
             data_dicts = spc_data.file_data
         
         # Charges
         if args.charges:
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts)
-            chg_data = charges(chg_read.file_data, data_dicts, program=args.program)
+            chg_data = charges(chg_read.file_data, data_dicts)
             data_dicts = chg_data.file_data
         
         # FMO
         if args.fmo:
             fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts)
-            fmo_data = fmo(fmo_read.file_data, data_dicts, program=args.program)
+            fmo_data = fmo(fmo_read.file_data, data_dicts)
             data_dicts = fmo_data.file_data
         
         # NMR
         if args.nmr:
-            nmr_read = files("nmr", args.nmr, data_dicts, program=args.program)
-            nmr_data = nmr(nmr_read.file_data, data_dicts, program=args.program)
+            nmr_read = files("nmr", args.nmr, data_dicts)
+            nmr_data = nmr(nmr_read.file_data, data_dicts)
             data_dicts = nmr_data.file_data
 
         # NBO
         if args.nbo:
-            nbo_read = files("nbo", args.nbo, data_dicts, program=args.program)
-            nbo_data = nbo(nbo_read.file_data, data_dicts, program=args.program)
+            nbo_read = files("nbo", args.nbo, data_dicts)
+            nbo_data = nbo(nbo_read.file_data, data_dicts)
             data_dicts = nbo_data.file_data
 
         # FUKUI
         if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
             print('FUKUI PATH', [args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized])
-            fukui_read = files(
-                calc="fukui",
-                data_dict=data_dicts,
-                path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized],
-                program=args.program,
-            )
-            fukui_data = fukui(fukui_read.file_data, data_dicts, program=args.program)
+            fukui_read = files(calc="fukui", data_dict=data_dicts, path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized])
+            fukui_data = fukui(fukui_read.file_data, data_dicts)
             data_dicts = fukui_data.data_dict
 
         # AD IE & EA
         if args.ad_reduced and args.ad_oxidized:
-            ad_ie_ea_read = files(
-                calc="ad_ie_ea",
-                data_dict = data_dicts,
-                path=[args.ad_reduced, args.ad_oxidized],
-                program=args.program,
-            )
-            ad_ie_ea_data = ie_ea(
-                "ad_ie_ea", ad_ie_ea_read.file_data, data_dicts, program=args.program
-            )
+            ad_ie_ea_read = files(calc="ad_ie_ea", data_dict = data_dicts, path=[args.ad_reduced, args.ad_oxidized])
+            ad_ie_ea_data = ie_ea("ad_ie_ea", ad_ie_ea_read.file_data, data_dicts)
             data_dicts = ad_ie_ea_data.file_data
     
     if args.substructure != "":
@@ -167,7 +153,7 @@ def main():
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
-    get_df(data_dicts, program=args.program, substructure=args.substructure, prefix = args.output)
+    get_df(data_dicts, substructure=args.substructure, prefix = args.output)
     
     if args.boltz:
         boltz(temp=args.temp, spc=args.spc, prefix=args.output)

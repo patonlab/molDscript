@@ -24,13 +24,12 @@ class files:
         self.args = load_variables(kwargs, "FILES", create_dat=create_dat)
         self.calc = calc
         self.path = path
-        self.program = self.args.program
         if type(self.path) == str:
-            self.files = get_files(self.path, self.program)
+            self.files = get_files(self.path)
         elif type(self.path) == list:
             self.files = []
             for i in self.path:
-                for j in get_files(i, self.program):
+                for j in get_files(i):
                     self.files.append(j)
         self.data_dict = data_dict
 

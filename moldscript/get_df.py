@@ -13,7 +13,7 @@ class get_df:
     Class to create 3 .csv files containing paramaters
     """
 
-    def __init__(self, data_dicts, substructure="", program="gaussian", volume=False, prefix=""):
+    def __init__(self, data_dicts, substructure="", prefix=""):
         self.dd = data_dicts
         self.substructure = substructure
         self.prefix = prefix

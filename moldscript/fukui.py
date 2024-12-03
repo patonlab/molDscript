@@ -25,9 +25,7 @@ class fukui:
         self.data_dict = data_dicts
 
         if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"x  Could not find files to obtain information for calculating Fukui Coefficients\n"
-            )
+            self.args.log.write(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
             self.args.log.finalize()
             sys.exit()
         else:
@@ -35,70 +33,43 @@ class fukui:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(
-                f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n"
-            )
+            self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
-        mydict = lambda: defaultdict(mydict)
-        file_data = mydict()
+
         first = False
-
-        self.args.log.write(
-                    f"-- Fukui Parameter Collection starting"
-                )
-
+        self.args.log.write(f"-- Fukui Parameter Collection starting")
         for file_name in list(self.data.keys()):
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
-                neutral_data = self.parse_cc_data(
-                    file_name, self.data[file_name]["neutral"]
-                )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                    self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
-                    first = True
+                neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
+                if first == False:
+                    try:     
+                        first = True               
+                        self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
+                        self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
+                        self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
+                    except: pass
             if "oxidized" in self.data[file_name].keys():
-                oxidized_data = self.parse_cc_data(
-                    file_name, self.data[file_name]["oxidized"]
-                )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {oxidized_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {oxidized_data.metadata['basis_set']}")
-                    first = True
+                oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
-                reduced_data = self.parse_cc_data(
-                    file_name, self.data[file_name]["reduced"]
-                )
-                if first == False and self.args.program=='gaussian':
-                    self.args.log.write(f"   Functional used: {reduced_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {reduced_data.metadata['basis_set']}")
-                    first = True
+                reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
 
             if neutral_data != None and oxidized_data != None and reduced_data != None:
-                self.args.log.write(
-                    f"o  Parsing Fukui data from {file_name}"
-                )
-                self.data_dict[file_name]['atom']['oxidized_natural_charges'] = (
-                    oxidized_data.atomcharges["natural"]
-                )
-
-                ##Reduced molecule
-                
-                self.data_dict[file_name]['atom']['reduced_natural_charges'] = (
-                    reduced_data.atomcharges["natural"]
-                )
+                self.args.log.write(f"o  Parsing Fukui data from {file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
                 red_e = reduced_data.scfenergies[-1] * eV_to_hartree
                 ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
                 self.data_dict[file_name]['mol']['vertical_ie'] = ox_e - neut_e
                 self.data_dict[file_name]['mol']['vertical_ea'] = red_e - neut_e
-                
-                reduced_charges = np.array(reduced_data.atomcharges["natural"])
-                neutral_charges = np.array(neutral_data.atomcharges["natural"])
-                oxidized_charges = np.array(oxidized_data.atomcharges["natural"])
+                chg = self.find_first_match(["natural", "hirshfeld", "mulliken"], list(neutral_data.atomcharges.keys()))
+                self.args.log.write(f'   Charges used for FUKUI: {chg}')
+                reduced_charges = np.array(reduced_data.atomcharges[chg])
+                neutral_charges = np.array(neutral_data.atomcharges[chg])
+                oxidized_charges = np.array(oxidized_data.atomcharges[chg])
+                self.data_dict[file_name]['atom'][f'oxidized_{chg}_charges'] = oxidized_charges
+                self.data_dict[file_name]['atom'][f'reduced_{chg}_charges'] = reduced_charges
                 #multiplied by -1 to change from charge density to electron density to meet fukui definition
                 fplus = -1 * (reduced_charges - neutral_charges)
                 fminus = -1 * (neutral_charges - oxidized_charges)
@@ -107,9 +78,7 @@ class fukui:
                 self.data_dict[file_name]['atom']['fminus'] = (fminus)
                 self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
             else:
-                self.args.log.write(
-                    f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!"
-                )
+                self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
 
         return self.data_dict
 
@@ -120,21 +89,11 @@ class fukui:
         try:
             cc_data = parser.parse()
         except:
-            self.args.log.write(
-                f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
-            )
+            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
             cc_data = None
 
         try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
-        except: cc_data.atomcharges["natural"] = None
-
-        if self.args.program=='orca':
-            try: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = self.orca_data(file, cc_data), None
-            except: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = None, None
-
-        if self.args.program=='gaussian':
-            try: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = self.gaussian_data(file, cc_data)
-            except: cc_data.atomcharges["hirsfeld"], cc_data.atomcharges["cm5"] = None, None
+        except: pass
         
         return cc_data
         
@@ -153,41 +112,10 @@ class fukui:
             for i in range(start_npop, end_npop):
                 nat_charges.append(float(lines[i].split()[2]))
         return nat_charges
-    
-    def gaussian_data(self, file, cc_data):
-        start_npop = None
-        lines = open(file, "r").readlines()
-        for i, line in enumerate(lines):
-            if (
-                line.find(
-                    "Hirshfeld charges, spin densities, dipoles, and CM5 charges using IRadAn=      5:"
-                )
-                > -1
-            ):
-                start_npop = i + 2
-        if start_npop != None:
-            hers_charges = []
-            cm5_charges = []
-            end_npop = start_npop + len(cc_data.atomnos)
-            for i in range(start_npop, end_npop):
-                hers_charges.append(float(lines[i].split()[2]))
-                cm5_charges.append(float(lines[i].split()[-1]))
-        return hers_charges, cm5_charges
-    
-    def orca_data(self, file, cc_data):
-        start_npop = None
-        lines = open(file, "r").readlines()
-        for i, line in enumerate(lines):
-            if (
-                line.find("HIRSHFELD ANALYSIS")
-                > -1
-            ):
-                start_npop = i + 7
-        if start_npop != None:
-            hers_charges = []
-            end_npop = start_npop + len(cc_data.atomnos)
-            for i in range(start_npop, end_npop):
-                hers_charges.append(float(lines[i].split()[2]))
-        return hers_charges
-    
+    def find_first_match(self, list_a, list_b):
+        for element in list_a:
+            if element in list_b:
+                return element
+        return None  # No match found
+
 

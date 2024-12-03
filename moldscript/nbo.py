@@ -26,9 +26,7 @@ class nbo:
         self.fnames = self.data_dict.keys()
 
         if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"\nx  Could not find files to obtain information for calculating NBO"
-            )
+            self.args.log.write(f"\nx  Could not find files to obtain information for calculating NBO")
             self.args.log.finalize()
             sys.exit()
         else:
@@ -44,45 +42,31 @@ class nbo:
             self.args.log.finalize()
 
     def get_data(self):
-        mydict = lambda: defaultdict(mydict)
-        file_data = mydict()
 
-        self.args.log.write(
-                    f"-- NBO Parameter Collection starting"
-                )
-
+        self.args.log.write(f"-- NBO Parameter Collection starting")
         for i, file_name in enumerate(self.data.keys()):
-
             nbo_data = self.parse_cc_data(file_name, self.data[file_name])
-            # try:
-            #     nbo_data = self.parse_cc_data(file_name, self.data[file_name])
-            # except:
-            #     nbo_data = None
             
             if i == 0:
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
                 try:
                     nbo_version = self.parse_nbo_version(self.data[file_name])
                     self.args.log.write(f"   NBO version used: {nbo_version}")
+                    self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}\n")
                 except: 
                     pass
-                self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}\n")
-            if nbo_data != None:
 
-                self.args.log.write(
-                    f"o  Parsing NBO data from {file_name}"
-                )
+            if nbo_data != None:
+                self.args.log.write(f"o  Parsing NBO data from {file_name}")
                 file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
                 self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
-                # self.data_dict[file_name]['atom']['nbo_atomnos'] = nbo_data.atomnos
+
                 
             else:
-                self.args.log.write(
-                    f"Skipping file {file_name} as NBO data didnt exist\n"
-                )
+                self.args.log.write(f"Skipping file {file_name} as NBO data didnt exist\n")
 
             # self.data_dict[file_name]['mol']['nbo_cpu_time'] = datetime.timedelta(0) # initialize cpu time
             # for time in nbo_data.metadata['cpu_time']:
@@ -122,10 +106,7 @@ class nbo:
         except:
             setattr(cc_data, "bondorders", None)
         setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
-        # try:
-        #     setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
-        # except:
-        #     setattr(cc_data, "bondorders_matrix", None)
+
 
         try:
             cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)

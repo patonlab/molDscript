@@ -27,9 +27,7 @@ class nmr:
         self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"\nx  Could not find files to obtain information for calculating NMR"
-            )
+            self.args.log.write(f"\nx  Could not find files to obtain information for calculating NMR")
             self.args.log.finalize()
             sys.exit()
         else:
@@ -39,14 +37,10 @@ class nmr:
             elapsed_time = round(time.time() - start_time_overall, 2)
             try:
                 total_cpu = add_cpu_times(self.file_data)
-                self.args.log.write(
-                    f"\n   NMR calculations complete in {total_cpu} seconds"
-                )
+                self.args.log.write(f"\n   NMR calculations complete in {total_cpu} seconds")
             except:
                 pass
-            self.args.log.write(
-                f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n"
-            )
+            self.args.log.write(f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
@@ -60,25 +54,16 @@ class nmr:
                 nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             except:
                 nmr_data = None
-
-            if i == 0:
-                self.args.log.write(
-                    f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}"
-                )
-                self.args.log.write(
-                    f"   Functional used: {nmr_data.metadata['functional']}"
-                )
-                self.args.log.write(
-                    f"   Basis set used: {nmr_data.metadata['basis_set']}\n"
-                )
+            try:
+                if i == 0:
+                    self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
+            except:
+                pass
             if nmr_data != None:
-                self.args.log.write(
-                    f"o  Parsing NMR Shielding Tensors from {file_name}"
-                )
-                self.data_dict[file_name]["atom"][
-                    "nmr_shielding"
-                ] = nmr_data.nmr_shielding
-                # self.data_dict[file_name]["atom"]["nmr_atomnos"] = nmr_data.atomnos
+                self.args.log.write(f"o  Parsing NMR Shielding Tensors from {file_name}")
+                self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
                 self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
@@ -101,14 +86,13 @@ class nmr:
                 f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
             )
             cc_data = None
-
-        if self.args.program == "gaussian":
+        if file.rsplit(".", 1)[1] == "log":
             try:
                 setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
             except:
                 setattr(cc_data, "nmr_shielding", None)
 
-        if self.args.program == "orca":
+        elif file.rsplit(".", 1)[1] == "out":
             try:
                 setattr(
                     cc_data,

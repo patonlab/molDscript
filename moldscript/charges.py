@@ -23,9 +23,7 @@ class charges:
         self.data = data
         self.data_dict = data_dict
         if len(self.data.keys()) == 0:
-            self.args.log.write(
-                f"\nx  Could not find files to obtain information for single point correction"
-            )
+            self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
             self.args.log.finalize()
             sys.exit()
         else:
@@ -38,17 +36,17 @@ class charges:
 
     def get_data(self):
 
-        self.args.log.write(
-                    f"-- Charges Collection starting"
-                )
-
+        self.args.log.write(f"-- Charges Collection starting")
         for file_name in self.data.keys():
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
-            if list(self.data.keys()).index(file_name) == 0:
-                self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
-                self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
+            try:
+                if list(self.data.keys()).index(file_name) == 0:
+                    self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
+            except:
+                pass
             self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             for i in chg_data.atomcharges.keys():
                 if 'mulliken' not in i and 'sum' not in i:
