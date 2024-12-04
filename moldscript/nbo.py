@@ -105,8 +105,8 @@ class nbo:
             setattr(cc_data, "bondorders", self.bondorders(file, cc_data))
         except:
             setattr(cc_data, "bondorders", None)
-        setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
 
+        setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
 
         try:
             cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)

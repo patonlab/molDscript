@@ -38,6 +38,7 @@ class spc:
         self.args.log.write(f"   --- Single Point Energy Collection starting")
 
         for file_name in self.data.keys():
+            print(self.data[file_name])
             spc_data = self.parse_cc_data(file_name, self.data[file_name])
 
             filename = self.get_filename(file_name)
@@ -48,19 +49,14 @@ class spc:
                     self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
             except:
                 pass
-            spc_data.scfenergies[-1] * eV_to_hartree
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
             self.data_dict[filename]['mol']['spc_energy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-
-        ### parse data
-        parser = cc.io.ccopen(file)
-
         try:
-            cc_data = parser.parse()
+            cc_data = cc.io.ccread(file)
         except:
             self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
             cc_data = None

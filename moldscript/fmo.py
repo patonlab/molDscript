@@ -64,7 +64,7 @@ class fmo:
             self.data_dict[file_name]["mol"]["global_electrophilicity"] = glob_electrophilicity
             self.data_dict[file_name]["mol"]["global_nucleophilicity"] = 1/glob_electrophilicity
 
-            if self.fmo_program == "gaussian":
+            try:
                 quadrupole_moments = fmo_data.moments[2]
                 quadrupole_matrix = np.array([
     [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
@@ -73,7 +73,8 @@ class fmo:
 ])
                 trace = np.trace(quadrupole_matrix)
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
-
+            except: 
+                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

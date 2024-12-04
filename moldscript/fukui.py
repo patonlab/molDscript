@@ -84,10 +84,8 @@ class fukui:
 
     def parse_cc_data(self, file_name, file):
 
-        ### parse data
-        parser = cc.io.ccopen(file)
         try:
-            cc_data = parser.parse()
+            cc_data = cc.io.ccread(file)
         except:
             self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
             cc_data = None
