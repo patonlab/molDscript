@@ -8,6 +8,7 @@ import time
 import cclib as cc
 from moldscript.argument_parser import load_variables
 from moldscript.utils import eV_to_hartree
+import datetime
 
 class spc:
     """
@@ -52,6 +53,19 @@ class spc:
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
             self.data_dict[filename]['mol']['spc_energy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
+            
+            if self.data[file_name] in self.data_dict['CPU_time']:
+                pass
+            else:
+                try: 
+                    for time in spc_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict["CPU_time"].append(self.data[file_name])
+                except:
+                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                    for time in spc_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict['CPU_time'].append(self.data[file_name])
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

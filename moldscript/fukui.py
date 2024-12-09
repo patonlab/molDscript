@@ -10,6 +10,7 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
 from moldscript.utils import eV_to_hartree
+import datetime
 
 class fukui:
     """
@@ -79,6 +80,38 @@ class fukui:
                 self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
             else:
                 self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
+            for i in ['neutral', 'reduced', 'oxidized']:
+                if self.data[file_name][i] in self.data_dict['CPU_time']:
+                    pass
+                else:
+                    try: 
+                        if i == 'neutral':
+                            for time in neutral_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                        elif i == 'reduced':
+                            for time in reduced_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time
+                        elif i == 'oxidized':
+                            for time in oxidized_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time
+                        self.data_dict["CPU_time"].append(self.data[file_name][i])
+
+                    except:
+                        self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                        if i == 'neutral':
+                            for time in neutral_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                        elif i == 'reduced':
+                            for time in reduced_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time
+                        elif i == 'oxidized':
+                            for time in oxidized_data.metadata["cpu_time"]:
+                                self.data_dict[file_name]["CPU_time"] += time
+                        self.data_dict['CPU_time'].append(self.data[file_name][i])
+
+                return self.data_dict
+
+            
 
         return self.data_dict
 

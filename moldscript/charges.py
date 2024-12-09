@@ -9,6 +9,7 @@ import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 from moldscript.utils import eV_to_hartree
+import datetime
 
 class charges:
     """
@@ -51,6 +52,19 @@ class charges:
             for i in chg_data.atomcharges.keys():
                 if 'mulliken' not in i and 'sum' not in i:
                     self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
+
+            if self.data[file_name] in self.data_dict['CPU_time']:
+                pass
+            else:
+                try: 
+                    for time in chg_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict["CPU_time"].append(self.data[file_name])
+                except:
+                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                    for time in chg_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict['CPU_time'].append(self.data[file_name])
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

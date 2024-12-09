@@ -6,6 +6,7 @@ import numpy as np
 pd.options.mode.chained_assignment = None
 import math
 import periodictable
+import datetime
 
 
 class get_df:
@@ -20,13 +21,13 @@ class get_df:
         mol_df = self.get_mol_df()
         bond_df = self.get_bond_df()
         atom_df = self.get_atom_df()
+        self.get_time()
 
     def get_mol_df(self):
         mol_csv = str(self.prefix) + "molecule_level.csv"
-        print(
-            "\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}".format(mol_csv)
-        )
+        print("\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}".format(mol_csv))
         filenames = list(self.dd.keys())
+        filenames.remove("CPU_time")
         data = self.dd
 
         for fname in filenames:
@@ -48,6 +49,7 @@ class get_df:
         bond_csv = str(self.prefix) + "bond_level.csv"
         print("\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}".format(bond_csv))
         filenames = list(self.dd.keys())
+        filenames.remove("CPU_time")
         data = self.dd
         props = list(data[filenames[0]]["bond"].keys())
         for prop in props:
@@ -103,6 +105,7 @@ class get_df:
         atom_csv = str(self.prefix) + "atom_level.csv"
         print("\n\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
         filenames = list(self.dd.keys())
+        filenames.remove("CPU_time")
         data = self.dd
         props = list(data[filenames[0]]["atom"].keys())
         props.remove("atomnos")
@@ -171,6 +174,15 @@ class get_df:
         atomdf = atomdf.map(lambda x: np.nan if isinstance(x, str) and x.strip() == '' else x)
         atomdf = atomdf.round(4)
         atomdf.to_csv(atom_csv, index=False)
+    def get_time(self):
+        cpu_time = datetime.timedelta(0)
+        fnames = list(self.dd.keys())
+        fnames.remove('CPU_time')
+        for file in fnames:
+            cpu_time += self.dd[file]["CPU_time"]
+        total_seconds = cpu_time.total_seconds()
+        hours = total_seconds / 3600
+        print(f'\n\tThe total CPU time used in the generation of the parsed data is {hours:.0f} SUs')
 
     def get_atom_lab(self, num):
         label = periodictable.elements[num]

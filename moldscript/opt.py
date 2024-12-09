@@ -2,10 +2,9 @@
 #        This file stores the OPT class               #
 ######################################################.
 
-
+import datetime
 import sys, os
 import time
-import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
@@ -54,7 +53,7 @@ class opt:
         mydict = lambda: defaultdict(mydict)
 
         self.args.log.write(f"-- Optimization Parameter Collection starting")
-
+        self.data_dict["CPU_time"] = []
         for i, file_name in enumerate(self.data.keys()):
             nickname = file_name
             self.data_dict[file_name] = dict()
@@ -86,9 +85,18 @@ class opt:
             self.data_dict[file_name]["mol"]["molecular_volume"] = volume
 
 
-            # self.data_dict[file_name]["mol"]["cpu_time"] = datetime.timedelta(0)  # initialize cpu time
-            # for time in opt_data.metadata["cpu_time"]:
-            #     self.data_dict[file_name]["mol"]["cpu_time"] += time  # add cpu time
+            if self.data[file_name] in self.data_dict['CPU_time']:
+                pass
+            else:
+                try: 
+                    for time in opt_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict["CPU_time"].append(self.data[file_name])
+                except:
+                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                    for time in opt_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict['CPU_time'].append(self.data[file_name])
         
         return self.data_dict
 
