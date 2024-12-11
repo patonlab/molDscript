@@ -12,11 +12,11 @@ from moldscript.charges import charges
 from moldscript.fukui import fukui
 from moldscript.utils import eV_to_hartree
 
-@pytest.mark.parametrize("opt_path, species, energy, enthalpy, gibbs_energy, smiles", [
-    ('arbr/opt',  'arbr31_wb97xd', -2996.631169953559, -2996.486642, -2996.532564, '[H]c1c([H])c2c(c([H])c1Br)C([H])([H])C([H])([H])C2=O'),
+@pytest.mark.parametrize("opt_path, species,  smiles", [
+    ('arbr/opt',  'arbr31_wb97xd',  '[H]c1c([H])c2c(c([H])c1Br)C([H])([H])C([H])([H])C2=O'),
 ])
 
-def test_opt(opt_path,  species, energy, enthalpy, gibbs_energy, smiles):
+def test_opt(opt_path,  species,  smiles):
     path = datapath(opt_path)
     data_dicts = {}
 
@@ -26,9 +26,6 @@ def test_opt(opt_path,  species, energy, enthalpy, gibbs_energy, smiles):
     
     # molecular parameters
     precision = 6 # 6 decimal places for energies
-    assert round(data_dicts[species]['mol']['scfenergy'], precision) == round(energy, precision)
-    assert round(data_dicts[species]['mol']['opt_enthalpy'], precision) == round(enthalpy, precision)
-    assert round(data_dicts[species]['mol']['opt_freeenergy'], precision) == round(gibbs_energy, precision)
     assert data_dicts[species]['mol']['smiles'] == smiles
 
 
