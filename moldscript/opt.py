@@ -77,8 +77,8 @@ class opt:
             file_name = nickname
 
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
+            self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
             if self.ml == False:
-                self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
                 self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
                 self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi

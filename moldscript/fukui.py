@@ -42,13 +42,11 @@ class fukui:
         first = False
         self.args.log.write(f"-- Fukui Parameter Collection starting")
         for file_name in list(self.data.keys()):
-            print(file_name)
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
                 if first == False:
-                    try:     
-                        first = True               
+                    try:                 
                         self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
                         self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
                         self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
@@ -66,7 +64,9 @@ class fukui:
                 self.data_dict[file_name]['mol']['vertical_ie'] = ox_e - neut_e
                 self.data_dict[file_name]['mol']['vertical_ea'] = red_e - neut_e
                 chg = self.find_first_match(["natural", "hirshfeld", "mulliken"], list(neutral_data.atomcharges.keys()))
-                self.args.log.write(f'   Charges used for FUKUI: {chg}')
+                if first == False:
+                    self.args.log.write(f'   Charges used for FUKUI: {chg}')
+                    first = True
                 reduced_charges = np.array(reduced_data.atomcharges[chg])
                 neutral_charges = np.array(neutral_data.atomcharges[chg])
                 oxidized_charges = np.array(oxidized_data.atomcharges[chg])
@@ -81,35 +81,36 @@ class fukui:
                 self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
             else:
                 self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
-            for i in ['neutral', 'reduced', 'oxidized']:
-                if self.data[file_name][i] in self.data_dict['CPU_time']:
-                    pass
-                else:
-                    try: 
-                        if i == 'neutral':
-                            for time in neutral_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                        elif i == 'reduced':
-                            for time in reduced_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time
-                        elif i == 'oxidized':
-                            for time in oxidized_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time
-                        self.data_dict["CPU_time"].append(self.data[file_name][i])
+            try:
+                for i in ['neutral', 'reduced', 'oxidized']:
+                    if self.data[file_name][i] in self.data_dict['CPU_time']:
+                        pass
+                    else:
+                        try: 
+                            if i == 'neutral':
+                                for time in neutral_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                            elif i == 'reduced':
+                                for time in reduced_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time
+                            elif i == 'oxidized':
+                                for time in oxidized_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time
+                            self.data_dict["CPU_time"].append(self.data[file_name][i])
 
-                    except:
-                        self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                        if i == 'neutral':
-                            for time in neutral_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                        elif i == 'reduced':
-                            for time in reduced_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time
-                        elif i == 'oxidized':
-                            for time in oxidized_data.metadata["cpu_time"]:
-                                self.data_dict[file_name]["CPU_time"] += time
-                        self.data_dict['CPU_time'].append(self.data[file_name][i])
-
+                        except:
+                            self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                            if i == 'neutral':
+                                for time in neutral_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                            elif i == 'reduced':
+                                for time in reduced_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time
+                            elif i == 'oxidized':
+                                for time in oxidized_data.metadata["cpu_time"]:
+                                    self.data_dict[file_name]["CPU_time"] += time
+                            self.data_dict['CPU_time'].append(self.data[file_name][i])
+            except: print(f'!!Could not obtain CPU time for {file_name}, skipping!!')
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

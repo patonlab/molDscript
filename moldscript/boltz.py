@@ -7,10 +7,11 @@ import numpy as np
 boltzmann_constant = 3.1668114e-6
 
 class boltz:
-    def __init__(self, temp = 298.15, spc=False, prefix='' ):
+    def __init__(self, temp = 298.15, spc=False, prefix='', energies=None ):
         self.spc = spc
         self.temp = temp
         self.prefix = prefix
+        self.energies = energies
         self.weight_dict = {}
         self.mol_boltz()
         self.atom_boltz()
@@ -19,10 +20,8 @@ class boltz:
     def mol_boltz(self):
         ensemble_mol_csv = str(self.prefix) + 'ensemble_molecule_level.csv'
         mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
-        if self.spc:
-            print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN BOLTZMANN WEIGHTS--')   
-            mol_df['scfenergy'] = mol_df['spc_energy']
-            mol_df.drop(columns=['spc_energy'], inplace=True)
+        mol_df = pd.merge(mol_df, self.energies, on='filename')
+
         print('\u25A1  AVERAGING MOLECULE-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_mol_csv))
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
         weighted_df = pd.DataFrame()
@@ -64,7 +63,8 @@ class boltz:
                 output_df['filename'] = [name]
             weighted_df = pd.concat([weighted_df, output_df])
         columns_order = ['filename', 'smiles'] + [col for col in weighted_df.columns if col not in ['filename', 'smiles']]
-        weighted_df = weighted_df[columns_order]    
+        weighted_df = weighted_df[columns_order]  
+        weighted_df = weighted_df.drop('scfenergy', axis=1)  
         weighted_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_boltz(self):

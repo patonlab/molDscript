@@ -51,7 +51,7 @@ class spc:
             except:
                 pass
             self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
-            self.data_dict[filename]['mol']['spc_energy'] = (
+            self.data_dict[filename]['mol']['scfenergy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
             
             if self.data[file_name] in self.data_dict['CPU_time']:
