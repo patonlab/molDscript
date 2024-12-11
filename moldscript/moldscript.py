@@ -101,7 +101,7 @@ def main():
         # OPT
         if args.opt:
             opt_read = files("opt", args.opt, data_dicts)
-            opt_data = opt(opt_read.file_data, data_dicts)
+            opt_data = opt(opt_read.file_data, data_dicts, ml = args.ml)
             data_dicts = opt_data.file_data
         
         # SPC
@@ -154,13 +154,13 @@ def main():
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
-    get_df(data_dicts, substructure=args.substructure, prefix = args.output)
+    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output)
     
     if args.boltz:
-        boltz(temp=args.temp, spc=args.spc, prefix=args.output)
+        boltz(temp=args.temp, spc=args.spc, prefix=args.output, energies = df_getter.energies)
     
     if args.min_max:
-        min_max(temp=args.temp, cut=args.cut, spc=args.spc,  prefix=args.output)
+        min_max(temp=args.temp, cut=args.cut, spc=args.spc,  prefix=args.output, energies = df_getter.energies)
     tfin = time.time()
     print(F"\n\tMolDscript finished running in {round(tfin - tstart, 2)} seconds")
 if __name__ == "__main__":

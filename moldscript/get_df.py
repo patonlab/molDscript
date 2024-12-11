@@ -43,6 +43,8 @@ class get_df:
             print(f"\t- {prop}")
         moldf.insert(0, "filename", col)
         moldf = moldf.round(4)
+        self.energies = moldf[['filename', 'scfenergy']]
+        moldf.drop('scfenergy', axis=1, inplace=True)
         moldf.to_csv(mol_csv, index=False)
 
     def get_bond_df(self):

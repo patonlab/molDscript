@@ -20,13 +20,14 @@ class opt:
     Class containing all the functions for the opt module related to Gaussian output files
     """
 
-    def __init__(self, data, data_dict, create_dat=True, **kwargs):
+    def __init__(self, data, data_dict, create_dat=True, ml = True, **kwargs):
 
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "OPT", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.ml = ml
 
         if len(self.data.keys()) == 0:
             self.args.log.write(
@@ -77,8 +78,9 @@ class opt:
 
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
             self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
-            self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
-            self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
+            if self.ml == False:
+                self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
+                self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
             self.data_dict[file_name]["mol"]["smiles"] = smi
             self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
             self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
