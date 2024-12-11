@@ -39,7 +39,7 @@ class spc:
         self.args.log.write(f"   --- Single Point Energy Collection starting")
 
         for file_name in self.data.keys():
-            print(self.data[file_name])
+
             spc_data = self.parse_cc_data(file_name, self.data[file_name])
 
             filename = self.get_filename(file_name)

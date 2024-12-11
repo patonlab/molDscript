@@ -160,7 +160,7 @@ def main():
         boltz(temp=args.temp, spc=args.spc, prefix=args.output)
     
     if args.min_max:
-        min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables, prefix=args.output)
+        min_max(temp=args.temp, cut=args.cut, spc=args.spc,  prefix=args.output)
     tfin = time.time()
     print(F"\n\tMolDscript finished running in {round(tfin - tstart, 2)} seconds")
 if __name__ == "__main__":

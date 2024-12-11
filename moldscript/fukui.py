@@ -42,6 +42,7 @@ class fukui:
         first = False
         self.args.log.write(f"-- Fukui Parameter Collection starting")
         for file_name in list(self.data.keys()):
+            print(file_name)
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
@@ -109,7 +110,7 @@ class fukui:
                                 self.data_dict[file_name]["CPU_time"] += time
                         self.data_dict['CPU_time'].append(self.data[file_name][i])
 
-                return self.data_dict
+        return self.data_dict
 
             
 

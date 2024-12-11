@@ -182,7 +182,7 @@ class get_df:
             cpu_time += self.dd[file]["CPU_time"]
         total_seconds = cpu_time.total_seconds()
         hours = total_seconds / 3600
-        print(f'\n\tThe total CPU time used in the generation of the parsed data is {hours:.0f} SUs')
+        print(f'\n\tThe total CPU time used in the generation of the parsed data is {hours:.0f} hours\n')
 
     def get_atom_lab(self, num):
         label = periodictable.elements[num]
