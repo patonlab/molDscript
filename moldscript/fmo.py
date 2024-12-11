@@ -10,6 +10,7 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 from moldscript.utils import eV_to_hartree
 import numpy as np
+import datetime
 
 class fmo:
     """
@@ -64,7 +65,7 @@ class fmo:
             self.data_dict[file_name]["mol"]["global_electrophilicity"] = glob_electrophilicity
             self.data_dict[file_name]["mol"]["global_nucleophilicity"] = 1/glob_electrophilicity
 
-            if self.fmo_program == "gaussian":
+            try:
                 quadrupole_moments = fmo_data.moments[2]
                 quadrupole_matrix = np.array([
     [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
@@ -73,6 +74,22 @@ class fmo:
 ])
                 trace = np.trace(quadrupole_matrix)
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
+            except: 
+                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
+    
+            if self.data[file_name] in self.data_dict['CPU_time']:
+                pass
+            else:
+                try: 
+                    for time in fmo_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict["CPU_time"].append(self.data[file_name])
+                except:
+                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                    for time in fmo_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict['CPU_time'].append(self.data[file_name])
+
 
         return self.data_dict
 

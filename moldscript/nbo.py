@@ -68,9 +68,18 @@ class nbo:
             else:
                 self.args.log.write(f"Skipping file {file_name} as NBO data didnt exist\n")
 
-            # self.data_dict[file_name]['mol']['nbo_cpu_time'] = datetime.timedelta(0) # initialize cpu time
-            # for time in nbo_data.metadata['cpu_time']:
-            #     self.data_dict[file_name]['mol']['nbo_cpu_time'] += time
+            if self.data[file_name] in self.data_dict['CPU_time']:
+                pass
+            else:
+                try: 
+                    for time in nbo_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict["CPU_time"].append(self.data[file_name])
+                except:
+                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
+                    for time in nbo_data.metadata["cpu_time"]:
+                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
+                    self.data_dict['CPU_time'].append(self.data[file_name])
 
         return self.data_dict
 
@@ -105,8 +114,8 @@ class nbo:
             setattr(cc_data, "bondorders", self.bondorders(file, cc_data))
         except:
             setattr(cc_data, "bondorders", None)
-        setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
 
+        setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
 
         try:
             cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)

@@ -19,6 +19,7 @@ from moldscript.argument_parser import (
 )
 from moldscript.boltz import boltz
 from moldscript.fmo import fmo
+import time
 
 header = """
    • ▌ ▄ ·.       ▄▄▌  ·▄▄▄▄  .▄▄ ·  ▄▄· ▄▄▄  ▪   ▄▄▄·▄▄▄▄▄
@@ -55,7 +56,7 @@ def checks():
 def main():
     # This chunk parses the CLI arguments and load user-defined arguments from command line
     args = command_line_args()
-
+    tstart = time.time()
 
     data_dicts = {}
 
@@ -159,8 +160,9 @@ def main():
         boltz(temp=args.temp, spc=args.spc, prefix=args.output)
     
     if args.min_max:
-        min_max(temp=args.temp, cut=args.cut, spc=args.spc, syllables=args.syllables, prefix=args.output)
-
+        min_max(temp=args.temp, cut=args.cut, spc=args.spc,  prefix=args.output)
+    tfin = time.time()
+    print(F"\n\tMolDscript finished running in {round(tfin - tstart, 2)} seconds")
 if __name__ == "__main__":
     checks()
     main()
