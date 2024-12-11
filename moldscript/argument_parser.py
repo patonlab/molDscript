@@ -39,7 +39,8 @@ var_dict = {
     "substructure": "",
     "varfile" : '',
     "radius": 3,
-    "output": ""
+    "output": "",
+    "ml" : True
 }
 
 
@@ -113,7 +114,8 @@ def command_line_args():
         "boltz",
         "min_max",
         "vall",
-        "volume"
+        "volume",
+        'ml'
     ]
     list_args = ["skip_list"]
     int_args = ["syllables"]

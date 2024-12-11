@@ -112,10 +112,6 @@ class fukui:
 
         return self.data_dict
 
-            
-
-        return self.data_dict
-
     def parse_cc_data(self, file_name, file):
 
         try:

@@ -101,7 +101,7 @@ def main():
         # OPT
         if args.opt:
             opt_read = files("opt", args.opt, data_dicts)
-            opt_data = opt(opt_read.file_data, data_dicts)
+            opt_data = opt(opt_read.file_data, data_dicts, ml = args.ml)
             data_dicts = opt_data.file_data
         
         # SPC
