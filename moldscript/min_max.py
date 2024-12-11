@@ -6,12 +6,13 @@ import pandas as pd
 import numpy as np
 
 class min_max:
-    def __init__(self, cut=0.95, temp = 298.15, spc=False, prefix=''):
+    def __init__(self, cut=0.95, temp = 298.15, spc=False, energies =None, prefix=''):
         self.prefix = prefix
         self.threshold = 1 - cut
         self.temp = temp
         self.spc = spc
         self.weight_dict = {}
+        self.energies = energies
         self.mol_min_max_range()
         self.atom_min_max_range()
         self.bond_min_max_range()
@@ -20,11 +21,7 @@ class min_max:
     def mol_min_max_range(self):
         ensemble_mol_csv = str(self.prefix) + 'min_max_range_molecule_level.csv'
         mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
-        
-        if self.spc:
-            print('\n   --USING SINGLE POINT CORRECTED ENERGIES TO OBTAIN MIN, MAX, AND RANGE--')   
-            mol_df['scfenergy'] = mol_df['spc_energy']
-            mol_df.drop(columns=['spc_energy'], inplace=True)
+        mol_df = pd.merge(mol_df, self.energies, on='filename')
         
         print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR MOLECULE-LEVEL DESCRIPTORS INTO {}'.format(ensemble_mol_csv))
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
@@ -52,7 +49,7 @@ class min_max:
             numerical_cols = tempdf.select_dtypes(include=[np.number]).columns.tolist()
             non_numerical_cols = tempdf.select_dtypes(exclude=[np.number]).columns.tolist()
             # Exclude intermediate calculation columns
-            intermediate_cols = ['Exponent', 'Exponent_shifted', 'Boltzmann_weight', 'Boltzmann_weight_normalized']
+            intermediate_cols = ['Exponent', 'Exponent_shifted', 'Boltzmann_weight', 'Boltzmann_weight_normalized', 'scfenergy']
             numerical_cols = [col for col in numerical_cols if col not in intermediate_cols]
             # Prepare output_dict
             output_dict = {}
@@ -85,6 +82,7 @@ class min_max:
             result_df = pd.concat([result_df, output_df], ignore_index=True)
         columns_order = ['filename', 'smiles'] + [col for col in result_df.columns if col not in ['filename', 'smiles']]
         result_df = result_df[columns_order]
+        result_df = result_df.round(4)
         result_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_min_max_range(self):
