@@ -24,7 +24,7 @@ class charges:
         self.data = data
         self.data_dict = data_dict
         if len(self.data.keys()) == 0:
-            self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
+            self.args.log.write(f"\nx  Could not find files to obtain information for charge data")
             self.args.log.finalize()
             sys.exit()
         else:

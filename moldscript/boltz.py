@@ -65,6 +65,7 @@ class boltz:
         columns_order = ['filename', 'smiles'] + [col for col in weighted_df.columns if col not in ['filename', 'smiles']]
         weighted_df = weighted_df[columns_order]  
         weighted_df = weighted_df.drop('scfenergy', axis=1)  
+        weighted_df = weighted_df.round(4)  
         weighted_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_boltz(self):
@@ -100,6 +101,7 @@ class boltz:
         weighted_df = weighted_df.drop('basename', axis=1)
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in weighted_df.columns if col not in ['filename', 'atom_index', 'atom_type']]
         weighted_df = weighted_df[columns_order]
+        weighted_df = weighted_df.round(4)  
         weighted_df.to_csv(ensemble_atom_csv, index=False)
 
 
@@ -133,5 +135,6 @@ class boltz:
         weighted_df = weighted_df.drop('basename', axis=1)
         columns_order = ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2'] + [col for col in weighted_df.columns if col not in ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2']]
         weighted_df = weighted_df[columns_order]
+        weighted_df = weighted_df.round(4)  
         weighted_df.to_csv(ensemble_bond_csv, index=False)
        
