@@ -55,7 +55,6 @@ class fukui:
                 oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
-
             if neutral_data != None and oxidized_data != None and reduced_data != None:
                 self.args.log.write(f"o  Parsing Fukui data from {file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree

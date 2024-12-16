@@ -98,12 +98,12 @@ class files:
 
     def get_fukui(self):
         file_data = defaultdict(dict)
-        neut = self.path[0]
-        red = self.path[1]
-        ox = self.path[2]
+        cwd = os.getcwd()
+        neut = os.path.join(cwd, self.path[0])
+        red = os.path.join(cwd, self.path[1])
+        ox = os.path.join(cwd, self.path[2])
         for file in self.files:
             key_name = self.get_filename(file)
-
             if neut in file:
                 file_data[key_name]["neutral"] = file
             if red in file:
