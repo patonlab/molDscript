@@ -11,6 +11,7 @@ from moldscript.get_df import get_df
 from moldscript.min_max import min_max
 from moldscript.sterics import sterics
 from moldscript.charges import charges
+from moldscript.lowe import lowe
 from moldscript.argument_parser import (
     command_line_args,
     moldscript_version,
@@ -157,10 +158,13 @@ def main():
     df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output)
     
     if args.boltz:
-        boltz(temp=args.temp, spc=args.spc, prefix=args.output, energies = df_getter.energies)
+        boltz(temp=args.temp, prefix=args.output, energies = df_getter.energies)
     
     if args.min_max:
-        min_max(temp=args.temp, cut=args.cut, spc=args.spc,  prefix=args.output, energies = df_getter.energies)
+        min_max(temp=args.temp, cut=args.cut,  prefix=args.output, energies = df_getter.energies)
+    if args.lowe:
+        lowe(prefix=args.output, energies = df_getter.energies)
+    
     tfin = time.time()
     print(F"\n\tMolDscript finished running in {round(tfin - tstart, 2)} seconds")
 if __name__ == "__main__":
