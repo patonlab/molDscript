@@ -7,8 +7,8 @@ import numpy as np
 boltzmann_constant = 3.1668114e-6
 
 class boltz:
-    def __init__(self, temp = 298.15, spc=False, prefix='', energies=None ):
-        self.spc = spc
+    def __init__(self, temp = 298.15,  prefix='', energies=None ):
+
         self.temp = temp
         self.prefix = prefix
         self.energies = energies

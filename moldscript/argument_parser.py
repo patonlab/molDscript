@@ -33,6 +33,7 @@ var_dict = {
     "link": False,
     "boltz": False,
     "min_max": False,
+    "lowe" : False,
     "temp":298.15,
     "cut":0.95,
     "syllables": 1,
@@ -113,6 +114,7 @@ def command_line_args():
         "command_line",
         "boltz",
         "min_max",
+        "lowe",
         "vall",
         "volume",
         'ml'

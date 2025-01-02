@@ -6,11 +6,10 @@ import pandas as pd
 import numpy as np
 
 class min_max:
-    def __init__(self, cut=0.95, temp = 298.15, spc=False, energies =None, prefix=''):
+    def __init__(self, cut=0.95, temp = 298.15,  energies =None, prefix=''):
         self.prefix = prefix
         self.threshold = 1 - cut
         self.temp = temp
-        self.spc = spc
         self.weight_dict = {}
         self.energies = energies
         self.mol_min_max_range()
