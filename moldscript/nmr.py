@@ -141,7 +141,7 @@ class nmr:
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
         tempname = fullname
-        for i in range(fullname.count("_")):
+        for i in range(fullname.count("_")+1):
             try:
                 findex = flist.index(tempname)
                 keyname = flist[findex]

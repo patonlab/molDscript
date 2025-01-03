@@ -115,7 +115,7 @@ def find_nth(haystack: str, needle: str, n: int) -> int:
 def get_filename(fullname, dd):
     flist = list(dd.keys())
     tempname = fullname
-    for i in range(fullname.count("_")):
+    for i in range(fullname.count("_")+1):
         try:
             findex = flist.index(tempname)
             keyname = flist[findex]

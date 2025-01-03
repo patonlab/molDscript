@@ -55,41 +55,47 @@ class opt:
 
         self.args.log.write(f"-- Optimization Parameter Collection starting")
         self.data_dict["CPU_time"] = []
+        test_file = self.data[list(self.data.keys())[0]]
+        xtb = False
+        with open(test_file, 'r') as f:
+            for _ in range(10):  # Read the first 10 lines
+                line = f.readline()
+                if 'x T B' in line:
+                    xtb = True
+                    print('- Identified XTB opt file')
+                    break
+
         for i, file_name in enumerate(self.data.keys()):
             nickname = file_name
             self.data_dict[file_name] = dict()
             self.data_dict[file_name]["mol"] = dict()
             self.data_dict[file_name]["atom"] = dict()
             self.data_dict[file_name]["bond"] = dict()
-            
-            # convert log to smiles
-            opt_data = self.parse_cc_data(file_name, self.data[file_name])
-            mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
-            volume = AllChem.ComputeMolVolume(mol)
-            smi = Chem.MolToSmiles(mol)
-            try:
-                if i == 0:
-                    self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
-                    self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}\n")
-            except:
-                pass
-            file_name = nickname
-
             self.args.log.write(f"o  Parsing Energy & Thermochemistry Data from {os.path.basename(file_name)}")
-            self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
-            if self.ml == False:
-                self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
-                self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
-            self.data_dict[file_name]["mol"]["smiles"] = smi
-            self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
-            self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
-            self.data_dict[file_name]["mol"]["molecular_volume"] = volume
+            if xtb == False:
+                # convert log to smiles
+                opt_data = self.parse_cc_data(file_name, self.data[file_name])
+                mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
+                volume = AllChem.ComputeMolVolume(mol)
+                smi = Chem.MolToSmiles(mol)
+                try:
+                    if i == 0:
+                        self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
+                        self.args.log.write(f"   Functional used: {opt_data.metadata['functional']}")
+                        self.args.log.write(f"   Basis set used: {opt_data.metadata['basis_set']}\n")
+                except:
+                    pass
+                file_name = nickname
 
 
-            if self.data[file_name] in self.data_dict['CPU_time']:
-                pass
-            else:
+                self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
+                if self.ml == False:
+                    self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
+                    self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
+                self.data_dict[file_name]["mol"]["smiles"] = smi
+                self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
+                self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
+                self.data_dict[file_name]["mol"]["molecular_volume"] = volume
                 try: 
                     for time in opt_data.metadata["cpu_time"]:
                         self.data_dict[file_name]["CPU_time"] += time  # add cpu time
@@ -99,6 +105,50 @@ class opt:
                     for time in opt_data.metadata["cpu_time"]:
                         self.data_dict[file_name]["CPU_time"] += time  # add cpu time
                     self.data_dict['CPU_time'].append(self.data[file_name])
+            elif xtb == True:
+                full_name = self.data[file_name]
+                # print(full_name)
+                # print(file_name)
+                with open(full_name, 'r') as f:
+                    atom_coords = []
+                    atomnos = []
+                    parsing_coords = False
+                    for line in f:
+                        if '          :  net charge                          ' in line:
+                            chg = int(line.split()[-2])
+                        if '          | TOTAL ENERGY         ' in line:
+                            scf_energy = float(line.split()[3])
+                            self.data_dict[file_name]["mol"]["scfenergy"] = scf_energy
+                        if 'final structure:' in line:
+                            parsing_coords = True
+                            for _ in range(3):
+                                next(f)  # Skip the next 3 lines
+                            continue
+                        if parsing_coords:
+                            parts = line.split()
+                            if len(parts) < 4:
+                                parsing_coords = False
+                                continue
+                            atomnos.append(Chem.GetPeriodicTable().GetAtomicNumber(parts[0]))
+                            coords = [float(x) for x in parts[1:4]]
+                            atom_coords.append(coords)
+                        if '* finished run on' in line:
+                            for _ in range(4):
+                                cpu_time_line = next(f).strip()
+                            days, hours, minutes, seconds = map(float, cpu_time_line.split()[2::2])
+                            total_seconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
+                            self.data_dict[file_name]["CPU_time"] = datetime.timedelta(seconds=total_seconds)
+                            self.data_dict["CPU_time"].append(self.data[file_name])
+                bond_data_matrix = self.bond_data_matrix(coords)
+                self.data_dict[file_name]["bond"]["bond_length"] = bond_data_matrix
+                mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
+                volume = AllChem.ComputeMolVolume(mol)
+                smi = Chem.MolToSmiles(mol)
+                self.data_dict[file_name]["atom"]["atomnos"] = np.array(atomnos)
+                self.data_dict[file_name]["mol"]["smiles"] = smi
+                self.data_dict[file_name]["mol"]["molecular_volume"] = volume
+
+
         
         return self.data_dict
 
@@ -113,7 +163,10 @@ class opt:
         return cc_data
 
     def bond_data_matrix(self, opt_data):
-        coords = opt_data.atomcoords[-1]
+        try:
+            coords = opt_data.atomcoords[-1]
+        except:
+            coords = opt_data
         bond_data_matrix_list = []
         for atom1 in range(len(coords)):
             row = []
