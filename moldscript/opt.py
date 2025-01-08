@@ -139,7 +139,7 @@ class opt:
                             total_seconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
                             self.data_dict[file_name]["CPU_time"] = datetime.timedelta(seconds=total_seconds)
                             self.data_dict["CPU_time"].append(self.data[file_name])
-                bond_data_matrix = self.bond_data_matrix(coords)
+                bond_data_matrix = self.bond_data_matrix(atom_coords)
                 self.data_dict[file_name]["bond"]["bond_length"] = bond_data_matrix
                 mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
                 volume = AllChem.ComputeMolVolume(mol)
