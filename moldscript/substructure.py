@@ -18,7 +18,11 @@ class substructure:
     """
 
     def __init__(self, data, data_dict, substructure, create_dat=True, **kwargs):
-
+        try:
+            from openbabel import openbabel as ob
+            self.openbabel = True
+        except:
+            self.openbabel = False
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SUBSTRUCTURE", create_dat=create_dat)
@@ -56,17 +60,41 @@ class substructure:
         return self.data_dict
 
     def get_mol(self, file):
-
-        # convert log to smiles
-        parser = cc.io.ccopen(file)
-        cc_data = parser.parse()
-        mol = xyz2mol.xyz2mol(cc_data.atomnos.tolist(), cc_data.atomcoords[-1].tolist(), charge=cc_data.charge)[0]
-        print(mol)
+        try:
+            parser = cc.io.ccopen(file)
+            cc_data = parser.parse()
+            mol = xyz2mol.xyz2mol(cc_data.atomnos.tolist(), cc_data.atomcoords[-1].tolist(), charge=cc_data.charge)[0]
+        except:
+            if self.openbabel:
+                try:
+                    obConversion = ob.OBConversion()
+                    obConversion.SetInAndOutFormats("log", "mol")
+                    ob_mol = ob.OBMol()
+                    obConversion.ReadFile(ob_mol, file)
+                    obConversion.WriteFile(ob_mol, file.split(".")[0] + ".mol")
+                    obConversion.CloseOutFile()
+                    mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
+                except:
+                    print('!Unable to encode structure for substructure match!')
+                    print('!Including all atoms in the molecule!')
+                    whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
+                    return whole_mol
+            else:
+                print('!Unable to encode structure for substructure match!')
+                print('!Including all atoms in the molecule!')
+                print('!Consider installing OpenBabel for another encoder optiion!')
+                whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
+                return whole_mol
 
         substructure = Chem.MolFromSmarts(self.substructure)
         Draw.MolToImage(substructure, size=(100, 100))
         indexsall = mol.GetSubstructMatches(substructure)
-        indexsall = tuple(x + 1 for x in indexsall[0])
+        if indexsall == ():
+            print('!No substructure match found!')
+            print('!Including all atoms in the molecule!')
+            indexsall = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
+        else:
+            indexsall = tuple(x + 1 for x in indexsall[0])
         
         return indexsall
     
