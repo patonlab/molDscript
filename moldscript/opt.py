@@ -21,7 +21,11 @@ class opt:
     """
 
     def __init__(self, data, data_dict, create_dat=True, ml = True, **kwargs):
-
+        try:
+            from openbabel import openbabel as ob
+            self.openbabel = True
+        except:
+            self.openbabel = False
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "OPT", create_dat=create_dat)
@@ -75,9 +79,34 @@ class opt:
             if xtb == False:
                 # convert log to smiles
                 opt_data = self.parse_cc_data(file_name, self.data[file_name])
-                mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
-                volume = AllChem.ComputeMolVolume(mol)
-                smi = Chem.MolToSmiles(mol)
+                try:
+                    mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
+                    volume = AllChem.ComputeMolVolume(mol)
+                    smi = Chem.MolToSmiles(mol)
+                except:
+                    if self.openbabel:
+                        try:            
+                            file_name = self.data[file_name]
+                            obConversion = ob.OBConversion()
+                            ext = file_name.split(".")[-1]
+                            obConversion.SetInAndOutFormats(ext, "mol")
+                            ob_mol = ob.OBMol()
+                            mol = obConversion.ReadFile(ob_mol, file_name)
+                            obConversion.WriteFile(ob_mol, file_name.split(".")[0] + ".mol")
+                            obConversion.CloseOutFile()
+                            mol = Chem.MolFromMolFile(file_name.split(".")[0] + ".mol", removeHs=False)
+                            os.remove(file_name.split(".")[0] + ".mol")
+                        except:
+                            print('!Encountered issue during the conversion of coordinates to smiles and molecular volume!')
+                            print(f'!Omitting these values for {os.path.basename(file_name)}!')
+                            smi = ''
+                            volume = np.nan
+                    else:
+                        print('!Encountered issue during the conversion of coordinates to smiles and molecular volume!')
+                        print(f'!Omitting these values for {os.path.basename(file_name)}!')
+                        print('!Consider installing OpenBabel for another encoder option!')
+                        smi = ''
+                        volume = np.nan
                 try:
                     if i == 0:
                         self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
