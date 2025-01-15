@@ -144,6 +144,7 @@ class min_max:
         result_df = result_df.drop('basename', axis=1)
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in result_df.columns if col not in ['filename', 'atom_index', 'atom_type']]
         result_df = result_df[columns_order]
+        result_df = result_df.round(4)
         result_df.to_csv(ensemble_atom_csv, index=False)
 
     def bond_min_max_range(self):
@@ -205,4 +206,5 @@ class min_max:
         result_df = result_df.drop('basename', axis=1)
         columns_order = ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2'] + [col for col in result_df.columns if col not in ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2']]
         result_df = result_df[columns_order]
+        result_df = result_df.round(4)
         result_df.to_csv(ensemble_bond_csv, index=False)
