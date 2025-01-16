@@ -14,7 +14,6 @@ moldscript_ref = "King, J.; Sowndarya, S. V. S.; Paton, R. S. MOLDSCRIPT: A Gene
 var_dict = {
     "struc": "",
     "varfile": None,
-    "command_line": False,
     "verbose": True,
     "opt": False,
     "volume": False,
@@ -29,7 +28,6 @@ var_dict = {
     "fukui_reduced": False,
     "ad_oxidized": False,
     "ad_reduced": False,
-    "skip_list": [],
     "link": False,
     "boltz": False,
     "min_max": False,
@@ -111,7 +109,6 @@ def command_line_args():
     kwargs = {}
     available_args = ["help"]
     bool_args = [
-        "command_line",
         "boltz",
         "min_max",
         "lowe",
