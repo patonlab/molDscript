@@ -109,10 +109,9 @@ class fmo:
                         self.orca6 = True
                         break   
         if not self.orca6:
-            parser = cc.io.ccread(file)
 
             try:
-                cc_data = parser.parse()
+                cc_data = cc.io.ccread(file)
             except:
                 self.args.log.write(
                     f"\nx  Could not parse {file_name} to obtain spc energy information"
