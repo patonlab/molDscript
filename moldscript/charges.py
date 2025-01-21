@@ -76,7 +76,6 @@ class charges:
                     if version.startswith('6'):
                         orca6 = True
                         break
-        print(f"orca6: {orca6}")
         if not orca6:
             parser = cc.io.ccopen(file)
 
@@ -113,7 +112,6 @@ class charges:
                             if charge_line.strip().startswith('Sum') or charge_line.strip() == '':
                                 break
                             parts = charge_line.split()
-                            print(parts)
                             if parts != []:
                                 charge = float(parts[-1])
                                 charges_list.append(charge)

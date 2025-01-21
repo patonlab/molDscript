@@ -77,7 +77,6 @@ class spc:
                     if version.startswith('6'):
                         orca6 = True
                         break
-        print(f"orca6: {orca6}")
         if not orca6:
             try:
                 cc_data = cc.io.ccread(file)
