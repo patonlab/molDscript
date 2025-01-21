@@ -52,11 +52,17 @@ class fmo:
                     self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
             except: pass
-            fmo_data.scfenergies[-1] * eV_to_hartree
+
             self.args.log.write(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
-            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
-            self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
-            self.data_dict[file_name]["mol"]["LUMO"] = fmo_data.moenergies[0][fmo_data.homos[0] + 1]
+            if not self.orca6:
+                self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
+                self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
+                self.data_dict[file_name]["mol"]["LUMO"] = fmo_data.moenergies[0][fmo_data.homos[0] + 1]
+            else:
+                self.data_dict[file_name]["mol"]["dipole(au)"] = fmo_data.dipole
+                self.data_dict[file_name]['mol']['HOMO'] = fmo_data.homo
+                self.data_dict[file_name]['mol']['LUMO'] = fmo_data.lumo
+  
             softness = self.data_dict[file_name]["mol"]["LUMO"]- self.data_dict[file_name]["mol"]["HOMO"]
             self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (softness)
             chemical_potential = (self.data_dict[file_name]["mol"]["LUMO"] + self.data_dict[file_name]["mol"]["HOMO"]) /2
@@ -94,19 +100,71 @@ class fmo:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
+        self.orca6 = False
+        with open(file, 'r') as f:
+            for line in f:
+                if 'Program Version' in line:
+                    version = line.split()[2]
+                    if version.startswith('6'):
+                        self.orca6 = True
+                        break   
+        if not self.orca6:
+            parser = cc.io.ccread(file)
 
-        ### parse data
-        parser = cc.io.ccopen(file)
+            try:
+                cc_data = parser.parse()
+            except:
+                self.args.log.write(
+                    f"\nx  Could not parse {file_name} to obtain spc energy information"
+                )
+                cc_data = None
+        else:
+            class CCData:
+                def __init__(self):
+                    self.metadata = {}
+                    self.homo = float()
+                    self.lumo = float()
+                    self.dipole = float()
+            cc_data = CCData()
+            cc_data.metadata["cpu_time"] = ''
+            with open(file, 'r') as f:
+                for line in f:
+                    if 'TOTAL RUN TIME:' in line:
+                        time_parts = line.split(':')[1].strip().split()
+                        days = int(time_parts[0])
+                        hours = int(time_parts[2])
+                        minutes = int(time_parts[4])
+                        seconds = int(time_parts[6])
+                        milliseconds = int(time_parts[8])
+                        total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
+                        cc_data.metadata["cpu_time"] = total_time
+                    if 'ORBITAL ENERGIES' in line:
+                        next(f)
+                        next(f)
+                        next(f)
+                        line = next(f)
+                        moenergies = []
+                        mooccupancies = []
+                        proceed = True
+                        while proceed==True:
+                            if line.startswith('*') or line.strip() == '':
+                                proceed = False
+                                break
+                            parts = line.split()
+                            mooccupancies.append(float(parts[1]))
+                            moenergies.append(float(parts[3]))
+                            line=next(f)
+                        for i in range(len(mooccupancies) - 1, -1, -1):
+                            if mooccupancies[i] > 0.0:
+                                cc_data.homo = moenergies[i]
+                                cc_data.lumo = moenergies[i + 1] if i + 1 < len(moenergies) else None
+                                break
+                    if 'Magnitude (a.u.)' in line:
+                        cc_data.dipole = float(line.split(':')[1].strip())
+                    
+        return cc_data  
+    
 
-        try:
-            cc_data = parser.parse()
-        except:
-            self.args.log.write(
-                f"\nx  Could not parse {file_name} to obtain spc energy information"
-            )
-            cc_data = None
-
-        return cc_data
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
         tempname = fullname
