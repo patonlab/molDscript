@@ -14,7 +14,6 @@ moldscript_ref = "King, J.; Sowndarya, S. V. S.; Paton, R. S. MOLDSCRIPT: A Gene
 var_dict = {
     "struc": "",
     "varfile": None,
-    "command_line": False,
     "verbose": True,
     "opt": False,
     "volume": False,
@@ -29,7 +28,6 @@ var_dict = {
     "fukui_reduced": False,
     "ad_oxidized": False,
     "ad_reduced": False,
-    "skip_list": [],
     "link": False,
     "boltz": False,
     "min_max": False,
@@ -111,7 +109,6 @@ def command_line_args():
     kwargs = {}
     available_args = ["help"]
     bool_args = [
-        "command_line",
         "boltz",
         "min_max",
         "lowe",
@@ -202,10 +199,6 @@ def command_line_args():
     # Second, load all the default variables as an "add_option" object
     args = load_variables(kwargs, "command")
 
-    if len(args.skip_list) != 0:
-        for prop in args.skip_list:
-            vars(args)[prop] = False
-
     return args
 
 
@@ -249,47 +242,43 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
             if moldscript_module == "FMO":
                 logger_1 = "FMO"
             if not error_setup:
-                if not self.command_line:
-                    self.log = Logger(
-                        f"{self.initial_dir}/MOLDSCRIPT", logger_1, verbose=self.verbose
-                    )
-                else:
-                    # prevents errors when using command lines and running to remote directories
-                    path_command = Path(f"{os.getcwd()}")
-                    self.log = Logger(
-                        f"{path_command}/MOLDSCRIPT", logger_1, verbose=self.verbose
-                    )
+
+                # prevents errors when using command lines and running to remote directories
+                path_command = Path(f"{os.getcwd()}")
+                self.log = Logger(
+                    f"{path_command}/MOLDSCRIPT", logger_1, verbose=self.verbose
+                )
 
                 self.log.write_only(
                     f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
                 )
 
-                if self.command_line:
-                    cmd_print = ""
-                    cmd_args = sys.argv[1:]
-                    for i, elem in enumerate(cmd_args):
-                        if elem[0] in ['"', "'"]:
-                            elem = elem[1:]
-                        if elem[-1] in ['"', "'"]:
-                            elem = elem[:-1]
-                        if elem != "-h" and elem.split("--")[-1] not in var_dict:
-                            if (
-                                cmd_args[i - 1].split("--")[-1] in var_dict
-                            ):  # check if the previous word is an arg
-                                cmd_print += f'"{elem}'
-                            if (
-                                i == len(cmd_args) - 1
-                                or cmd_args[i + 1].split("--")[-1] in var_dict
-                            ):  # check if the next word is an arg, or last word in command
-                                cmd_print += f'"'
-                        else:
-                            cmd_print += f"{elem}"
-                        if i != len(cmd_args) - 1:
-                            cmd_print += " "
 
-                    self.log.write(
-                        f"Command line used in MOLDSCRIPT: python -m moldscript {cmd_print}\n"
-                    )
+                cmd_print = ""
+                cmd_args = sys.argv[1:]
+                for i, elem in enumerate(cmd_args):
+                    if elem[0] in ['"', "'"]:
+                        elem = elem[1:]
+                    if elem[-1] in ['"', "'"]:
+                        elem = elem[:-1]
+                    if elem != "-h" and elem.split("--")[-1] not in var_dict:
+                        if (
+                            cmd_args[i - 1].split("--")[-1] in var_dict
+                        ):  # check if the previous word is an arg
+                            cmd_print += f'"{elem}'
+                        if (
+                            i == len(cmd_args) - 1
+                            or cmd_args[i + 1].split("--")[-1] in var_dict
+                        ):  # check if the next word is an arg, or last word in command
+                            cmd_print += f'"'
+                    else:
+                        cmd_print += f"{elem}"
+                    if i != len(cmd_args) - 1:
+                        cmd_print += " "
+
+                self.log.write(
+                    f"Command line used in MOLDSCRIPT: python -m moldscript {cmd_print}\n"
+                )
 
             if error_setup:
                 # this is added to avoid path problems in jupyter notebooks
