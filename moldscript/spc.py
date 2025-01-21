@@ -69,12 +69,47 @@ class spc:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-        try:
-            cc_data = cc.io.ccread(file)
-        except:
-            self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
-            cc_data = None
+        orca6 = False
+        with open(file, 'r') as f:
+            for line in f:
+                if 'Program Version' in line:
+                    version = line.split()[2]
+                    if version.startswith('6'):
+                        orca6 = True
+                        break
+        print(f"orca6: {orca6}")
+        if not orca6:
+            try:
+                cc_data = cc.io.ccread(file)
 
+            except:
+                self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
+                cc_data = None
+        else:
+            try:
+                class CCData:
+                    def __init__(self):
+                        self.scfenergies = []
+
+                cc_data = CCData()
+                cc_data.metadata = {"cpu_time": []}
+                with open(file, 'r') as f:
+                    for line in f:
+                        if 'Total Energy' in line and 'Eh' in line:
+                            energy = float(line.split()[3])
+                            cc_data.scfenergies.append(energy)
+                        if 'TOTAL RUN TIME:' in line:
+                            time_parts = line.split(':')[1].strip().split()
+                            days = int(time_parts[0])
+                            hours = int(time_parts[2])
+                            minutes = int(time_parts[4])
+                            seconds = int(time_parts[6])
+                            milliseconds = int(time_parts[8])
+                            total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
+                            cc_data.metadata["cpu_time"].append(total_time)
+            except:
+                self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
+                cc_data = None
         return cc_data
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
