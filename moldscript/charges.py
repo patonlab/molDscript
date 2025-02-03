@@ -83,56 +83,57 @@ class charges:
                 cc_data = parser.parse()
             except:
                 self.args.log.write(
-                    f"\nx  Could not parse {file_name} to obtain spc energy information")
+                    f"\nx  Could not parse {file_name} to obtain charge energy information")
                 cc_data = None
         else:
-            # try:
-            class CCData:
-                def __init__(self):
-                    self.atomcharges = {}
-                    self.metadata = {}
-            cc_data = CCData()
-            cc_data.metadata["cpu_time"] = ''
-            with open(file, 'r') as f:
-                for line in f:
-                    if 'TOTAL RUN TIME:' in line:
-                        time_parts = line.split(':')[1].strip().split()
-                        days = int(time_parts[0])
-                        hours = int(time_parts[2])
-                        minutes = int(time_parts[4])
-                        seconds = int(time_parts[6])
-                        milliseconds = int(time_parts[8])
-                        total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
-                        cc_data.metadata["cpu_time"] = total_time
-                    if 'ATOMIC CHARGES' in line:
-                        charge_type = line.split()[0].lower()
-                        charges_list = []
-                        next(f)  # skip the next line
-                        for charge_line in f:
-                            if charge_line.strip().startswith('Sum') or charge_line.strip() == '':
-                                break
-                            parts = charge_line.split()
-                            if parts != []:
-                                charge = float(parts[-1])
-                                charges_list.append(charge)
-                        cc_data.atomcharges[charge_type] = charges_list
-            # except:
-            #     self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
-            #     cc_data = None
+            try:
+                class CCData:
+                    def __init__(self):
+                        self.atomcharges = {}
+                        self.metadata = {}
+                cc_data = CCData()
+                cc_data.metadata["cpu_time"] = ''
+                with open(file, 'r') as f:
+                    for line in f:
+                        if 'TOTAL RUN TIME:' in line:
+                            time_parts = line.split(':')[1].strip().split()
+                            days = int(time_parts[0])
+                            hours = int(time_parts[2])
+                            minutes = int(time_parts[4])
+                            seconds = int(time_parts[6])
+                            milliseconds = int(time_parts[8])
+                            total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
+                            cc_data.metadata["cpu_time"] = total_time
+                        if 'ATOMIC CHARGES' in line:
+                            charge_type = line.split()[0].lower()
+                            charges_list = []
+                            next(f)  # skip the next line
+                            for charge_line in f:
+                                if charge_line.strip().startswith('Sum') or charge_line.strip() == '':
+                                    break
+                                parts = charge_line.split()
+                                if parts != []:
+                                    charge = float(parts[-1])
+                                    charges_list.append(charge)
+                            cc_data.atomcharges[charge_type] = charges_list
+            except:
+                self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
+                cc_data = None
 
         return cc_data
     def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        for i in range(fullname.count("_")+1):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-                print(tempname)
-        print(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
-        raise SystemExit
+        try:
+            flist = list(self.data_dict.keys())
+            tempname = fullname
+            for i in range(fullname.count("_")+1):
+                try:
+                    findex = flist.index(tempname)
+                    keyname = flist[findex]
+                    return keyname
+                except:
+                    tempname = tempname.rsplit("_", 1)[0]
+                    print(tempname)
+        
+        except:
+            self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')
+            raise SystemExit
