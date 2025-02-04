@@ -49,11 +49,11 @@ class nmr:
 
         self.args.log.write(f"-- NMR Parameter Collection starting")
         for i, file_name in enumerate(self.data.keys()):
-            try:
-                file_name = self.get_filename(file_name)
-                nmr_data = self.parse_cc_data(file_name, self.data[file_name])
-            except:
-                nmr_data = None
+            # try:
+            file_name = self.get_filename(file_name)
+            nmr_data = self.parse_cc_data(file_name, self.data[file_name])
+            # except:
+            #     nmr_data = None
             try:
                 if i == 0:
                     self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
@@ -83,15 +83,28 @@ class nmr:
 
     def parse_cc_data(self, file_name, file):
         ### parse data
+        orca6 = False
+        with open(file, 'r') as f:
+            for line in f:
+                if 'Program Version' in line:
+                    version = line.split()[2]
+                    if version.startswith('6'):
+                        orca6 = True
+                        break
         parser = cc.io.ccopen(file)
-        try:
-            cc_data = parser.parse()
-
-        except:
-            self.args.log.write(
-                f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
-            )
-            cc_data = None
+        if not orca6:
+            try:
+                cc_data = parser.parse()
+            except:
+                self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
+                cc_data = None
+        else:
+            class CCData:
+                def __init__(self):
+                    self.atomcharges = {}
+                    self.metadata = {}
+                    self.metadata["cpu_time"] = ''
+            cc_data = CCData()
         if file.rsplit(".", 1)[1] == "log":
             try:
                 setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
@@ -99,14 +112,14 @@ class nmr:
                 setattr(cc_data, "nmr_shielding", None)
 
         elif file.rsplit(".", 1)[1] == "out":
-            try:
+            # try:
                 setattr(
                     cc_data,
                     "nmr_shielding",
-                    self.orca_nmr_shielding(file, cc_data.natom),
+                    self.orca_nmr_shielding(file),
                 )
-            except:
-                setattr(cc_data, "nmr_shielding", None)
+            # except:
+            #     setattr(cc_data, "nmr_shielding", None)
 
         return cc_data
 
@@ -124,18 +137,21 @@ class nmr:
             nmr_shielding.append(nmr)
         return nmr_shielding
 
-    def orca_nmr_shielding(self, file, natoms):
+    def orca_nmr_shielding(self, file):
         outfile = open(file, "r")
         lines = outfile.readlines()
         for i in range(0, len(lines)):
             if lines[i].find("CHEMICAL SHIELDING SUMMARY (ppm)") > -1:
-                start = i + 6
-
-        end = start + natoms
+                idx = i + 6
         nmr_shielding = []
-        for j in range(start, end):
-            nmr = float(lines[j].split()[2])
+        line = True
+        for i in range(idx, len(lines)):
+            line = lines[idx]
+            if line.split() == []:
+                break
+            nmr = float(line.split()[2])
             nmr_shielding.append(nmr)
+            idx += 1
         return nmr_shielding
 
     def get_filename(self, fullname):
