@@ -58,14 +58,14 @@ class get_df:
             print(f"\t- {prop}")
         bonddf = pd.DataFrame()
         for fname in filenames:
-            atoms = data[fname]["atom"]["atomnos"]
+            atoms = np.array(data[fname]["atom"]["atomnos"])
             filedf = pd.DataFrame()
             for prop in props:
                 matrix = np.array(data[fname]["bond"][prop])
                 atom1_idx, atom2_idx = np.tril_indices_from(matrix, k=-1)
                 values = matrix[atom1_idx, atom2_idx]
                 fnames = np.array(fname for i in range(len(values)))
-                num1 = atoms[atom1_idx]
+                num1 = atoms[atom1_idx.astype(int)]
                 vfunc = np.vectorize(self.get_atom_lab)
                 element1 = vfunc(num1)
                 num2 = atoms[atom2_idx]

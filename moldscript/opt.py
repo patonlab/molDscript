@@ -80,7 +80,10 @@ class opt:
                 # convert log to smiles
                 opt_data = self.parse_cc_data(file_name, self.data[file_name])
                 try:
-                    mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
+                    if not self.orca6:
+                        mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
+                    else:
+                        mol = xyz2mol.xyz2mol(opt_data.atomnos, opt_data.atomcoords[-1], charge=opt_data.charge)[0]
                     volume = AllChem.ComputeMolVolume(mol)
                     smi = Chem.MolToSmiles(mol)
                 except:
@@ -185,15 +188,15 @@ class opt:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-        orca6 = False
+        self.orca6 = False
         with open(file, 'r') as f:
             for line in f:
                 if 'Program Version' in line:
                     version = line.split()[2]
                     if version.startswith('6'):
-                        orca6 = True
+                        self.orca6 = True
                         break
-        if not orca6:
+        if not self.orca6:
             try:              
                 ### parse data
                 parser = cc.io.ccopen(file)
