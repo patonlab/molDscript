@@ -84,7 +84,6 @@ class opt:
                         mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
                     else:
                         mol = xyz2mol.xyz2mol(opt_data.atomnos, opt_data.atomcoords[-1], charge=opt_data.charge)[0]
-                    volume = AllChem.ComputeMolVolume(mol)
                     smi = Chem.MolToSmiles(mol)
                 except:
                     if self.openbabel:
@@ -100,16 +99,14 @@ class opt:
                             mol = Chem.MolFromMolFile(file_name.split(".")[0] + ".mol", removeHs=False)
                             os.remove(file_name.split(".")[0] + ".mol")
                         except:
-                            print('!Encountered issue during the conversion of coordinates to smiles and molecular volume!')
-                            print(f'!Omitting these values for {os.path.basename(file_name)}!')
+                            print('!Encountered issue during the conversion of coordinates to smiles!')
+                            print(f'!Omitting smiles for {os.path.basename(file_name)}!')
                             smi = ''
-                            volume = np.nan
                     else:
-                        print('!Encountered issue during the conversion of coordinates to smiles and molecular volume!')
-                        print(f'!Omitting these values for {os.path.basename(file_name)}!')
+                        print('!Encountered issue during the conversion of coordinates to smiles!')
+                        print(f'!Omitting smiles for {os.path.basename(file_name)}!')
                         print('!Consider installing OpenBabel for another encoder option!')
                         smi = ''
-                        volume = np.nan
                 try:
                     if i == 0:
                         self.args.log.write(f"   Package used: {opt_data.metadata['package']} {opt_data.metadata['package_version']}")
