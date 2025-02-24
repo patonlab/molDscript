@@ -155,7 +155,7 @@ def main():
     if args.volume != False or args.vall != False:
         data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
             
-    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output)
+    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output, bond_filter=args.no_bond_filter)
     
     if args.boltz:
         boltz(temp=args.temp, prefix=args.output, energies = df_getter.energies)

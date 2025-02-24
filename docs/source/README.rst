@@ -94,7 +94,8 @@ Molecule level parameters
 Bond level parameters
 ~~~~~~~~~~~~~~~~~~~~~
 
-* Bond Orders: Wiberg bond indices
+* Bond orders: Wiberg bond indices
+* Bond distances: Bond lengths (angstroms)
 
 Atom level parameters
 ~~~~~~~~~~~~~~~~~~~~~

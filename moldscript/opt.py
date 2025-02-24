@@ -127,7 +127,6 @@ class opt:
                 self.data_dict[file_name]["mol"]["smiles"] = smi
                 self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
                 self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
-                self.data_dict[file_name]["mol"]["molecular_volume"] = volume
                 try: 
                     for time in opt_data.metadata["cpu_time"]:
                         self.data_dict[file_name]["CPU_time"] += time  # add cpu time

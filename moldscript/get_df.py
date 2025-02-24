@@ -14,10 +14,11 @@ class get_df:
     Class to create 3 .csv files containing paramaters
     """
 
-    def __init__(self, data_dicts, substructure="", prefix=""):
+    def __init__(self, data_dicts, substructure="", prefix="", bond_filter=False):
         self.dd = data_dicts
         self.substructure = substructure
         self.prefix = prefix
+        self.no_bond_filter = bond_filter
         mol_df = self.get_mol_df()
         bond_df = self.get_bond_df()
         atom_df = self.get_atom_df()
@@ -101,6 +102,14 @@ class get_df:
                 final_df = pd.concat([final_df, filtered_df])
             bonddf = final_df    
         bonddf = bonddf.round(4)
+        if not self.no_bond_filter:
+            if 'bond_order_matrix' in props:
+                print(f'  Filtering bond data by bond order of 0.1')
+                bonddf['bond_order_matrix'] = pd.to_numeric(bonddf['bond_order_matrix'], errors='coerce')
+                bonddf = bonddf[bonddf['bond_order_matrix'] >= 0.1]
+            else:
+                print(f'  Filtering bond data by bond length of 3 angstroms')
+                bonddf = bonddf[bonddf['bond_length'] <= 3]
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
