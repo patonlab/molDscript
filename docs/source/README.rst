@@ -12,8 +12,9 @@
 |
 Introduction
 ------------
-molDscript is a Python package that curates a variety of molecular, bond, and atom-level properties from Density Functional Theory (DFT) output files.
-These properties are curated into .csv files that can be easily used for machine learning, benchmarking, and other computational chemistry applications.
+molDscript is a cutting-edge Python package designed to transform Density Functional Theory (DFT) outputs into actionable insights. 
+By automatically extracting key molecular, bond, and atomic properties from your DFT calculations, molDscript converts raw output files into user-friendly CSV files that are ready for ML and benchmarking applications. 
+Beyond just data extraction, molDscript also offers a range of advanced features including substructure matching, buried volume calculations, and several conformer ensemble treatments including lowest energy conformer, Boltzmann weighted average, and min/max/range within a given Boltzmann population window.
 
 Installation
 ------------
