@@ -49,9 +49,13 @@ class charges:
             except:
                 pass
             self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
-            for i in chg_data.atomcharges.keys():
-                if 'mulliken' not in i and 'sum' not in i:
-                    self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
+            if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
+                self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
+            else:
+                for i in chg_data.atomcharges.keys():
+                    if 'mulliken' not in i and 'sum' not in i:
+                        self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
+                
 
             if self.data[file_name] in self.data_dict['CPU_time']:
                 pass

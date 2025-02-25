@@ -152,6 +152,4 @@ class files:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-        print(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
+        print(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
