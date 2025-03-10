@@ -39,7 +39,8 @@ var_dict = {
     "varfile" : '',
     "radius": 3,
     "output": "",
-    "ml" : True
+    "ml" : True,
+    "no_bond_filter": False,
 }
 
 
@@ -114,7 +115,8 @@ def command_line_args():
         "lowe",
         "vall",
         "volume",
-        'ml'
+        'ml',
+        'no_bond_filter'
     ]
     list_args = ["skip_list"]
     int_args = ["syllables"]

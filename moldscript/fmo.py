@@ -175,7 +175,5 @@ class fmo:
             except:
                 tempname = tempname.rsplit("_", 1)[0]
                 print(tempname)
-        print(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
+        self.args.log.write('Issue matching one of your filenames')
         raise SystemExit
