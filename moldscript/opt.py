@@ -193,79 +193,16 @@ class opt:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-        self.orca6 = False
-        with open(file, 'r') as f:
-            for line in f:
-                if 'Program Version' in line:
-                    version = line.split()[2]
-                    if version.startswith('6'):
-                        self.orca6 = True
-                        break
-        if not self.orca6:
-            try:              
-                ### parse data
-                parser = cc.io.ccopen(file)
-                cc_data = parser.parse()
-                setattr(cc_data, "bond_data_matrix", self.bond_data_matrix(cc_data))
-            except:
-                self.args.log.write(
-                    f"\nx  Could not parse {file_name} to obtain optimization information")
-                cc_data = None
-            return cc_data
-        else:            
-            # try:
-            class CCData:
-                def __init__(self):
-                    self.atomcoords = []
-                    self.metadata = {}
-                    self.scfenergies = []
-                    self.charge = int()
-                    self.atomnos = []
-                    self.bond_data_matrix = []
-            cc_data = CCData()
-            cc_data.metadata["cpu_time"] = []
-            with open(file, 'r') as f:
-                print('test1')
-                for line in f:
-                    if 'TOTAL RUN TIME:' in line:
-                        print('test1')
-                        time_parts = line.split(':')[1].strip().split()
-                        days = int(time_parts[0])
-                        hours = int(time_parts[2])
-                        minutes = int(time_parts[4])
-                        seconds = int(time_parts[6])
-                        milliseconds = int(time_parts[8])
-                        total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
-                        cc_data.metadata["cpu_time"].append(total_time)
-                    if 'Total Energy       :' in line:
-                        print('test2')
-                        energy_eV = float(line.split()[-2])
-                        cc_data.scfenergies.append(energy_eV)
-                    if 'Sum of atomic charges:' in line:
-                        print('test3')
-                        cc_data.charge = int(float(line.split()[-1]))
-                        print('test4')
-                    if 'CARTESIAN COORDINATES (ANGSTROEM)' in line:
-                        next(f)  # Skip the dashed line
-                        atomcoords = []
-                        atomnos = []
-                        for coord_line in f:
-                            if coord_line.strip() == '':
-                                break
-                            parts = coord_line.split()
-                            atom_type = parts[0]
-                            coords = list(map(float, parts[1:4]))
-                            atomcoords.append(coords)
-                            atomnos.append(Chem.GetPeriodicTable().GetAtomicNumber(atom_type))
-                        cc_data.atomcoords.append(atomcoords)
-                        cc_data.atomnos = atomnos
-                fcoords = cc_data.atomcoords[-1]
-                cc_data.bond_data_matrix = self.bond_data_matrix(fcoords)
-
-            # except:
-            #     self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
-            #     cc_data = None
-            return cc_data
+        try:              
+            ### parse data
+            parser = cc.io.ccopen(file)
+            cc_data = parser.parse()
+            setattr(cc_data, "bond_data_matrix", self.bond_data_matrix(cc_data))
+        except:
+            self.args.log.write(
+                f"\nx  Could not parse {file_name} to obtain optimization information")
+            cc_data = None
+        return cc_data
 
     def bond_data_matrix(self, opt_data):
         try:
