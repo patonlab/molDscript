@@ -82,45 +82,14 @@ class nmr:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-        ### parse data
-        orca6 = False
-        with open(file, 'r') as f:
-            for line in f:
-                if 'Program Version' in line:
-                    version = line.split()[2]
-                    if version.startswith('6'):
-                        orca6 = True
-                        break
+
         parser = cc.io.ccopen(file)
-        if not orca6:
-            try:
-                cc_data = parser.parse()
-            except:
-                self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
-                cc_data = None
-        else:
-            class CCData:
-                def __init__(self):
-                    self.atomcharges = {}
-                    self.metadata = {}
-                    self.metadata["cpu_time"] = ''
-            cc_data = CCData()
-        if file.rsplit(".", 1)[1] == "log":
-            try:
-                setattr(cc_data, "nmr_shielding", self.gaussian_nmr_shielding(file))
-            except:
-                setattr(cc_data, "nmr_shielding", None)
-
-        elif file.rsplit(".", 1)[1] == "out":
-            # try:
-                setattr(
-                    cc_data,
-                    "nmr_shielding",
-                    self.orca_nmr_shielding(file),
-                )
-            # except:
-            #     setattr(cc_data, "nmr_shielding", None)
-
+        try:
+            cc_data = parser.parse()
+        except:
+            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
+            cc_data = None
+   
         return cc_data
 
     def gaussian_nmr_shielding(self, file):
