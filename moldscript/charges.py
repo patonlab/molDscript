@@ -107,7 +107,7 @@ class charges:
                             seconds = int(time_parts[6])
                             milliseconds = int(time_parts[8])
                             total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
-                            cc_data.metadata["cpu_time"] = total_time
+                            cc_data.metadata["cpu_time"] = [total_time]
                         if 'ATOMIC CHARGES' in line:
                             charge_type = line.split()[0].lower()
                             charges_list = []

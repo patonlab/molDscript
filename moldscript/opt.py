@@ -62,7 +62,7 @@ class opt:
         test_file = self.data[list(self.data.keys())[0]]
         xtb = False
         with open(test_file, 'r') as f:
-            for _ in range(10):  # Read the first 10 lines
+            for _ in f:  # Read the first 10 lines
                 line = f.readline()
                 if 'x T B' in line:
                     xtb = True
@@ -155,6 +155,13 @@ class opt:
                             for _ in range(3):
                                 next(f)  # Skip the next 3 lines
                             continue
+                        if 'CARTESIAN COORDINATES (ANGSTROEM)' in line: #for orca6 xtb
+                            atom_coords = []
+                            atomnos = []
+                            parsing_coords = True
+                            for _ in range(1):
+                                next(f)  # Skip the next 3 lines
+                            continue
                         if parsing_coords:
                             parts = line.split()
                             if len(parts) < 4:
@@ -172,12 +179,14 @@ class opt:
                             self.data_dict["CPU_time"].append(self.data[file_name])
                 bond_data_matrix = self.bond_data_matrix(atom_coords)
                 self.data_dict[file_name]["bond"]["bond_length"] = bond_data_matrix
-                mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
-                volume = AllChem.ComputeMolVolume(mol)
-                smi = Chem.MolToSmiles(mol)
+                try:
+                    mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
+                    smi = Chem.MolToSmiles(mol)
+                except:
+                    print('!Encountered issue during the conversion of coordinates to smiles!')
+                    smi = ''
                 self.data_dict[file_name]["atom"]["atomnos"] = np.array(atomnos)
                 self.data_dict[file_name]["mol"]["smiles"] = smi
-                self.data_dict[file_name]["mol"]["molecular_volume"] = volume
 
 
         
@@ -216,8 +225,10 @@ class opt:
             cc_data = CCData()
             cc_data.metadata["cpu_time"] = []
             with open(file, 'r') as f:
+                print('test1')
                 for line in f:
                     if 'TOTAL RUN TIME:' in line:
+                        print('test1')
                         time_parts = line.split(':')[1].strip().split()
                         days = int(time_parts[0])
                         hours = int(time_parts[2])
@@ -227,10 +238,13 @@ class opt:
                         total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
                         cc_data.metadata["cpu_time"].append(total_time)
                     if 'Total Energy       :' in line:
+                        print('test2')
                         energy_eV = float(line.split()[-2])
                         cc_data.scfenergies.append(energy_eV)
                     if 'Sum of atomic charges:' in line:
+                        print('test3')
                         cc_data.charge = int(float(line.split()[-1]))
+                        print('test4')
                     if 'CARTESIAN COORDINATES (ANGSTROEM)' in line:
                         next(f)  # Skip the dashed line
                         atomcoords = []

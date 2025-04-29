@@ -26,6 +26,7 @@ class lowe:
         weighted_df = pd.DataFrame()
 
         for name in basenames:
+            print(name)
             tempdf = mol_df[mol_df['filename'].str.contains(name)]
             mine = tempdf['scfenergy'].min()
             outdf = tempdf[tempdf['scfenergy'] == mine]
