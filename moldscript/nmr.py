@@ -84,11 +84,14 @@ class nmr:
     def parse_cc_data(self, file_name, file):
 
         parser = cc.io.ccopen(file)
-        try:
-            cc_data = parser.parse()
-        except:
-            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
-            cc_data = None
+        cc_data = parser.parse()
+        if cc_data.metadata['package'].lower() == "gaussian":
+            cc_data.nmr_shielding = self.gaussian_nmr_shielding(file)
+        elif cc_data.metadata['package'].lower() == "orca":
+            cc_data.nmr_shielding = self.orca_nmr_shielding(file)
+        else:
+            raise ValueError(f"Unsupported nmr tensor program: {cc_data.metadata['package']}")
+
    
         return cc_data
 

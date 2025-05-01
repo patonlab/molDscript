@@ -80,10 +80,7 @@ class opt:
                 # convert log to smiles
                 opt_data = self.parse_cc_data(file_name, self.data[file_name])
                 try:
-                    if not self.orca6:
-                        mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
-                    else:
-                        mol = xyz2mol.xyz2mol(opt_data.atomnos, opt_data.atomcoords[-1], charge=opt_data.charge)[0]
+                    mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
                     smi = Chem.MolToSmiles(mol)
                 except:
                     if self.openbabel:
@@ -98,7 +95,8 @@ class opt:
                             obConversion.CloseOutFile()
                             mol = Chem.MolFromMolFile(file_name.split(".")[0] + ".mol", removeHs=False)
                             os.remove(file_name.split(".")[0] + ".mol")
-                        except:
+                        except Exception as e:
+                            print(f'!Encountered issue during the conversion of coordinates to smiles! {e}')
                             print('!Encountered issue during the conversion of coordinates to smiles!')
                             print(f'!Omitting smiles for {os.path.basename(file_name)}!')
                             smi = ''
