@@ -62,7 +62,7 @@ class opt:
         test_file = self.data[list(self.data.keys())[0]]
         xtb = False
         with open(test_file, 'r') as f:
-            for _ in range(10):  # Read the first 10 lines
+            for _ in f:  # Read the first 10 lines
                 line = f.readline()
                 if 'x T B' in line:
                     xtb = True
@@ -80,10 +80,7 @@ class opt:
                 # convert log to smiles
                 opt_data = self.parse_cc_data(file_name, self.data[file_name])
                 try:
-                    if not self.orca6:
-                        mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
-                    else:
-                        mol = xyz2mol.xyz2mol(opt_data.atomnos, opt_data.atomcoords[-1], charge=opt_data.charge)[0]
+                    mol = xyz2mol.xyz2mol(opt_data.atomnos.tolist(), opt_data.atomcoords[-1].tolist(), charge=opt_data.charge)[0]
                     smi = Chem.MolToSmiles(mol)
                 except:
                     if self.openbabel:
@@ -98,7 +95,8 @@ class opt:
                             obConversion.CloseOutFile()
                             mol = Chem.MolFromMolFile(file_name.split(".")[0] + ".mol", removeHs=False)
                             os.remove(file_name.split(".")[0] + ".mol")
-                        except:
+                        except Exception as e:
+                            print(f'!Encountered issue during the conversion of coordinates to smiles! {e}')
                             print('!Encountered issue during the conversion of coordinates to smiles!')
                             print(f'!Omitting smiles for {os.path.basename(file_name)}!')
                             smi = ''
@@ -155,6 +153,13 @@ class opt:
                             for _ in range(3):
                                 next(f)  # Skip the next 3 lines
                             continue
+                        if 'CARTESIAN COORDINATES (ANGSTROEM)' in line: #for orca6 xtb
+                            atom_coords = []
+                            atomnos = []
+                            parsing_coords = True
+                            for _ in range(1):
+                                next(f)  # Skip the next 3 lines
+                            continue
                         if parsing_coords:
                             parts = line.split()
                             if len(parts) < 4:
@@ -172,86 +177,30 @@ class opt:
                             self.data_dict["CPU_time"].append(self.data[file_name])
                 bond_data_matrix = self.bond_data_matrix(atom_coords)
                 self.data_dict[file_name]["bond"]["bond_length"] = bond_data_matrix
-                mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
-                volume = AllChem.ComputeMolVolume(mol)
-                smi = Chem.MolToSmiles(mol)
+                try:
+                    mol = xyz2mol.xyz2mol(atomnos, atom_coords, charge=chg)[0]
+                    smi = Chem.MolToSmiles(mol)
+                except:
+                    print('!Encountered issue during the conversion of coordinates to smiles!')
+                    smi = ''
                 self.data_dict[file_name]["atom"]["atomnos"] = np.array(atomnos)
                 self.data_dict[file_name]["mol"]["smiles"] = smi
-                self.data_dict[file_name]["mol"]["molecular_volume"] = volume
 
 
         
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-        self.orca6 = False
-        with open(file, 'r') as f:
-            for line in f:
-                if 'Program Version' in line:
-                    version = line.split()[2]
-                    if version.startswith('6'):
-                        self.orca6 = True
-                        break
-        if not self.orca6:
-            try:              
-                ### parse data
-                parser = cc.io.ccopen(file)
-                cc_data = parser.parse()
-                setattr(cc_data, "bond_data_matrix", self.bond_data_matrix(cc_data))
-            except:
-                self.args.log.write(
-                    f"\nx  Could not parse {file_name} to obtain optimization information")
-                cc_data = None
-            return cc_data
-        else:            
-            # try:
-            class CCData:
-                def __init__(self):
-                    self.atomcoords = []
-                    self.metadata = {}
-                    self.scfenergies = []
-                    self.charge = int()
-                    self.atomnos = []
-                    self.bond_data_matrix = []
-            cc_data = CCData()
-            cc_data.metadata["cpu_time"] = []
-            with open(file, 'r') as f:
-                for line in f:
-                    if 'TOTAL RUN TIME:' in line:
-                        time_parts = line.split(':')[1].strip().split()
-                        days = int(time_parts[0])
-                        hours = int(time_parts[2])
-                        minutes = int(time_parts[4])
-                        seconds = int(time_parts[6])
-                        milliseconds = int(time_parts[8])
-                        total_time = datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds, milliseconds=milliseconds)
-                        cc_data.metadata["cpu_time"].append(total_time)
-                    if 'Total Energy       :' in line:
-                        energy_eV = float(line.split()[-2])
-                        cc_data.scfenergies.append(energy_eV)
-                    if 'Sum of atomic charges:' in line:
-                        cc_data.charge = int(float(line.split()[-1]))
-                    if 'CARTESIAN COORDINATES (ANGSTROEM)' in line:
-                        next(f)  # Skip the dashed line
-                        atomcoords = []
-                        atomnos = []
-                        for coord_line in f:
-                            if coord_line.strip() == '':
-                                break
-                            parts = coord_line.split()
-                            atom_type = parts[0]
-                            coords = list(map(float, parts[1:4]))
-                            atomcoords.append(coords)
-                            atomnos.append(Chem.GetPeriodicTable().GetAtomicNumber(atom_type))
-                        cc_data.atomcoords.append(atomcoords)
-                        cc_data.atomnos = atomnos
-                fcoords = cc_data.atomcoords[-1]
-                cc_data.bond_data_matrix = self.bond_data_matrix(fcoords)
-
-            # except:
-            #     self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
-            #     cc_data = None
-            return cc_data
+        try:              
+            ### parse data
+            parser = cc.io.ccopen(file)
+            cc_data = parser.parse()
+            setattr(cc_data, "bond_data_matrix", self.bond_data_matrix(cc_data))
+        except:
+            self.args.log.write(
+                f"\nx  Could not parse {file_name} to obtain optimization information")
+            cc_data = None
+        return cc_data
 
     def bond_data_matrix(self, opt_data):
         try:

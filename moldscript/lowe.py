@@ -26,13 +26,24 @@ class lowe:
         weighted_df = pd.DataFrame()
 
         for name in basenames:
+
             tempdf = mol_df[mol_df['filename'].str.contains(name)]
+
             mine = tempdf['scfenergy'].min()
             outdf = tempdf[tempdf['scfenergy'] == mine]
+            if len(outdf) > 1:
+                numeric_cols = outdf.select_dtypes(include=[np.number]).columns
+                non_numeric_cols = outdf.select_dtypes(exclude=[np.number]).columns
+
+                averaged_row = outdf[numeric_cols].mean().to_frame().T
+                for col in non_numeric_cols:
+                    averaged_row[col] = outdf[col].iloc[0]
+
+                outdf = averaged_row
 
             self.low_confs.append(outdf['filename'].iloc[0])
             weighted_df = pd.concat([weighted_df, outdf])
- 
+        weighted_df['filename'] = [k.rsplit('_conf',1)[0] for k in weighted_df['filename']]
         columns_order = ['filename', 'smiles'] + [col for col in weighted_df.columns if col not in ['filename', 'smiles']]
         weighted_df = weighted_df[columns_order]  
         weighted_df = weighted_df.drop('scfenergy', axis=1)  
