@@ -71,6 +71,11 @@ def add_cpu_times(file_data):
         total_cpu += file_data[filename]['cpu_time']
     
     return total_cpu
+def initiate_data_dict():
+    """
+    Initiates a data dictionary to store all the data from the files.
+    """
+    
 
 def format_lists(value):
     '''

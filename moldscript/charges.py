@@ -39,6 +39,7 @@ class charges:
 
         self.args.log.write(f"-- Charges Collection starting")
         for file_name in self.data.keys():
+            print(file_name)
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 

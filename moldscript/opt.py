@@ -68,8 +68,9 @@ class opt:
                     xtb = True
                     print('- Identified XTB opt file')
                     break
-
+        
         for i, file_name in enumerate(self.data.keys()):
+            print(file_name)
             nickname = file_name
             self.data_dict[file_name] = dict()
             self.data_dict[file_name]["mol"] = dict()
@@ -116,12 +117,6 @@ class opt:
 
 
                 self.data_dict[file_name]["mol"]["scfenergy"] = (opt_data.scfenergies[-1] * eV_to_hartree)
-                if self.ml == False:
-                    try:
-                        self.data_dict[file_name]["mol"]["opt_enthalpy"] = opt_data.enthalpy
-                        self.data_dict[file_name]["mol"]["opt_freeenergy"] = opt_data.freeenergy
-                    except:
-                        pass
                 self.data_dict[file_name]["mol"]["smiles"] = smi
                 self.data_dict[file_name]["atom"]["atomnos"] = opt_data.atomnos
                 self.data_dict[file_name]["bond"]["bond_length"] = opt_data.bond_data_matrix
