@@ -8,6 +8,10 @@ import ast
 from pathlib import Path
 import glob
 import datetime
+import numpy as np
+import cclib as cc
+import moldscript.xyz2mol as xyz2mol
+from rdkit import Chem
 
 k_B_hartree = 3.1668114e-6  # hartree/K
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
@@ -71,11 +75,29 @@ def add_cpu_times(file_data):
         total_cpu += file_data[filename]['cpu_time']
     
     return total_cpu
-def initiate_data_dict():
+def initiate_data_dict(calc_type, data):
     """
     Initiates a data dictionary to store all the data from the files.
     """
-    
+    print(f"Initializing data parsing with SMILES and geometry data from {calc_type} files")
+    data_dict = {}
+    for i, file_name in enumerate(data.keys()):
+        nickname = file_name
+        data_dict[file_name] = dict()
+        data_dict[file_name]["mol"] = dict()
+        data_dict[file_name]["atom"] = dict()
+        data_dict[file_name]["bond"] = dict()
+        parsed_data = parse_cc_data(file_name, data[file_name])
+        try:
+            mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
+            smi = Chem.MolToSmiles(mol)
+        except:
+            print("Encountered an issue with the mol embedding. Skipping smiles string.")
+        data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
+        data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
+        data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
+        data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
+    return data_dict
 
 def format_lists(value):
     '''
@@ -91,8 +113,32 @@ def format_lists(value):
             while('' in value):
                 value.remove('')
     return value
-
-
+def bond_data_matrix(data):
+        try:
+            coords = data.atomcoords[-1]
+        except:
+            coords = data
+        bond_data_matrix_list = []
+        for atom1 in range(len(coords)):
+            row = []
+            for atom2 in range(len(coords)):
+                p1 = np.array(coords[atom1])
+                p2 = np.array(coords[atom2])
+                squared_dist = np.sum((p1 - p2) ** 2, axis=0)
+                dist = np.sqrt(squared_dist)
+                row.append(dist)
+            bond_data_matrix_list.append(row)
+        return bond_data_matrix_list
+def parse_cc_data(file_name, file):
+        try:              
+            parser = cc.io.ccopen(file)
+            cc_data = parser.parse()
+            setattr(cc_data, "bond_data_matrix", bond_data_matrix(cc_data))
+        except:
+            print(
+                f"\nx  Could not parse {file_name}")
+            raise SystemExit(f"Error parsing {file_name}. Ensure the file is a valid cclib file.")
+        return cc_data
 def get_files(value):
 
         if value[-1]=='/':
