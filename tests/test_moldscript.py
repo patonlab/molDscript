@@ -126,23 +126,19 @@ def test_charges(opt_path,  species, apt_charges, charges_suffix):
         assert round(data_dicts[species]['atom']['apt_charge'][i], precision) == round(charge, precision)
 
 
-@pytest.mark.parametrize("opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path,  species, oxidized_charges, reduced_charges", [
-    ('arbr/opt', 'arbr/popn', 'arbr/fukui_ox', 'arbr/fukui_red', 'arbr31_wb97xd', [-0.07481, 0.55092, -0.42669, -0.43292, 0.09900, -0.24454, 
+@pytest.mark.parametrize("opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path,  fukui_neutral_suffix, fukui_oxidized_suffix, fukui_reduced_suffix, species, oxidized_charges, reduced_charges", [
+    ('arbr/opt', 'arbr/popn', 'arbr/fukui_ox', 'arbr/fukui_red', 'popn', 'ox', 'red', 'arbr31_wb97xd', [-0.07481, 0.55092, -0.42669, -0.43292, 0.09900, -0.24454, 
     -0.00150, 0.17203, -0.22431, -0.11532, -0.16606, 0.28381, 0.28382, 0.26198, 0.26197, 0.25935, 0.26189, 0.25138], [-0.67645, 0.44630,-0.48153, -0.41843, 0.03051, -0.31967, -0.17854, -0.05180, -0.23203, -0.26912, -0.22398, 0.19031, 0.19031, 0.19610, 0.19610, 0.19775, 0.19804, 0.20612]),
 ])
 
-def test_fukui(opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path, species, oxidized_charges, reduced_charges):
+def test_fukui(opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path, fukui_neutral_suffix, fukui_oxidized_suffix, fukui_reduced_suffix, species, oxidized_charges, reduced_charges):
     path = datapath(opt_path)
     data_dicts = {}
-
-    opt_read = files("opt", path, data_dicts)
-    opt_data = opt(opt_read.file_data, data_dicts)
-    data_dicts = opt_data.file_data
-    
     fukui_read = files(
                 calc="fukui",
                 data_dict=data_dicts,
-                path=[datapath(fukui_neutral_path), datapath(fukui_reduced_path), datapath(fukui_oxidized_path)])
+                path=[datapath(fukui_neutral_path), datapath(fukui_reduced_path), datapath(fukui_oxidized_path)],
+                suffix=[fukui_neutral_suffix, fukui_reduced_suffix, fukui_oxidized_suffix])
     fukui_data = fukui(fukui_read.file_data, data_dicts)
     data_dicts = fukui_data.data_dict
 
