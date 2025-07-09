@@ -206,12 +206,6 @@ def command_line_args():
                 value = True
 
             kwargs[arg_name] = value
-
-    # Check if 'opt' keyword is provided
-    if 'opt' not in kwargs:
-        print("Error: The 'opt' keyword is required.")
-        sys.exit(1)
-
     # Second, load all the default variables as an "add_option" object
     args = load_variables(kwargs, "command")
 

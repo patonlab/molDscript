@@ -75,11 +75,11 @@ def add_cpu_times(file_data):
         total_cpu += file_data[filename]['cpu_time']
     
     return total_cpu
-def initiate_data_dict(calc_type, data):
+def initiate_data_dict(data):
     """
     Initiates a data dictionary to store all the data from the files.
     """
-    print(f"Initializing data parsing with SMILES and geometry data from {calc_type} files")
+    print(f"Initializing data parsing with SMILES and geometry data")
     data_dict = {}
     for i, file_name in enumerate(data.keys()):
         nickname = file_name
@@ -97,6 +97,7 @@ def initiate_data_dict(calc_type, data):
         data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
         data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
         data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
+        data_dict['CPU_time'] = []
     return data_dict
 
 def format_lists(value):

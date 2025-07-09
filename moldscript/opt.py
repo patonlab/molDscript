@@ -25,12 +25,11 @@ class opt:
         self.data = data
         self.data_dict = data_dict
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict("opt", self.data)
+            self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
-            self.args.log.write(
+            print(
                 f"\nx  Could not find files to obtain optimization information. Exiting program"
             )
-            self.args.log.finalize()
             sys.exit()
         else:
             self.file_data = self.get_data()

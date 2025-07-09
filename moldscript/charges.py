@@ -8,7 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, initiate_data_dict
 import datetime
 
 class charges:
@@ -23,6 +23,8 @@ class charges:
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for charge data")
             self.args.log.finalize()
@@ -37,9 +39,8 @@ class charges:
 
     def get_data(self):
 
-        self.args.log.write(f"-- Charges Collection starting")
+        print(f"-- Charges Collection starting")
         for file_name in self.data.keys():
-            print(file_name)
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
