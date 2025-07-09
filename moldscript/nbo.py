@@ -7,10 +7,8 @@ import sys, os
 import time
 import datetime
 import cclib as cc
-from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import add_cpu_times
-from moldscript.utils import get_filename
+from moldscript.utils import add_cpu_times, get_filename, initiate_data_dict
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
@@ -23,6 +21,8 @@ class nbo:
         self.args = load_variables(kwargs, "NBO", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         self.fnames = self.data_dict.keys()
 
         if len(self.data.keys()) == 0:

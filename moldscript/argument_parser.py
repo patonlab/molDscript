@@ -26,8 +26,6 @@ var_dict = {
     "fukui_neutral": False,
     "fukui_oxidized": False,
     "fukui_reduced": False,
-    "ad_oxidized": False,
-    "ad_reduced": False,
     "link": False,
     "boltz": False,
     "min_max": False,
@@ -41,6 +39,15 @@ var_dict = {
     "output": "",
     "ml" : True,
     "no_bond_filter": False,
+    "opt_suffix": "",
+    "spc_suffix": "spc",
+    "nbo_suffix": "nbo",
+    "nmr_suffix": "nmr",
+    "fukui_neutral_suffix": "neut",
+    "fukui_reduced_suffix": "red",
+    "fukui_oxidized_suffix": "ox",
+    "charges_suffix": "",
+    "fmo_suffix": "",
 }
 
 
@@ -136,13 +143,20 @@ def command_line_args():
         "fukui_neutral",
         "fukui_oxidized",
         "fukui_reduced",
-        "ad_reduced",
-        "ad_oxidized",
         "link",
         "substructure",
         "varfile",
         "radius",
-        "fmo"
+        "fmo",
+        "opt_suffix",
+        "spc_suffix",
+        "nbo_suffix",
+        "nmr_suffix",
+        "fukui_neutral_suffix",
+        "fukui_reduced_suffix",
+        "fukui_oxidized_suffix",
+        "charges_suffix",
+        "fmo_suffix"
     ]
 
     for arg in var_dict:
@@ -192,12 +206,6 @@ def command_line_args():
                 value = True
 
             kwargs[arg_name] = value
-
-    # Check if 'opt' keyword is provided
-    if 'opt' not in kwargs:
-        print("Error: The 'opt' keyword is required.")
-        sys.exit(1)
-
     # Second, load all the default variables as an "add_option" object
     args = load_variables(kwargs, "command")
 

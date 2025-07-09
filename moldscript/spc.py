@@ -7,7 +7,7 @@ import sys, os
 import time
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, initiate_data_dict
 import datetime
 
 class spc:
@@ -22,6 +22,8 @@ class spc:
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
             self.args.log.finalize()

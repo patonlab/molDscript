@@ -8,7 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, initiate_data_dict
 import datetime
 
 class charges:
@@ -23,32 +23,32 @@ class charges:
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
-            self.args.log.write(f"\nx  Could not find files to obtain information for charge data")
-            self.args.log.finalize()
+            print(f"\nx  Could not find files to obtain information for charge data")
             sys.exit()
         else:
             self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"-- Charges Collection complete in {elapsed_time} seconds\n")
-            self.args.log.finalize()
+            print(f"-- Charges Collection complete in {elapsed_time} seconds")
 
     def get_data(self):
 
-        self.args.log.write(f"-- Charges Collection starting")
+        print(f"-- Charges Collection starting")
         for file_name in self.data.keys():
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
             try:
                 if list(self.data.keys()).index(file_name) == 0:
-                    self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
+                    print(f"   Functional used: {chg_data.metadata['functional']}")
+                    print(f"   Basis set used: {chg_data.metadata['basis_set']}")
             except:
                 pass
-            self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
+            print(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
                 self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
             else:

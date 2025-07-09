@@ -9,7 +9,7 @@ import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import add_cpu_times
+from moldscript.utils import add_cpu_times, initiate_data_dict
 
 
 class nmr:
@@ -24,6 +24,8 @@ class nmr:
         self.args = load_variables(kwargs, "NMR", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
@@ -47,7 +49,7 @@ class nmr:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        self.args.log.write(f"-- NMR Parameter Collection starting")
+        print(f"-- NMR Parameter Collection starting")
         for i, file_name in enumerate(self.data.keys()):
             # try:
             file_name = self.get_filename(file_name)
@@ -56,16 +58,16 @@ class nmr:
             #     nmr_data = None
             try:
                 if i == 0:
-                    self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
-                    self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
+                    print(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
+                    print(f"   Functional used: {nmr_data.metadata['functional']}")
+                    print(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
             except:
                 pass
             if nmr_data != None:
-                self.args.log.write(f"o  Parsing NMR Shielding Tensors from {file_name}")
+                print(f"o  Parsing NMR Shielding Tensors from {file_name}")
                 self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
-                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
+                print(f"!  Skipping {file_name} as NMR data not found")
 
             if self.data[file_name] in self.data_dict['CPU_time']:
                 pass
