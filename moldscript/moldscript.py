@@ -121,7 +121,7 @@ def main():
         # FUKUI
         if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
             print('FUKUI PATH', [args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized])
-            fukui_read = files(calc="fukui", data_dict=data_dicts, path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized], suffix= [args.fukui_reduced_suffix, args.fukui_oxidized_suffix, args.fukui_neutral_suffix])
+            fukui_read = files(calc="fukui", data_dict=data_dicts, path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized], suffix= [args.fukui_neutral_suffix, args.fukui_reduced_suffix, args.fukui_oxidized_suffix])
             fukui_data = fukui(fukui_read.file_data, data_dicts)
             data_dicts = fukui_data.data_dict
     

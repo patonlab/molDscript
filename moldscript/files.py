@@ -62,38 +62,38 @@ class files:
     def get_opt_or_substructure(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
 
     def get_spc(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
     def get_chg(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
     def get_fmo(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
     def get_nmr(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
     def get_nbo(self):
         file_data = defaultdict(dict)
         for file in self.files:
-            key_name = self.get_filename(file)
+            key_name = self.get_filename(file, self.suffix)
             file_data[key_name] = file
         return file_data
 
@@ -104,12 +104,15 @@ class files:
         red = os.path.join(cwd, self.path[1])
         ox = os.path.join(cwd, self.path[2])
         for file in self.files:
-            key_name = self.get_filename(file)
+
             if neut in file:
+                key_name = self.get_filename(file, self.suffix[0])
                 file_data[key_name]["neutral"] = file
             if red in file:
+                key_name = self.get_filename(file, self.suffix[1])
                 file_data[key_name]["reduced"] = file
             if ox in file:
+                key_name = self.get_filename(file, self.suffix[2])
                 file_data[key_name]["oxidized"] = file
         return file_data
 
@@ -119,7 +122,7 @@ class files:
     #         file_data[file] = file
     #     return file_data
 
-    def get_filename(self, fullname):
+    def get_filename(self, fullname, suffix):
 
         try:
             fullname = fullname.split("/")[-1]
@@ -133,8 +136,8 @@ class files:
             fullname = fullname.split(".out")[0]
         except:
             pass
-        if self.suffix != '':
-            fullname = fullname.split("_" + self.suffix)[0]
+        if suffix != '':
+            fullname = fullname.split("_" + suffix)[0]
         elif self.warn_suffix == False:
             print(f"Warning: no suffix provided for {self.calc}, using full filename")
             print("If this is not intentional, it will cause issues with matching filenames")

@@ -9,8 +9,10 @@ import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, parse_cc_data
 import datetime
+import moldscript.xyz2mol as xyz2mol
+from rdkit import Chem
 
 class fukui:
     """
@@ -24,39 +26,39 @@ class fukui:
         self.args = load_variables(kwargs, "FUKUI", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        if self.data_dict == {}:
+            self.data_dict = self.fukui_data_dict(self.data)
 
         if len(self.data.keys()) == 0:
-            self.args.log.write(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
-            self.args.log.finalize()
+            print(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
             sys.exit()
         else:
             self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
-            self.args.log.finalize()
+            print(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
 
     def get_data(self):
 
         first = False
-        self.args.log.write(f"-- Fukui Parameter Collection starting")
+        print(f"-- Fukui Parameter Collection starting")
         for file_name in list(self.data.keys()):
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
                 if first == False:
-                    try:                 
-                        self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                        self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
-                        self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
+                    try:
+                        print(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
+                        print(f"   Functional used: {neutral_data.metadata['functional']}")
+                        print(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
                     except: pass
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
             if neutral_data != None and oxidized_data != None and reduced_data != None:
-                self.args.log.write(f"o  Parsing Fukui data from {file_name}")
+                print(f"o  Parsing Fukui data from {file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
                 red_e = reduced_data.scfenergies[-1] * eV_to_hartree
                 ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
@@ -117,7 +119,7 @@ class fukui:
         try:
             cc_data = cc.io.ccread(file)
         except:
-            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
+            print(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
             cc_data = None
 
         try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
@@ -145,5 +147,28 @@ class fukui:
             if element in list_b:
                 return element
         return None  # No match found
+    def fukui_data_dict(self,data):
+        """
+        Initiates a data dictionary to store all the data from the files.
+        """
+        print(f"Initializing data parsing with SMILES and geometry data")
+        data_dict = {}
+        for i, file_name in enumerate(data.keys()):
+            data_dict[file_name] = dict()
+            data_dict[file_name]["mol"] = dict()
+            data_dict[file_name]["atom"] = dict()
+            data_dict[file_name]["bond"] = dict()
+            parsed_data = parse_cc_data(file_name, data[file_name]['neutral'])
+            try:
+                mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
+                smi = Chem.MolToSmiles(mol)
+            except:
+                print("Encountered an issue with the mol embedding. Skipping smiles string.")
+            data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
+            data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
+            data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
+            data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
+            data_dict['CPU_time'] = []
+        return data_dict
 
 

@@ -82,7 +82,6 @@ def initiate_data_dict(data):
     print(f"Initializing data parsing with SMILES and geometry data")
     data_dict = {}
     for i, file_name in enumerate(data.keys()):
-        nickname = file_name
         data_dict[file_name] = dict()
         data_dict[file_name]["mol"] = dict()
         data_dict[file_name]["atom"] = dict()
