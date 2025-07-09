@@ -8,7 +8,7 @@ import time
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree
+from moldscript.utils import eV_to_hartree, initiate_data_dict
 import numpy as np
 import datetime
 
@@ -24,6 +24,8 @@ class fmo:
         self.args = load_variables(kwargs, "FMO", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        if self.data_dict == {}:
+            self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for FMO and moment analysis")
             self.args.log.finalize()
@@ -33,12 +35,11 @@ class fmo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            self.args.log.write(f"-- FMO Collection complete in {elapsed_time} seconds\n")
-            self.args.log.finalize()
+            print(f"-- FMO Collection complete in {elapsed_time} seconds\n")
 
     def get_data(self):
 
-        self.args.log.write(f"-- FMO Collection starting")
+        print(f"-- FMO Collection starting")
 
         for file_name in self.data.keys():
             if self.data[file_name].rsplit('.',1)[1] == 'log':
@@ -49,11 +50,11 @@ class fmo:
             file_name = self.get_filename(file_name)
             try:
                 if list(self.data.keys()).index(file_name) == 0:
-                    self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
+                    print(f"   Functional used: {fmo_data.metadata['functional']}")
+                    print(f"   Basis set used: {fmo_data.metadata['basis_set']}")
             except: pass
 
-            self.args.log.write(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
+            print(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
 
             self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
             self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
