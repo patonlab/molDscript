@@ -63,6 +63,9 @@ class boltz:
                 output_df['filename'] = [name]
             weighted_df = pd.concat([weighted_df, output_df])
         columns_order = ['filename', 'smiles'] + [col for col in weighted_df.columns if col not in ['filename', 'smiles']]
+        # Save self.weight_dict as a CSV file
+        weights_df = pd.DataFrame(list(self.weight_dict.items()), columns=['filename', 'boltzmann_weight'])
+        weights_df.to_csv(str(self.prefix) + 'boltzmann_weights.csv', index=False)
         weighted_df = weighted_df[columns_order]  
         weighted_df = weighted_df.drop('scfenergy', axis=1)  
         weighted_df = weighted_df.round(4)  

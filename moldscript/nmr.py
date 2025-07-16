@@ -108,7 +108,7 @@ class nmr:
         nmr_shielding = []
         for j in range(start, end - 1, 5):
             nmr = lines[j].split()[4]
-            if nmr == "Anisotropy":
+            if nmr == "Anisotropy": #Bad formatting in Gaussian
                 nmr_line = lines[j].split()[3]
                 nmr = nmr_line.strip("=")
             nmr = float(nmr)
