@@ -26,7 +26,7 @@ class boltz:
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
         weighted_df = pd.DataFrame()
         for name in basenames:
-            tempdf = mol_df[mol_df['filename'].str.contains(name)]
+            tempdf = mol_df[mol_df['filename'].str.split('_conf').str[0] == name]
             fullname = list(tempdf['filename'])[0]
             if len(tempdf) == 1:
                 tempdf['filename'] = [name]
@@ -34,10 +34,15 @@ class boltz:
                 self.weight_dict[fullname] = 1
             else:
                 # Calculate Boltzmann weights
+                # Make scfenergy values relative to the lowest one
+                tempdf['scfenergy'] = tempdf['scfenergy'] - tempdf['scfenergy'].min()
                 tempdf['Exponent'] = -tempdf['scfenergy'] / (boltzmann_constant * self.temp)
-                # Shift exponents for numerical stability
-                tempdf['Exponent_shifted'] = tempdf['Exponent'] - tempdf['Exponent'].min()
-                tempdf['Boltzmann_weight'] = np.exp(tempdf['Exponent_shifted'])
+
+                tempdf['Boltzmann_weight'] = np.exp(tempdf['Exponent'])
+                # Normalize Boltzmann weights so they sum to 1
+                tempdf['Boltzmann_weight'] = tempdf['Boltzmann_weight'] / tempdf['Boltzmann_weight'].sum()
+                # print(name)
+                # print(tempdf[['filename', 'scfenergy', 'Exponent', 'Boltzmann_weight']])
                 # Normalize weights
                 Z = tempdf['Boltzmann_weight'].sum()
                 tempdf['Boltzmann_weight_normalized'] = tempdf['Boltzmann_weight'] / Z
@@ -89,8 +94,8 @@ class boltz:
 
             grouped = tempdf.groupby('atom_index')
             weighted_avgs = grouped.apply(
-    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols})
-)
+    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),
+    include_groups=False)
             weighted_avgs.reset_index(inplace=True, drop=False)
             # For non-numerical columns, retain the first value in each group
             non_numerical_cols = tempdf.select_dtypes(exclude=[np.number]).columns.tolist()
@@ -125,7 +130,8 @@ class boltz:
             numerical_cols.remove('atom2_idx')
             grouped = tempdf.groupby(['atom1_idx', 'atom2_idx'])
             weighted_avgs = grouped.apply(
-    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}))
+    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),
+    include_groups=False)
             weighted_avgs.reset_index(inplace=True, drop=False)
             # For non-numerical columns, retain the first value in each group
             non_numerical_cols = tempdf.select_dtypes(exclude=[np.number]).columns.tolist()
