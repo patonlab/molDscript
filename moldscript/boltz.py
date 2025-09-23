@@ -77,7 +77,12 @@ class boltz:
         weighted_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_boltz(self):
-        atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        try:
+            atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        except FileNotFoundError:
+            print(f"atom_level.csv not found at {str(self.prefix) + 'atom_level.csv'}, skipping atom_boltz.")
+            return
+        
         ensemble_atom_csv =str(self.prefix) +  'ensemble_atom_level.csv'
         print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
@@ -115,6 +120,11 @@ class boltz:
 
     def bond_boltz(self):
         bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        try:
+            bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        except FileNotFoundError:
+            print(f"bond_level.csv not found at {str(self.prefix) + 'bond_level.csv'}, skipping bond_boltz.")
+            return
         ensemble_bond_csv =str(self.prefix) +  'ensemble_bond_level.csv'
         print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}\n'.format(ensemble_bond_csv))
         # Map the weights to the atomic DataFrame based on 'filename'

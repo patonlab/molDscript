@@ -48,6 +48,11 @@ var_dict = {
     "suffix_fukui_oxidized": "",
     "suffix_charges": "",
     "suffix_fmo": "",
+    "no_mol" : False,
+    'no_atom' : False,
+    'no_bond' : False,
+    'mol_vector' : False,
+
 }
 
 
@@ -89,7 +94,6 @@ def set_options(kwargs):
     # set default options and options provided
     options = options_add()
     # dictionary containing default values for options
-
     for key in var_dict:
         vars(options)[key] = var_dict[key]
     for key in kwargs:
@@ -123,7 +127,11 @@ def command_line_args():
         "vall",
         "volume",
         'ml',
-        'no_bond_filter'
+        'no_bond_filter',
+        'no_mol',
+        'no_atom',
+        'no_bond',
+        'mol_vector'
     ]
     list_args = ["skip_list"]
     int_args = ["syllables"]

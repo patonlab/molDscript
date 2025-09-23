@@ -83,38 +83,51 @@ def main():
 
     else:
         # OPT
+        first_read = ''
         if args.opt:
             opt_read = files("opt", args.opt, data_dicts, args.suffix_opt)
+            if first_read == '':
+                first_read = opt_read.file_data
             opt_data = opt(opt_read.file_data, data_dicts)
             data_dicts = opt_data.file_data
         
         # SPC
         if args.spc:
             spc_read = files(calc="spc", path=args.spc, data_dict=data_dicts, suffix=args.suffix_spc)
+            if first_read == '':
+                first_read = spc_read.file_data
             spc_data = spc(spc_read.file_data, data_dicts)
             data_dicts = spc_data.file_data
         
         # Charges
         if args.charges:
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts, suffix=args.suffix_charges)
+            if first_read == '':
+                first_read = chg_read.file_data
             chg_data = charges(chg_read.file_data, data_dicts)
             data_dicts = chg_data.file_data
         
         # FMO
         if args.fmo:
             fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts, suffix=args.suffix_fmo)
+            if first_read == '':
+                first_read = fmo_read.file_data
             fmo_data = fmo(fmo_read.file_data, data_dicts)
             data_dicts = fmo_data.file_data
         
         # NMR
         if args.nmr:
             nmr_read = files("nmr", args.nmr, data_dicts, args.suffix_nmr)
+            if first_read == '':
+                first_read = nmr_read.file_data
             nmr_data = nmr(nmr_read.file_data, data_dicts)
             data_dicts = nmr_data.file_data
 
         # NBO
         if args.nbo:
             nbo_read = files("nbo", args.nbo, data_dicts, args.suffix_nbo)
+            if first_read == '':
+                first_read = nbo_read.file_data
             nbo_data = nbo(nbo_read.file_data, data_dicts)
             data_dicts = nbo_data.file_data
 
@@ -130,9 +143,9 @@ def main():
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
     
     if args.volume != False or args.vall != False:
-        data_dicts = sterics(opt_read.file_data, data_dicts, args.volume, args.vall, args.radius).dd
+        data_dicts = sterics(first_read, data_dicts, args.volume, args.vall, args.radius).dd
             
-    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output, bond_filter=args.no_bond_filter)
+    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output, bond_filter=args.no_bond_filter, no_mol=args.no_mol, no_atom=args.no_atom, no_bond=args.no_bond, mol_vector=args.mol_vector)
     
     if args.boltz:
         boltz(temp=args.temp, prefix=args.output, energies = df_getter.energies)

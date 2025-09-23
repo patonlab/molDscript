@@ -14,14 +14,23 @@ class get_df:
     Class to create 3 .csv files containing paramaters
     """
 
-    def __init__(self, data_dicts, substructure="", prefix="", bond_filter=False):
+    def __init__(self, data_dicts, substructure="", prefix="", bond_filter=False, no_mol=False, no_atom=False, no_bond=False, mol_vector=False):
         self.dd = data_dicts
         self.substructure = substructure
         self.prefix = prefix
         self.no_bond_filter = bond_filter
-        mol_df = self.get_mol_df()
-        bond_df = self.get_bond_df()
-        atom_df = self.get_atom_df()
+        if no_mol:
+            print('\n\u25A1  SKIPPING MOLECULE-LEVEL DESCRIPTORS')
+        else:
+            mol_df = self.get_mol_df()
+        if no_bond:
+            print('\n\u25A1  SKIPPING BOND-LEVEL DESCRIPTORS')
+        else:
+            bond_df = self.get_bond_df()
+        if no_atom:
+            print('\n\u25A1  SKIPPING ATOM-LEVEL DESCRIPTORS')
+        else:
+            atom_df = self.get_atom_df()
         self.get_time()
 
     def get_mol_df(self):
