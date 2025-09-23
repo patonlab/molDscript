@@ -26,7 +26,7 @@ class boltz:
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
         weighted_df = pd.DataFrame()
         for name in basenames:
-            tempdf = mol_df[mol_df['filename'].str.contains(name)]
+            tempdf = mol_df[mol_df['filename'].str.split('_conf').str[0] == name]
             fullname = list(tempdf['filename'])[0]
             if len(tempdf) == 1:
                 tempdf['filename'] = [name]
@@ -34,10 +34,15 @@ class boltz:
                 self.weight_dict[fullname] = 1
             else:
                 # Calculate Boltzmann weights
+                # Make scfenergy values relative to the lowest one
+                tempdf['scfenergy'] = tempdf['scfenergy'] - tempdf['scfenergy'].min()
                 tempdf['Exponent'] = -tempdf['scfenergy'] / (boltzmann_constant * self.temp)
-                # Shift exponents for numerical stability
-                tempdf['Exponent_shifted'] = tempdf['Exponent'] - tempdf['Exponent'].min()
-                tempdf['Boltzmann_weight'] = np.exp(tempdf['Exponent_shifted'])
+
+                tempdf['Boltzmann_weight'] = np.exp(tempdf['Exponent'])
+                # Normalize Boltzmann weights so they sum to 1
+                tempdf['Boltzmann_weight'] = tempdf['Boltzmann_weight'] / tempdf['Boltzmann_weight'].sum()
+                # print(name)
+                # print(tempdf[['filename', 'scfenergy', 'Exponent', 'Boltzmann_weight']])
                 # Normalize weights
                 Z = tempdf['Boltzmann_weight'].sum()
                 tempdf['Boltzmann_weight_normalized'] = tempdf['Boltzmann_weight'] / Z
@@ -63,13 +68,21 @@ class boltz:
                 output_df['filename'] = [name]
             weighted_df = pd.concat([weighted_df, output_df])
         columns_order = ['filename', 'smiles'] + [col for col in weighted_df.columns if col not in ['filename', 'smiles']]
+        # Save self.weight_dict as a CSV file
+        weights_df = pd.DataFrame(list(self.weight_dict.items()), columns=['filename', 'boltzmann_weight'])
+        weights_df.to_csv(str(self.prefix) + 'boltzmann_weights.csv', index=False)
         weighted_df = weighted_df[columns_order]  
         weighted_df = weighted_df.drop('scfenergy', axis=1)  
         weighted_df = weighted_df.round(4)  
         weighted_df.to_csv(ensemble_mol_csv, index=False)
 
     def atom_boltz(self):
-        atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        try:
+            atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
+        except FileNotFoundError:
+            print(f"atom_level.csv not found at {str(self.prefix) + 'atom_level.csv'}, skipping atom_boltz.")
+            return
+        
         ensemble_atom_csv =str(self.prefix) +  'ensemble_atom_level.csv'
         print('\u25A1  AVERAGING ATOM-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}'.format(ensemble_atom_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
@@ -86,8 +99,8 @@ class boltz:
 
             grouped = tempdf.groupby('atom_index')
             weighted_avgs = grouped.apply(
-    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols})
-)
+    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),
+    include_groups=False)
             weighted_avgs.reset_index(inplace=True, drop=False)
             # For non-numerical columns, retain the first value in each group
             non_numerical_cols = tempdf.select_dtypes(exclude=[np.number]).columns.tolist()
@@ -107,6 +120,11 @@ class boltz:
 
     def bond_boltz(self):
         bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        try:
+            bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
+        except FileNotFoundError:
+            print(f"bond_level.csv not found at {str(self.prefix) + 'bond_level.csv'}, skipping bond_boltz.")
+            return
         ensemble_bond_csv =str(self.prefix) +  'ensemble_bond_level.csv'
         print('\u25A1  AVERAGING BOND-LEVEL DESCRIPTORS OVER CONFORMERS INTO {}\n'.format(ensemble_bond_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
@@ -122,7 +140,8 @@ class boltz:
             numerical_cols.remove('atom2_idx')
             grouped = tempdf.groupby(['atom1_idx', 'atom2_idx'])
             weighted_avgs = grouped.apply(
-    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}))
+    lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),
+    include_groups=False)
             weighted_avgs.reset_index(inplace=True, drop=False)
             # For non-numerical columns, retain the first value in each group
             non_numerical_cols = tempdf.select_dtypes(exclude=[np.number]).columns.tolist()

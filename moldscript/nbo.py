@@ -62,7 +62,8 @@ class nbo:
                 file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
-                self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
+                if nbo_data.bondorders_matrix != []:
+                    self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
 
                 
             else:
@@ -153,8 +154,9 @@ class nbo:
                 start_wiberg_ind = i + 2
             if line.find("Wiberg bond index") > -1:
                 end_wiberg_ind = i - 1
+        wiberg_bos_matrix = []
         if start_wiberg_ind != None and end_wiberg_ind != None:
-            wiberg_bos_matrix = []
+
             for i in range(start_wiberg_ind, end_wiberg_ind):
                 if lines[i].find("Atom") > -1:
                     for j, atom_idx in enumerate(lines[i].split()):
