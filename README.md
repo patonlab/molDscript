@@ -4,121 +4,64 @@
 [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/JDvVi58JeRw4LYzfeJGsjn/T7u88FmqfkcE7c6vKveH1L/tree/main.svg?style=shield&circle-token=CCIPRJ_3nGjXb4n3dHaAo6mQ67TBk_5ce95f5de89641ed836cbe55488e9b11f28c43d3)](https://dl.circleci.com/status-badge/redirect/circleci/JDvVi58JeRw4LYzfeJGsjn/T7u88FmqfkcE7c6vKveH1L/tree/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+MolDscript is a Python workflow that converts Density Functional Theory (DFT) and related quantum chemistry outputs into descriptor tables ready for machine learning, benchmarking, and mechanistic analysis. It wraps `cclib`, `RDKit`, `DBSTEP`, and `pandas` to align Gaussian, ORCA, and xTB calculations and write consistent molecule-, bond-, and atom-level CSV files.
 
-A Python package for ...
+## Highlights
+- Parse optimization, single-point, NBO, NMR, charge, FMO, and Fukui calculations without manual file editing.
+- Match conformer ensembles, apply SMARTS-based substructure filters, and compute DBSTEP buried volumes on demand.
+- Generate ensemble statistics (Boltzmann weights, population windows, lowest-energy snapshots) in a single run.
+- Emit descriptor CSVs alongside module logs (`MOLDSCRIPT_*.dat`) for traceability.
 
-## Requirements
-
-* cclib
-* DBSTEP
-* rdkit
-* yaml
-
-## Key parameters
-
-* --varfile (str): Specify a .txt file of arguments with the following format:
-```
-parameter1: value1
-parameter2: value2
-``` 
-* --opt (str): Specify the path to a folder containing your optimization files
-* --nbo (str): Specify the path to a folder containing your nbo files
-* --nmr (str): Specify the path to a folder containing your nmr files
-* --fukui_neutral (str): Specify the path to a folder containing your neutral fukui files
-* --fukui_reduced (str): Specify the path to a folder containing your reduced fukui files
-* --fukui_oxidized (str): Specify the path to a folder containing your oxidized fukui files
-* --charges (str): Specify the path to a folder containing your charges files
-* --fmo (str): Specify the path to a folder containing your fmo and dipole files
-* --ad_reduced (str): Specify the path to a folder containing your adiabatic reduced files
-* --ad_oxidized (str): Specify the path to a folder containing your adiabatic oxidized files
-* --substructure ("str"): specify the substructure you want to search for in the molecule
-* --volume : Indicate you want the buried volume of the atoms in the substructure match
-* --vall : Indicate you want the volume of all atoms in every molecule
-* --radius (float or [float, float]): Speficy the radius/radii you want buried volume to be calculated for
-* --boltz : Indicate you want the boltzmann weighted average of the conformers
-* --temp (float): Indicate the temperature to use for boltzmann weighting
-* --min_max : Indicate you want the minimum, maximum, and range values of the parameters
-
-# Installation
-
-## pip
-
+## Installation
 ```shell
-$ pip install XXX
+git clone https://github.com/patonlab/molDscript.git
+cd molDscript
+pip install -e .
 ```
-
-## conda
-
+RDKit and Open Babel are easiest to install from conda-forge:
 ```shell
-$ conda install -c conda-forge XXX
+conda install -c conda-forge rdkit openbabel
 ```
 
-# Usage
-
-XXX can be imported as a Python module that is easily integrated into
-workflows. Here is an example for ...
-
+## Quick Start
 ```shell
->>> from XXX import YYY
->>> etc
+python -m moldscript \
+  --opt calculations/opt --spc calculations/spc \
+  --nbo calculations/nbo --nmr calculations/nmr \
+
 ```
+Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; command-line flags override values loaded from the file.
 
-It can also be used from the command line.
+## Core Inputs & Flags
+- `--opt PATH` (required) - baseline optimization files and conformer metadata.
+- `--spc PATH` - single-point energies that replace optimization SCF energies.
+- `--nbo`, `--nmr`, `--charges`, `--fmo` PATH - add module-specific descriptors; pair with `--suffix_*` when filenames include extra tokens.
+- `--fukui_neutral`, `--fukui_reduced`, `--fukui_oxidized` PATH - supply all three charge states for vertical IE/EA and condensed Fukui functions.
+- `--substructure SMARTS` - limit atom/bond descriptors to a SMARTS match; combine with `--volume` or `--vall` and optional `--radius` list for DBSTEP buried volumes.
+- `--boltz`, `--min_max`, `--lowe` - compute Boltzmann-weighted averages, min/max/range tables (using `--cut`), and lowest-energy snapshots. Adjust `--temp` (K) as needed.
+- `--output PREFIX` - prepend every generated filename; append a slash to target a directory. Use `--no_mol`, `--no_atom`, `--no_bond`, or `--no_bond_filter` to tailor CSV output.
 
-```console
-$ python -m moldscript --varfile arguments.txt
-```
-For further information, see the separate [documentation](https:/XXX).
+## Output Artefacts
+- `molecule_level.csv`, `bond_level.csv`, `atom_level.csv` - aligned descriptors per calculation, bond pair, or atom.
+- `ensemble_*.csv`, `boltzmann_weights.csv` - created when `--boltz` is enabled.
+- `min_max_range_*.csv`, `lowest_energy_*.csv` - created when `--min_max` or `--lowe` are requested.
+- `MOLDSCRIPT_*.dat` - per-module logs capturing provenance and CPU-time summaries.
 
-# Packages Supported
+## Documentation
+The Read the Docs site (coming soon) will provide the full user guide: [https://moldscript.readthedocs.io](https://moldscript.readthedocs.io)
 
-* Gaussian
-* Orca
-* xTB
+## Dependencies
+Key Python dependencies include `pandas`, `cclib` (latest GitHub version), `dbstep`, `rdkit`, `networkx`, `numpy`, and `periodictable`.
 
-# Features
+## Supported Quantum Packages
+- Gaussian
+- ORCA
+- xTB (optimizations)
 
-### Molecule level parameters
+## Testing
+Run `pytest -v` from the project root to execute the test suite.
 
-* Dipole and quadrupole moments
-* Molecular apolarizabilities and hyperpolarizabilities
-* Orbital energies: HOMO energy, LUMO energy, HOMO-LUMO gap
-* Global reactivity descriptors: electronegativity, hardness, softness, global electrophilicity index
-* Ionization Potential and Electron Affinity
-* Molecular volume, Van der Waals volume, Solvent-accessible volume (not yet implemented)
-* Surface Area: Van der Waals surface area, Solvent-accessible surface area (SASA), Polar surface area (PSA) (not yet implemented)
+## Acknowledgements
+This work was carried out in the [Paton Laboratory at Colorado State University](https://patonlab.colostate.edu), supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/) (grant [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)).
 
-### Bond level parameters
-
-* Bond Orders: Wiberg bond indices
-
-### Atom level parameters
-
-* Partial charges: Natural Population Analysis (NPA) charges, Hirshfeld charges
-* Atomic apolarizabilities and hyperpolarizabilities (not yet implemented)
-* Fukui indices: Nucleophilic fukui function (f-), Electrophilic fukui function (f+), Radical fukui function (f0)
-* NMR Chemical Shifts
-* Atomic Volumes (not yet implemented)
-* Buried Volumes (not yet implemented)
-* Vol2Vec parameters (not yet implemented)
-
-
-### Testing
-details 
-
-Tests can be run with the `pytest -v` command. There are a number of additional command line arguments to explore.
-
-### Documentation
-something about readthedocs
-
-
-# Acknowledgements
-
-This work was carried out in the [Paton Laboratory at Colorado State University](https://patonlab.colostate.edu), supported by the [NSF Center for Computer-Assisted Synthesis](https://ccas.nd.edu/), grant number [CHE-1925607](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2202693&HistoricalAwards=false)
-
-In particular, the following people have contributed significantly to developing its functionality:
-
-* [Shree Sowndarya](https://github.com/shreesowndarya)
-* [Jake King](https://github.com/j77king)
-* [Robert Paton](https://github.com/bobbypaton)
-
+Contributors include [Shree Sowndarya](https://github.com/shreesowndarya), [Jake King](https://github.com/j77king), and [Robert Paton](https://github.com/bobbypaton).
