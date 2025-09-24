@@ -5,12 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
-from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree, parse_cc_data
-import datetime
+from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
 
@@ -26,6 +25,8 @@ class fukui:
         self.args = load_variables(kwargs, "FUKUI", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        self.module_cpu_seconds = 0.0
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
             self.data_dict = self.fukui_data_dict(self.data)
 
@@ -83,35 +84,21 @@ class fukui:
             else:
                 self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
             try:
-                for i in ['neutral', 'reduced', 'oxidized']:
-                    if self.data[file_name][i] in self.data_dict['CPU_time']:
-                        pass
-                    else:
-                        try: 
-                            if i == 'neutral':
-                                for time in neutral_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                            elif i == 'reduced':
-                                for time in reduced_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            elif i == 'oxidized':
-                                for time in oxidized_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            self.data_dict["CPU_time"].append(self.data[file_name][i])
+                datasets = (
+                    ("neutral", neutral_data, self.data[file_name].get('neutral')),
+                    ("reduced", reduced_data, self.data[file_name].get('reduced')),
+                    ("oxidized", oxidized_data, self.data[file_name].get('oxidized')),
+                )
+                for label, dataset, source in datasets:
+                    if not dataset:
+                        continue
+                    cpu_times = dataset.metadata.get('cpu_time') if hasattr(dataset, 'metadata') else None
+                    self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source, cpu_times)
 
-                        except:
-                            self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                            if i == 'neutral':
-                                for time in neutral_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                            elif i == 'reduced':
-                                for time in reduced_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            elif i == 'oxidized':
-                                for time in oxidized_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            self.data_dict['CPU_time'].append(self.data[file_name][i])
             except: print(f'!!Could not obtain CPU time for {file_name}, skipping!!')
+        module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+        if self.module_cpu_seconds:
+            print(f"-- FUKUI CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -124,9 +111,9 @@ class fukui:
 
         try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
         except: pass
-        
+
         return cc_data
-        
+
     def npa_data(self, file, cc_data):
         start_npop = None
         outfile = open(file, "r")
@@ -168,7 +155,7 @@ class fukui:
             data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
             data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
             data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
-            data_dict['CPU_time'] = []
         return data_dict
+
 
 

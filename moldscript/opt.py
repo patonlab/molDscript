@@ -10,7 +10,7 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
 from rdkit import Chem
-from moldscript.utils import eV_to_hartree, add_cpu_times, initiate_data_dict, parse_cc_data
+from moldscript.utils import eV_to_hartree, initiate_data_dict, parse_cc_data, record_cpu_time, format_timedelta
 import moldscript.xyz2mol as xyz2mol
 
 class opt:
@@ -24,6 +24,7 @@ class opt:
         self.args = load_variables(kwargs, "OPT", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
             self.data_dict = initiate_data_dict(self.data)
         if len(self.data.keys()) == 0:
@@ -36,13 +37,9 @@ class opt:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            try:
-                total_cpu = add_cpu_times(self.file_data)
-                self.args.log.write(
-                    f"\n   QM optimizations complete in {total_cpu} seconds"
-                )
-            except:
-                pass
+            module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+            if self.module_cpu_seconds:
+                self.args.log.write(f"\n   QM optimizations CPU time: {format_timedelta(module_cpu_td)}")
             self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
 
 
@@ -50,7 +47,7 @@ class opt:
         mydict = lambda: defaultdict(mydict)
 
         self.args.log.write(f"-- Optimization Parameter Collection starting")
-        self.data_dict["CPU_time"] = []
+        self.module_cpu_seconds = 0.0
         test_file = self.data[list(self.data.keys())[0]]
         xtb = False
         with open(test_file, 'r') as f:
@@ -60,21 +57,14 @@ class opt:
                     xtb = True
                     print('- Identified XTB opt file')
                     break
-        
+
         for i, file_name in enumerate(self.data.keys()):
             self.args.log.write(f"o  Parsing CPU time from {os.path.basename(file_name)}")
             if xtb == False:
                 # convert log to smiles
                 opt_data = parse_cc_data(file_name, self.data[file_name])
-                try: 
-                    for time in opt_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict["CPU_time"].append(self.data[file_name])
-                except:
-                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                    for time in opt_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict['CPU_time'].append(self.data[file_name])
+                cpu_times = opt_data.metadata.get('cpu_time') if hasattr(opt_data, 'metadata') else None
+                self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
             elif xtb == True:
                 full_name = self.data[file_name]
                 with open(full_name, 'r') as f:
@@ -84,6 +74,7 @@ class opt:
                                 cpu_time_line = next(f).strip()
                             days, hours, minutes, seconds = map(float, cpu_time_line.split()[2::2])
                             total_seconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
-                            self.data_dict[file_name]["CPU_time"] = datetime.timedelta(seconds=total_seconds)
-                            self.data_dict["CPU_time"].append(self.data[file_name])
+                            cpu_span = datetime.timedelta(seconds=total_seconds)
+                            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], [cpu_span])
         return self.data_dict
+
