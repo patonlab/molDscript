@@ -138,6 +138,8 @@ class get_df:
             tempdic = {}
             for prop in props:
                 try:
+                    if atom_level_data[prop] == None:
+                        raise Exception
                     values = atom_level_data[prop]
                 except:
                     values = ['' for i in range(len(atoms))]
