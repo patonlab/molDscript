@@ -130,11 +130,28 @@ def add_cpu_times(file_data):
 def initiate_data_dict(data):
     """
     Initiates a data dictionary to store all the data from the files.
+    Prints progress messages every 5%.
     """
     print(f"Initializing data parsing with SMILES and geometry data")
+    total = len(data)
     data_dict = {}
     data_dict['CPU_time'] = []
-    for i, file_name in enumerate(data.keys()):
+
+    if total == 0:
+        print("No files to process.")
+        return data_dict
+
+    last_step = 0  # tracks 5% steps printed (0..20)
+    for i, file_name in enumerate(data.keys(), start=1):
+        # Progress reporting every 5%
+        percent = int((i / total) * 100)
+        step = percent // 5
+        if step > last_step:
+            # print any missed intermediate 5% markers if step jumped
+            for s in range(last_step + 1, step + 1):
+                print(f"Progress: {s * 5}% ({i}/{total})")
+            last_step = step
+
         data_dict[file_name] = dict()
         data_dict[file_name]["mol"] = dict()
         data_dict[file_name]["atom"] = dict()
@@ -145,10 +162,17 @@ def initiate_data_dict(data):
             smi = Chem.MolToSmiles(mol)
         except:
             print("Encountered an issue with the mol embedding. Skipping smiles string.")
-        data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
+            smi = ''
+        data_dict[file_name]["mol"]["smiles"] = smi
         data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
         data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
         data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
+
+    # Ensure 100% is printed
+    if last_step < 20:
+        for s in range(last_step + 1, 21):
+            print(f"Progress: {s * 5}% ({total}/{total})")
+
     return data_dict
 
 def format_lists(value):
