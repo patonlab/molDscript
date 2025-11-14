@@ -138,11 +138,12 @@ class get_df:
             tempdic = {}
             for prop in props:
                 try:
-                    if atom_level_data[prop] == None:
-                        raise Exception
                     values = atom_level_data[prop]
-                except:
-                    values = ['' for i in range(len(atoms))]
+                    if values is None:
+                        raise Exception
+                except Exception:
+                    values = [''] * len(atoms)
+                print(values)
                 tempdic[str(prop)] = values
             fnames = [fname for i in range(len(values))]
             tempdic["filename"] = fnames
