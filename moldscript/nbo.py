@@ -23,7 +23,7 @@ class nbo:
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         self.fnames = self.data_dict.keys()
 
         if len(self.data.keys()) == 0:
@@ -45,7 +45,15 @@ class nbo:
 
         self.args.log.write(f"-- NBO Parameter Collection starting")
         self.module_cpu_seconds = 0.0
-        for i, file_name in enumerate(self.data.keys()):
+        total = len(self.data)
+        last_step = 0
+        for i, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((i / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
+                last_step = step
             nbo_data = self.parse_cc_data(file_name, self.data[file_name])
 
             if i == 0:

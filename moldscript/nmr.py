@@ -26,7 +26,7 @@ class nmr:
         self.data_dict = data_dicts
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
@@ -45,9 +45,17 @@ class nmr:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        print(f"-- NMR Parameter Collection starting")
+        self.args.log.write(f"-- NMR Parameter Collection starting")
         self.module_cpu_seconds = 0.0
-        for i, file_name in enumerate(self.data.keys()):
+        total = len(self.data)
+        last_step = 0
+        for i, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((i / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
+                last_step = step
             # try:
             file_name = self.get_filename(file_name)
             nmr_data = self.parse_cc_data(file_name, self.data[file_name])
@@ -55,22 +63,22 @@ class nmr:
             #     nmr_data = None
             try:
                 if i == 0:
-                    print(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
-                    print(f"   Functional used: {nmr_data.metadata['functional']}")
-                    print(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
+                    self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
             except:
                 pass
             if nmr_data != None:
-                print(f"o  Parsing NMR Shielding Tensors from {file_name}")
+                self.args.log.write(f"o  Parsing NMR Shielding Tensors from {file_name}")
                 self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
-                print(f"!  Skipping {file_name} as NMR data not found")
+                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
             cpu_times = nmr_data.metadata.get("cpu_time") if nmr_data and hasattr(nmr_data, "metadata") else None
             self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
-            print(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")
+            self.args.log.write(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -132,8 +140,8 @@ class nmr:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                print(tempname)
-        print(
+                self.args.log.write(tempname)
+        self.args.log.write(
             f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
         )
         raise SystemExit

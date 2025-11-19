@@ -24,9 +24,9 @@ class charges:
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         if len(self.data.keys()) == 0:
-            print(f"\nx  Could not find files to obtain information for charge data")
+            self.args.log.write(f"\nx  Could not find files to obtain information for charge data")
             sys.exit()
         else:
             self.file_data = self.get_data()
@@ -37,19 +37,27 @@ class charges:
 
     def get_data(self):
 
-        print(f"-- Charges Collection starting")
+        self.args.log.write(f"-- Charges Collection starting")
         self.module_cpu_seconds = 0.0
-        for file_name in self.data.keys():
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
             try:
                 if list(self.data.keys()).index(file_name) == 0:
-                    print(f"   Functional used: {chg_data.metadata['functional']}")
-                    print(f"   Basis set used: {chg_data.metadata['basis_set']}")
+                    self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
             except:
                 pass
-            print(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
+            self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
                 self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
             else:
@@ -62,7 +70,7 @@ class charges:
             self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
-            print(f"-- Charges CPU time: {format_timedelta(module_cpu_td)}")
+            self.args.log.write(f"-- Charges CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -88,7 +96,7 @@ class charges:
                     return keyname
                 except:
                     tempname = tempname.rsplit("_", 1)[0]
-                    print(tempname)
+                    self.args.log.write(tempname)
 
         except:
             self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')

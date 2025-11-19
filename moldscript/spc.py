@@ -24,7 +24,7 @@ class spc:
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
             self.args.log.finalize()
@@ -44,8 +44,15 @@ class spc:
         self.args.log.write(f"   --- Single Point Energy Collection starting")
         self.module_cpu_seconds = 0.0
 
-        for file_name in self.data.keys():
-
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             spc_data = self.parse_cc_data(file_name, self.data[file_name])
 
             filename = self.get_filename(file_name)
@@ -84,7 +91,7 @@ class spc:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                print(tempname)
-        print(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
+                self.args.log.write(tempname)
+            self.args.log.write(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
         raise SystemExit
 

@@ -31,35 +31,43 @@ class fukui:
             self.data_dict = self.fukui_data_dict(self.data)
 
         if len(self.data.keys()) == 0:
-            print(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
+            self.args.log.write(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
             sys.exit()
         else:
             self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            print(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
 
     def get_data(self):
 
         first = False
-        print(f"-- Fukui Parameter Collection starting")
-        for file_name in list(self.data.keys()):
+        self.args.log.write(f"-- Fukui Parameter Collection starting")
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(list(self.data.keys()), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
                 if first == False:
                     try:
-                        print(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                        print(f"   Functional used: {neutral_data.metadata['functional']}")
-                        print(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
+                        self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
+                        self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
+                        self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
                     except: pass
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
             if neutral_data != None and oxidized_data != None and reduced_data != None:
-                print(f"o  Parsing Fukui data from {file_name}")
+                self.args.log.write(f"o  Parsing Fukui data from {file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
                 red_e = reduced_data.scfenergies[-1] * eV_to_hartree
                 ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
@@ -95,10 +103,11 @@ class fukui:
                     cpu_times = dataset.metadata.get('cpu_time') if hasattr(dataset, 'metadata') else None
                     self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source, cpu_times)
 
-            except: print(f'!!Could not obtain CPU time for {file_name}, skipping!!')
+            except:
+                self.args.log.write(f'!!Could not obtain CPU time for {file_name}, skipping!!')
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
-            print(f"-- FUKUI CPU time: {format_timedelta(module_cpu_td)}")
+            self.args.log.write(f"-- FUKUI CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -106,7 +115,7 @@ class fukui:
         try:
             cc_data = cc.io.ccread(file)
         except:
-            print(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
+            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
             cc_data = None
 
         try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
@@ -138,7 +147,7 @@ class fukui:
         """
         Initiates a data dictionary to store all the data from the files.
         """
-        print(f"Initializing data parsing with SMILES and geometry data")
+        self.args.log.write(f"Initializing data parsing with SMILES and geometry data")
         data_dict = {}
         for i, file_name in enumerate(data.keys()):
             data_dict[file_name] = dict()
@@ -150,7 +159,7 @@ class fukui:
                 mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
                 smi = Chem.MolToSmiles(mol)
             except:
-                print("Encountered an issue with the mol embedding. Skipping smiles string.")
+                self.args.log.write("Encountered an issue with the mol embedding. Skipping smiles string.")
             data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
             data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
             data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix

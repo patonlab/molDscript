@@ -127,18 +127,26 @@ def add_cpu_times(file_data):
         if cpu_value:
             total_cpu += cpu_value
     return total_cpu
-def initiate_data_dict(data):
+def initiate_data_dict(data, logger=None):
     """
     Initiates a data dictionary to store all the data from the files.
-    Prints progress messages every 5%.
+    Progress and informational messages are emitted to `logger` when provided,
+    otherwise they fall back to printing to stdout.
     """
-    print(f"Initializing data parsing with SMILES and geometry data")
+    if logger:
+        logger.write(f"Initializing data parsing with SMILES and geometry data")
+    else:
+        print(f"Initializing data parsing with SMILES and geometry data")
+
     total = len(data)
     data_dict = {}
-    data_dict['CPU_time'] = []
+    data_dict["CPU_time"] = []
 
     if total == 0:
-        print("No files to process.")
+        if logger:
+            logger.write("No files to process.")
+        else:
+            print("No files to process.")
         return data_dict
 
     last_step = 0  # tracks 5% steps printed (0..20)
@@ -147,9 +155,12 @@ def initiate_data_dict(data):
         percent = int((i / total) * 100)
         step = percent // 5
         if step > last_step:
-            # print any missed intermediate 5% markers if step jumped
+            # emit any missed intermediate 5% markers if step jumped
             for s in range(last_step + 1, step + 1):
-                print(f"Progress: {s * 5}% ({i}/{total})")
+                if logger:
+                    logger.write(f"Progress: {s * 5}% ({i}/{total})")
+                else:
+                    print(f"Progress: {s * 5}% ({i}/{total})")
             last_step = step
 
         data_dict[file_name] = dict()
@@ -161,17 +172,23 @@ def initiate_data_dict(data):
             mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
             smi = Chem.MolToSmiles(mol)
         except:
-            print("Encountered an issue with the mol embedding. Skipping smiles string.")
+            if logger:
+                logger.write("Encountered an issue with the mol embedding. Skipping smiles string.")
+            else:
+                print("Encountered an issue with the mol embedding. Skipping smiles string.")
             smi = ''
         data_dict[file_name]["mol"]["smiles"] = smi
         data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
         data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
         data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
 
-    # Ensure 100% is printed
+    # Ensure 100% is emitted
     if last_step < 20:
         for s in range(last_step + 1, 21):
-            print(f"Progress: {s * 5}% ({total}/{total})")
+            if logger:
+                logger.write(f"Progress: {s * 5}% ({total}/{total})")
+            else:
+                print(f"Progress: {s * 5}% ({total}/{total})")
 
     return data_dict
 
