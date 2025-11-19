@@ -63,7 +63,7 @@ class fmo:
                     self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
             except: pass
 
-            self.args.log.write(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
 
             self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
             self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
@@ -117,8 +117,8 @@ class fmo:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write(tempname)
-            self.args.log.write('Issue matching one of your filenames')
+                self.args.log.write_only(tempname)
+            self.args.log.write_only('Issue matching one of your filenames')
         raise SystemExit
 
 

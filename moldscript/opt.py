@@ -39,8 +39,8 @@ class opt:
             elapsed_time = round(time.time() - start_time_overall, 2)
             module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
             if self.module_cpu_seconds:
-                self.args.log.write(f"\n   QM optimizations CPU time: {format_timedelta(module_cpu_td)}")
-            self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
+                self.args.log.write_only(f"\n   QM optimizations CPU time: {format_timedelta(module_cpu_td)}")
+            self.args.log.write_only(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
 
 
     def get_data(self):
@@ -55,7 +55,7 @@ class opt:
                 line = f.readline()
                 if 'x T B' in line:
                     xtb = True
-                    print('- Identified XTB opt file')
+                    self.args.log.write(f'- Identified XTB opt file')
                     break
 
         total = len(self.data)
@@ -67,7 +67,7 @@ class opt:
                 for s in range(last_step + 1, step + 1):
                     self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
                 last_step = step
-            self.args.log.write(f"o  Parsing CPU time from {os.path.basename(file_name)}")
+                self.args.log.write_only(f"o  Parsing CPU time from {os.path.basename(file_name)}")
             if xtb == False:
                 # convert log to smiles
                 opt_data = parse_cc_data(file_name, self.data[file_name])

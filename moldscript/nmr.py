@@ -69,7 +69,7 @@ class nmr:
             except:
                 pass
             if nmr_data != None:
-                self.args.log.write(f"o  Parsing NMR Shielding Tensors from {file_name}")
+                self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
                 self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
                 self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
@@ -140,8 +140,8 @@ class nmr:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write(tempname)
-        self.args.log.write(
+                self.args.log.write_only(tempname)
+        self.args.log.write_only(
             f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
         )
         raise SystemExit

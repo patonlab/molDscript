@@ -67,7 +67,7 @@ class nbo:
                     pass
 
             if nbo_data != None:
-                self.args.log.write(f"o  Parsing NBO data from {file_name}")
+                self.args.log.write_only(f"o  Parsing NBO data from {file_name}")
                 file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders

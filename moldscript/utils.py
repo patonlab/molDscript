@@ -227,10 +227,10 @@ def parse_cc_data(file_name, file):
             parser = cc.io.ccopen(file)
             cc_data = parser.parse()
             setattr(cc_data, "bond_data_matrix", bond_data_matrix(cc_data))
-        except:
-            print(
-                f"\nx  Could not parse {file_name}")
-            raise SystemExit(f"Error parsing {file_name}. Ensure the file is a valid cclib file.")
+        except Exception as e:
+            # raise an informative SystemExit without printing to stdout here;
+            # callers will log the error to the module .dat file as appropriate.
+            raise SystemExit(f"Error parsing {file_name}: {e}")
         return cc_data
 def get_files(value):
 
@@ -266,7 +266,8 @@ def get_filename(fullname, dd):
             return keyname
         except:
             tempname = tempname.rsplit("_", 1)[0]
-            print(tempname)
+            # suppress printing here; callers handle logging
+            pass
     print(
         f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
     )

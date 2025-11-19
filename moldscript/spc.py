@@ -63,7 +63,7 @@ class spc:
                     self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
             except:
                 pass
-            self.args.log.write(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
             self.data_dict[filename]['mol']['scfenergy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
 
@@ -91,7 +91,7 @@ class spc:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write(tempname)
-            self.args.log.write(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
+                self.args.log.write_only(tempname)
+        self.args.log.write_only(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
         raise SystemExit
 

@@ -33,7 +33,7 @@ class charges:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            print(f"-- Charges Collection complete in {elapsed_time} seconds")
+            self.args.log.write(f"-- Charges Collection complete in {elapsed_time} seconds")
 
     def get_data(self):
 
@@ -57,7 +57,7 @@ class charges:
                     self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
             except:
                 pass
-            self.args.log.write(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
                 self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
             else:
@@ -80,7 +80,7 @@ class charges:
         try:
             cc_data = parser.parse()
         except:
-            self.args.log.write(
+            self.args.log.write_only(
                 f"\nx  Could not parse {file_name} to obtain charge energy information")
             cc_data = None
         return cc_data
@@ -96,7 +96,7 @@ class charges:
                     return keyname
                 except:
                     tempname = tempname.rsplit("_", 1)[0]
-                    self.args.log.write(tempname)
+                    self.args.log.write_only(tempname)
 
         except:
             self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')
