@@ -143,7 +143,6 @@ class get_df:
                         raise Exception
                 except Exception:
                     values = [''] * len(atoms)
-                print(values)
                 tempdic[str(prop)] = values
             fnames = [fname for i in range(len(values))]
             tempdic["filename"] = fnames
