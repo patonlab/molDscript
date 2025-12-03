@@ -57,6 +57,7 @@ class sterics:
             self.dd[fname]['sterics'] = {}              
             for radius in self.rad:
                 radius = float(radius)
+                self.args.log.write(f'\t - Calculating buried volume for {fname} at radius {radius}.\n\tThis may take a moment...')
                 self.get_vbur(radius, atoms, fname, file_name)
             
 
