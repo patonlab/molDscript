@@ -2,9 +2,8 @@
 #      This file contains the argument parser        #
 #####################################################.
 
-import os, time, getopt, sys
-from pathlib import Path
-from moldscript.utils import format_lists, Logger
+import os, time, getopt, sys, shlex
+from moldscript.utils import format_lists, Logger, build_log_path
 
 moldscript_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
@@ -70,10 +69,10 @@ def load_arguments_from_file(filename):
             # Skip empty lines and comments
             if not line.strip() or line.startswith("#"):
                 continue
-            
+
             # Split the line into argument and value
             arg, value = map(str.strip, line.split(":", 1))
-            
+
             # Convert the value to the appropriate type
             if value.lower() == "true":
                 value = True
@@ -86,7 +85,7 @@ def load_arguments_from_file(filename):
                     value = float(value)
                 except ValueError:
                     pass  # Keep value as a string if it can't be converted
-            
+
             kwargs[arg] = value
     return kwargs
 
@@ -227,80 +226,29 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
     # first, load default values and options manually added to the function
     self = set_options(kwargs)
 
-    if moldscript_module != "command":
-        self.initial_dir = Path(os.getcwd())
+    self.log = Logger.silent()
 
-        error_setup = False
+    if moldscript_module != "command" and create_dat:
+        module_codes = {
+            "FILES": "FILES",
+            "OPT": "OPT",
+            "SPC": "SPC",
+            "NBO": "NBO",
+            "NMR": "NMR",
+            "IE_EA": "IE_EA",
+            "FUKUI": "FUKUI",
+            "SUBSTRUCTURE": "SUBSTRUCTURE",
+            "FMO": "FMO",
+        }
+        logger_code = module_codes.get(moldscript_module, moldscript_module)
+        log_path = build_log_path(self.output, logger_code)
+        self.log = Logger(log_path, verbose=self.verbose)
+        self.log.write_only(
+            f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
+        )
+        command_line = shlex.join(["python", "-m", "moldscript", *sys.argv[1:]])
+        self.log.write(f"Command line used in MOLDSCRIPT: {command_line}")
 
-        # start a log file to track the  module
-        if create_dat:
-            if moldscript_module == "FILES":
-                logger_1 = "FILES"
-
-            if moldscript_module == "OPT":
-                logger_1 = "OPT"
-            
-            elif moldscript_module == "SPC":
-                logger_1 = "SPC"
-
-            elif moldscript_module == "NBO":
-                logger_1 = "NBO"
-
-            elif moldscript_module == "NMR":
-                logger_1 = "NMR"
-
-            elif moldscript_module == "IE_EA":
-                logger_1 = "IE_EA"
-
-            elif moldscript_module == "FUKUI":
-                logger_1 = "FUKUI"
-
-            if moldscript_module == "SUBSTRUCTURE":
-                logger_1 = "SUBSTRUCTURE"
-            if moldscript_module == "FMO":
-                logger_1 = "FMO"
-            if not error_setup:
-
-                # prevents errors when using command lines and running to remote directories
-                path_command = Path(f"{os.getcwd()}")
-                self.log = Logger(
-                    f"{path_command}/MOLDSCRIPT", logger_1, verbose=self.verbose
-                )
-
-                self.log.write_only(
-                    f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
-                )
-
-
-                cmd_print = ""
-                cmd_args = sys.argv[1:]
-                for i, elem in enumerate(cmd_args):
-                    if elem[0] in ['"', "'"]:
-                        elem = elem[1:]
-                    if elem[-1] in ['"', "'"]:
-                        elem = elem[:-1]
-                    if elem != "-h" and elem.split("--")[-1] not in var_dict:
-                        if (
-                            cmd_args[i - 1].split("--")[-1] in var_dict
-                        ):  # check if the previous word is an arg
-                            cmd_print += f'"{elem}'
-                        if (
-                            i == len(cmd_args) - 1
-                            or cmd_args[i + 1].split("--")[-1] in var_dict
-                        ):  # check if the next word is an arg, or last word in command
-                            cmd_print += f'"'
-                    else:
-                        cmd_print += f"{elem}"
-                    if i != len(cmd_args) - 1:
-                        cmd_print += " "
-
-                self.log.write(
-                    f"Command line used in MOLDSCRIPT: python -m moldscript {cmd_print}\n"
-                )
-
-            if error_setup:
-                # this is added to avoid path problems in jupyter notebooks
-                self.log.finalize()
-                os.chdir(self.initial_dir)
-                sys.exit()
     return self
+
+

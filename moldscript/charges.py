@@ -5,11 +5,10 @@
 
 import sys, os
 import time
-import cclib as cc
-from collections import defaultdict
-from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree, initiate_data_dict
 import datetime
+import cclib as cc
+from moldscript.argument_parser import load_variables
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
 
 class charges:
     """
@@ -17,58 +16,61 @@ class charges:
     """
 
     def __init__(self, data, data_dict, create_dat=True,  **kwargs):
-        
+
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         if len(self.data.keys()) == 0:
-            print(f"\nx  Could not find files to obtain information for charge data")
+            self.args.log.write(f"\nx  Could not find files to obtain information for charge data")
             sys.exit()
         else:
             self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            print(f"-- Charges Collection complete in {elapsed_time} seconds")
+            self.args.log.write(f"-- Charges Collection complete in {elapsed_time} seconds")
 
     def get_data(self):
 
-        print(f"-- Charges Collection starting")
-        for file_name in self.data.keys():
+        self.args.log.write(f"-- Charges Collection starting")
+        self.module_cpu_seconds = 0.0
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             chg_data = self.parse_cc_data(file_name, self.data[file_name])
             filename = self.get_filename(file_name)
 
             try:
                 if list(self.data.keys()).index(file_name) == 0:
-                    print(f"   Functional used: {chg_data.metadata['functional']}")
-                    print(f"   Basis set used: {chg_data.metadata['basis_set']}")
+                    self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
             except:
                 pass
-            print(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
                 self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
             else:
                 for i in chg_data.atomcharges.keys():
                     if 'mulliken' not in i and 'sum' not in i:
                         self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
-                
 
-            if self.data[file_name] in self.data_dict['CPU_time']:
-                pass
-            else:
-                try: 
-                    for time in chg_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict["CPU_time"].append(self.data[file_name])
-                except:
-                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                    for time in chg_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict['CPU_time'].append(self.data[file_name])
+
+            cpu_times = chg_data.metadata.get("cpu_time") if chg_data and hasattr(chg_data, "metadata") else None
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+        module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+        if self.module_cpu_seconds:
+            self.args.log.write(f"-- Charges CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -78,11 +80,11 @@ class charges:
         try:
             cc_data = parser.parse()
         except:
-            self.args.log.write(
+            self.args.log.write_only(
                 f"\nx  Could not parse {file_name} to obtain charge energy information")
             cc_data = None
         return cc_data
-    
+
     def get_filename(self, fullname):
         try:
             flist = list(self.data_dict.keys())
@@ -94,8 +96,9 @@ class charges:
                     return keyname
                 except:
                     tempname = tempname.rsplit("_", 1)[0]
-                    print(tempname)
-        
+                    self.args.log.write_only(tempname)
+
         except:
             self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')
             raise SystemExit
+

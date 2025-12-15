@@ -9,7 +9,7 @@ import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import add_cpu_times, initiate_data_dict
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
 
 
 class nmr:
@@ -24,8 +24,9 @@ class nmr:
         self.args = load_variables(kwargs, "NMR", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
@@ -37,11 +38,6 @@ class nmr:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            try:
-                total_cpu = add_cpu_times(self.file_data)
-                self.args.log.write(f"\n   NMR calculations complete in {total_cpu} seconds")
-            except:
-                pass
             self.args.log.write(f"-- NMR Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
@@ -49,8 +45,17 @@ class nmr:
         mydict = lambda: defaultdict(mydict)
         file_data = mydict()
 
-        print(f"-- NMR Parameter Collection starting")
-        for i, file_name in enumerate(self.data.keys()):
+        self.args.log.write(f"-- NMR Parameter Collection starting")
+        self.module_cpu_seconds = 0.0
+        total = len(self.data)
+        last_step = 0
+        for i, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((i / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
+                last_step = step
             # try:
             file_name = self.get_filename(file_name)
             nmr_data = self.parse_cc_data(file_name, self.data[file_name])
@@ -58,29 +63,22 @@ class nmr:
             #     nmr_data = None
             try:
                 if i == 0:
-                    print(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
-                    print(f"   Functional used: {nmr_data.metadata['functional']}")
-                    print(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
+                    self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
             except:
                 pass
             if nmr_data != None:
-                print(f"o  Parsing NMR Shielding Tensors from {file_name}")
+                self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
                 self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
-                print(f"!  Skipping {file_name} as NMR data not found")
+                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
-            if self.data[file_name] in self.data_dict['CPU_time']:
-                pass
-            else:
-                try: 
-                    for time in nmr_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict["CPU_time"].append(self.data[file_name])
-                except:
-                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                    for time in nmr_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict['CPU_time'].append(self.data[file_name])
+            cpu_times = nmr_data.metadata.get("cpu_time") if nmr_data and hasattr(nmr_data, "metadata") else None
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+        module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+        if self.module_cpu_seconds:
+            self.args.log.write(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -94,7 +92,7 @@ class nmr:
         else:
             raise ValueError(f"Unsupported nmr tensor program: {cc_data.metadata['package']}")
 
-   
+
         return cc_data
 
     def gaussian_nmr_shielding(self, file):
@@ -142,8 +140,9 @@ class nmr:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                print(tempname)
-        print(
+                self.args.log.write_only(tempname)
+        self.args.log.write_only(
             f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
         )
         raise SystemExit
+

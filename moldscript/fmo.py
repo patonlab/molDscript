@@ -5,12 +5,11 @@
 
 import sys, os
 import time
-import cclib as cc
-from collections import defaultdict
-from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree, initiate_data_dict
-import numpy as np
 import datetime
+import cclib as cc
+from moldscript.argument_parser import load_variables
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+import numpy as np
 
 class fmo:
     """
@@ -18,14 +17,15 @@ class fmo:
     """
 
     def __init__(self, data, data_dict, create_dat=True,  **kwargs):
-        
+
         start_time_overall = time.time()
         # load default and user-specified variables
         self.args = load_variables(kwargs, "FMO", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for FMO and moment analysis")
             self.args.log.finalize()
@@ -35,13 +35,22 @@ class fmo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            print(f"-- FMO Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- FMO Collection complete in {elapsed_time} seconds\n")
 
     def get_data(self):
 
-        print(f"-- FMO Collection starting")
+        self.args.log.write(f"-- FMO Collection starting")
+        self.module_cpu_seconds = 0.0
 
-        for file_name in self.data.keys():
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             if self.data[file_name].rsplit('.',1)[1] == 'log':
                 self.fmo_program = 'gaussian'
             elif self.data[file_name].rsplit('.', 1)[1] =='out':
@@ -50,11 +59,11 @@ class fmo:
             file_name = self.get_filename(file_name)
             try:
                 if list(self.data.keys()).index(file_name) == 0:
-                    print(f"   Functional used: {fmo_data.metadata['functional']}")
-                    print(f"   Basis set used: {fmo_data.metadata['basis_set']}")
+                    self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
             except: pass
 
-            print(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
 
             self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
             self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
@@ -77,21 +86,11 @@ class fmo:
 ])
                 trace = np.trace(quadrupole_matrix)
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
-            except: 
+            except:
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
-    
-            if self.data[file_name] in self.data_dict['CPU_time']:
-                pass
-            else:
-                try: 
-                    for time in fmo_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict["CPU_time"].append(self.data[file_name])
-                except:
-                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                    for time in fmo_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict['CPU_time'].append(self.data[file_name])
+
+            cpu_times = fmo_data.metadata.get("cpu_time") if fmo_data and hasattr(fmo_data, "metadata") else None
+            record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
 
 
         return self.data_dict
@@ -104,9 +103,9 @@ class fmo:
             self.args.log.write(
                 f"\nx  Could not parse {file_name} to obtain spc energy information"
             )
-            cc_data = None  
-        return cc_data  
-    
+            cc_data = None
+        return cc_data
+
 
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
@@ -118,6 +117,8 @@ class fmo:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                print(tempname)
-        self.args.log.write('Issue matching one of your filenames')
+                self.args.log.write_only(tempname)
+            self.args.log.write_only('Issue matching one of your filenames')
         raise SystemExit
+
+

@@ -4,12 +4,12 @@
 [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/JDvVi58JeRw4LYzfeJGsjn/T7u88FmqfkcE7c6vKveH1L/tree/main.svg?style=shield&circle-token=CCIPRJ_3nGjXb4n3dHaAo6mQ67TBk_5ce95f5de89641ed836cbe55488e9b11f28c43d3)](https://dl.circleci.com/status-badge/redirect/circleci/JDvVi58JeRw4LYzfeJGsjn/T7u88FmqfkcE7c6vKveH1L/tree/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MolDscript is a Python workflow that converts Density Functional Theory (DFT) and related quantum chemistry outputs into descriptor tables ready for machine learning, benchmarking, and mechanistic analysis. It wraps `cclib`, `RDKit`, `DBSTEP`, and `pandas` to align Gaussian, ORCA, and xTB calculations and write consistent molecule-, bond-, and atom-level CSV files.
+MolDscript is a Python workflow that converts Density Functional Theory (DFT) and related quantum chemistry outputs into descriptor tables ready for machine learning or benchmarking. It wraps `cclib`, `RDKit`, `DBSTEP`, and `pandas` to align Gaussian, ORCA, and xTB calculations and write consistent molecule-, bond-, and atom-level CSV files.
 
 ## Highlights
 - Parse optimization, single-point, NBO, NMR, charge, FMO, and Fukui calculations without manual file editing.
 - Match conformer ensembles, apply SMARTS-based substructure filters, and compute DBSTEP buried volumes on demand.
-- Generate ensemble statistics (Boltzmann weights, population windows, lowest-energy snapshots) in a single run.
+- Generate ensembles (Boltzmann weighted, min/mnax within population windows, lowest-energy snapshots) in a single run.
 - Emit descriptor CSVs alongside module logs (`MOLDSCRIPT_*.dat`) for traceability.
 
 ## Installation
@@ -18,16 +18,17 @@ git clone https://github.com/patonlab/molDscript.git
 cd molDscript
 pip install -e .
 ```
-RDKit and Open Babel are easiest to install from conda-forge:
+Open Babel (optional) can be installed from conda-forge:
 ```shell
-conda install -c conda-forge rdkit openbabel
+conda install -c conda-forge openbabel
 ```
 
 ## Quick Start
 ```shell
 python -m moldscript \
-  --opt calculations/opt --spc calculations/spc \
-  --nbo calculations/nbo --nmr calculations/nmr \
+  --opt calculations/opt --fmo calculations/fmo 
+  --suffix_fmo fmo_suffix --suffix_nbo nbo_suffix
+  --nbo calculations/nbo  
 
 ```
 Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; command-line flags override values loaded from the file.
@@ -51,7 +52,7 @@ Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; com
 The Read the Docs site (coming soon) will provide the full user guide: [https://moldscript.readthedocs.io](https://moldscript.readthedocs.io)
 
 ## Dependencies
-Key Python dependencies include `pandas`, `cclib` (latest GitHub version), `dbstep`, `rdkit`, `networkx`, `numpy`, and `periodictable`.
+Key Python dependencies include `pandas`, `cclib` (latest GitHub version for the most up-to-date package compatability), `dbstep`, `rdkit`, `networkx`, `numpy`, and `periodictable`.
 
 ## Supported Quantum Packages
 - Gaussian

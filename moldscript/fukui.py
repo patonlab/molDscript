@@ -5,12 +5,11 @@
 
 import sys, os
 import time
+import datetime
 import cclib as cc
-from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree, parse_cc_data
-import datetime
+from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
 
@@ -26,39 +25,49 @@ class fukui:
         self.args = load_variables(kwargs, "FUKUI", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dicts
+        self.module_cpu_seconds = 0.0
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
             self.data_dict = self.fukui_data_dict(self.data)
 
         if len(self.data.keys()) == 0:
-            print(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
+            self.args.log.write(f"x  Could not find files to obtain information for calculating Fukui Coefficients\n")
             sys.exit()
         else:
             self.file_data = self.get_data()
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            print(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
 
     def get_data(self):
 
         first = False
-        print(f"-- Fukui Parameter Collection starting")
-        for file_name in list(self.data.keys()):
+        self.args.log.write(f"-- Fukui Parameter Collection starting")
+        total = len(self.data)
+        last_step = 0
+        for idx, file_name in enumerate(list(self.data.keys()), start=1):
+            percent = int((idx / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
+                last_step = step
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
                 if first == False:
                     try:
-                        print(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                        print(f"   Functional used: {neutral_data.metadata['functional']}")
-                        print(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
+                        self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
+                        self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
+                        self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
                     except: pass
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
                 reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
             if neutral_data != None and oxidized_data != None and reduced_data != None:
-                print(f"o  Parsing Fukui data from {file_name}")
+                self.args.log.write_only(f"o  Parsing Fukui data from {file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
                 red_e = reduced_data.scfenergies[-1] * eV_to_hartree
                 ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
@@ -83,35 +92,22 @@ class fukui:
             else:
                 self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
             try:
-                for i in ['neutral', 'reduced', 'oxidized']:
-                    if self.data[file_name][i] in self.data_dict['CPU_time']:
-                        pass
-                    else:
-                        try: 
-                            if i == 'neutral':
-                                for time in neutral_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                            elif i == 'reduced':
-                                for time in reduced_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            elif i == 'oxidized':
-                                for time in oxidized_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            self.data_dict["CPU_time"].append(self.data[file_name][i])
+                datasets = (
+                    ("neutral", neutral_data, self.data[file_name].get('neutral')),
+                    ("reduced", reduced_data, self.data[file_name].get('reduced')),
+                    ("oxidized", oxidized_data, self.data[file_name].get('oxidized')),
+                )
+                for label, dataset, source in datasets:
+                    if not dataset:
+                        continue
+                    cpu_times = dataset.metadata.get('cpu_time') if hasattr(dataset, 'metadata') else None
+                    self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source, cpu_times)
 
-                        except:
-                            self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                            if i == 'neutral':
-                                for time in neutral_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                            elif i == 'reduced':
-                                for time in reduced_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            elif i == 'oxidized':
-                                for time in oxidized_data.metadata["cpu_time"]:
-                                    self.data_dict[file_name]["CPU_time"] += time
-                            self.data_dict['CPU_time'].append(self.data[file_name][i])
-            except: print(f'!!Could not obtain CPU time for {file_name}, skipping!!')
+            except:
+                self.args.log.write(f'!!Could not obtain CPU time for {file_name}, skipping!!')
+        module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+        if self.module_cpu_seconds:
+            self.args.log.write(f"-- FUKUI CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
@@ -119,14 +115,14 @@ class fukui:
         try:
             cc_data = cc.io.ccread(file)
         except:
-            print(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
+            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
             cc_data = None
 
         try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
         except: pass
-        
+
         return cc_data
-        
+
     def npa_data(self, file, cc_data):
         start_npop = None
         outfile = open(file, "r")
@@ -151,7 +147,7 @@ class fukui:
         """
         Initiates a data dictionary to store all the data from the files.
         """
-        print(f"Initializing data parsing with SMILES and geometry data")
+        self.args.log.write(f"Initializing data parsing with SMILES and geometry data")
         data_dict = {}
         for i, file_name in enumerate(data.keys()):
             data_dict[file_name] = dict()
@@ -163,12 +159,12 @@ class fukui:
                 mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
                 smi = Chem.MolToSmiles(mol)
             except:
-                print("Encountered an issue with the mol embedding. Skipping smiles string.")
+                self.args.log.write("Encountered an issue with the mol embedding. Skipping smiles string.")
             data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
             data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
             data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
             data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
-            data_dict['CPU_time'] = []
         return data_dict
+
 
 

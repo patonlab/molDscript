@@ -27,7 +27,8 @@ class lowe:
 
         for name in basenames:
 
-            tempdf = mol_df[mol_df['filename'].str.contains(name)]
+            # select rows that have an exact basename match (avoid substring matching)
+            tempdf = mol_df[mol_df['filename'].str.split('_conf').str[0] == name]
 
             mine = tempdf['scfenergy'].min()
             outdf = tempdf[tempdf['scfenergy'] == mine]

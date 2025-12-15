@@ -19,69 +19,150 @@ eV_to_hartree = 0.0367493
 
 # class for logging
 class Logger:
-    """
-    Class that wraps a file object to abstract the logging.
-    """
+    """Simple file logger used to emit MOLDSCRIPT_*.dat audit files."""
 
-    # Class Logger to write output to a file
-    def __init__(self, filein, append, suffix="dat", verbose=True):
-        if verbose:
-            self.log = open(f"{filein}_{append}.{suffix}", "w")
-        else:
-            self.log = ''
+    def __init__(self, file_path=None, verbose=True):
+        self.verbose = verbose
+        self.path = Path(file_path) if file_path else None
+        self._handle = None
+        if self.verbose and self.path:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self._handle = self.path.open("w", encoding="utf-8")
+
+    @classmethod
+    def silent(cls):
+        """Return a logger that swallows all output."""
+        return cls(file_path=None, verbose=False)
 
     def write(self, message):
-        """
-        Appends a newline character to the message and writes it into the file.
-
-        Parameters
-        ----------
-        message : str
-           Text to be written in the log file.
-        """
-        try:
-            self.log.write(f"{message}\n")
-        except AttributeError:
-            pass
-        print(f"{message}")
+        """Write a message to the log file (if enabled) and echo to stdout."""
+        if self._handle:
+            self._handle.write(f"{message}\n")
+            self._handle.flush()
+        print(message)
 
     def write_only(self, message):
-        """
-        Appends a newline character to the message and writes it into the file, but does not print it.
-
-        Parameters
-        ----------
-        message : str
-           Text to be written in the log file.
-        """
-        try:
-            self.log.write(f"{message}\n")
-        except AttributeError:
-            pass
+        """Write a message only to the log file (if enabled)."""
+        if self._handle:
+            self._handle.write(f"{message}\n")
+            self._handle.flush()
 
     def finalize(self):
-        """
-        Closes the file
-        """
-        try:
-            self.log.close()
-        except AttributeError:
-            pass
+        """Close the underlying file handle, if one was opened."""
+        if self._handle:
+            self._handle.close()
+            self._handle = None
+
+
+def build_log_path(output_prefix: str, module_code: str, suffix: str = "dat") -> Path:
+    """Return the filesystem path for a module audit log."""
+    prefix = output_prefix or ""
+    filename = f"{prefix}MOLDSCRIPT_{module_code}.{suffix}"
+    path = Path(filename)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path
+
+
+def _normalise_cpu_spans(cpu_times):
+    if cpu_times is None:
+        return []
+    if isinstance(cpu_times, (datetime.timedelta, int, float)):
+        cpu_times = [cpu_times]
+    spans = []
+    for span in cpu_times:
+        if span is None:
+            continue
+        if isinstance(span, datetime.timedelta):
+            spans.append(span)
+        elif isinstance(span, (int, float)):
+            spans.append(datetime.timedelta(seconds=float(span)))
+        else:
+            try:
+                spans.append(datetime.timedelta(seconds=float(span)))
+            except (TypeError, ValueError):
+                continue
+    return spans
+
+
+def record_cpu_time(data_dict, file_key, source_path, cpu_times):
+    """Accumulate CPU times for a parsed file and avoid double counting."""
+    spans = _normalise_cpu_spans(cpu_times)
+    if not spans:
+        return 0.0
+
+    bucket = None
+    if source_path is not None:
+        bucket = data_dict.setdefault("CPU_time", [])
+        if source_path in bucket:
+            return 0.0
+
+    entry = data_dict.setdefault(file_key, {})
+    total = entry.get("CPU_time", datetime.timedelta(0))
+    added = datetime.timedelta(0)
+    for delta in spans:
+        total += delta
+        added += delta
+    entry["CPU_time"] = total
+
+    if source_path is not None and bucket is not None:
+        bucket.append(source_path)
+
+    return added.total_seconds()
+
+
+def format_timedelta(value: datetime.timedelta) -> str:
+    total_seconds = value.total_seconds()
+    total_hours = total_seconds / 3600.0
+    return f"{total_hours:.2f} hours"
+
 
 def add_cpu_times(file_data):
     ''' add cpu times for all files'''
     total_cpu = datetime.timedelta(0)
-    for filename in file_data.keys():
-        total_cpu += file_data[filename]['cpu_time']
-    
+    for entry in file_data.values():
+        if not isinstance(entry, dict):
+            continue
+        cpu_value = entry.get("CPU_time") or entry.get("cpu_time")
+        if cpu_value:
+            total_cpu += cpu_value
     return total_cpu
-def initiate_data_dict(data):
+def initiate_data_dict(data, logger=None):
     """
     Initiates a data dictionary to store all the data from the files.
+    Progress and informational messages are emitted to `logger` when provided,
+    otherwise they fall back to printing to stdout.
     """
-    print(f"Initializing data parsing with SMILES and geometry data")
+    if logger:
+        logger.write(f"Initializing data parsing with SMILES and geometry data")
+    else:
+        print(f"Initializing data parsing with SMILES and geometry data")
+
+    total = len(data)
     data_dict = {}
-    for i, file_name in enumerate(data.keys()):
+    data_dict["CPU_time"] = []
+
+    if total == 0:
+        if logger:
+            logger.write("No files to process.")
+        else:
+            print("No files to process.")
+        return data_dict
+
+    last_step = 0  # tracks 5% steps printed (0..20)
+    for i, file_name in enumerate(data.keys(), start=1):
+        # Progress reporting every 5%
+        percent = int((i / total) * 100)
+        step = percent // 5
+        if step > last_step:
+            # emit any missed intermediate 5% markers if step jumped
+            for s in range(last_step + 1, step + 1):
+                if logger:
+                    logger.write(f"Progress: {s * 5}% ({i}/{total})")
+                else:
+                    print(f"Progress: {s * 5}% ({i}/{total})")
+            last_step = step
+
         data_dict[file_name] = dict()
         data_dict[file_name]["mol"] = dict()
         data_dict[file_name]["atom"] = dict()
@@ -91,12 +172,24 @@ def initiate_data_dict(data):
             mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
             smi = Chem.MolToSmiles(mol)
         except:
-            print("Encountered an issue with the mol embedding. Skipping smiles string.")
-        data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
+            if logger:
+                logger.write("Encountered an issue with the mol embedding. Skipping smiles string.")
+            else:
+                print("Encountered an issue with the mol embedding. Skipping smiles string.")
+            smi = ''
+        data_dict[file_name]["mol"]["smiles"] = smi
         data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
         data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
         data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
-        data_dict['CPU_time'] = []
+
+    # Ensure 100% is emitted
+    if last_step < 20:
+        for s in range(last_step + 1, 21):
+            if logger:
+                logger.write(f"Progress: {s * 5}% ({total}/{total})")
+            else:
+                print(f"Progress: {s * 5}% ({total}/{total})")
+
     return data_dict
 
 def format_lists(value):
@@ -130,14 +223,14 @@ def bond_data_matrix(data):
             bond_data_matrix_list.append(row)
         return bond_data_matrix_list
 def parse_cc_data(file_name, file):
-        try:              
+        try:
             parser = cc.io.ccopen(file)
             cc_data = parser.parse()
             setattr(cc_data, "bond_data_matrix", bond_data_matrix(cc_data))
-        except:
-            print(
-                f"\nx  Could not parse {file_name}")
-            raise SystemExit(f"Error parsing {file_name}. Ensure the file is a valid cclib file.")
+        except Exception as e:
+            # raise an informative SystemExit without printing to stdout here;
+            # callers will log the error to the module .dat file as appropriate.
+            raise SystemExit(f"Error parsing {file_name}: {e}")
         return cc_data
 def get_files(value):
 
@@ -156,7 +249,7 @@ def get_files(value):
         else:
             list_of_val = list_of_val_out
         return list_of_val
- 
+
 def find_nth(haystack: str, needle: str, n: int) -> int:
     start = haystack.find(needle)
     while start >= 0 and n > 1:
@@ -173,7 +266,8 @@ def get_filename(fullname, dd):
             return keyname
         except:
             tempname = tempname.rsplit("_", 1)[0]
-            print(tempname)
+            # suppress printing here; callers handle logging
+            pass
     print(
         f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
     )

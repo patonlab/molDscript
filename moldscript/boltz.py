@@ -35,6 +35,8 @@ class boltz:
             else:
                 # Calculate Boltzmann weights
                 # Make scfenergy values relative to the lowest one
+                # work on a copy to avoid SettingWithCopy issues
+                tempdf = tempdf.copy()
                 tempdf['scfenergy'] = tempdf['scfenergy'] - tempdf['scfenergy'].min()
                 tempdf['Exponent'] = -tempdf['scfenergy'] / (boltzmann_constant * self.temp)
 
@@ -91,12 +93,14 @@ class boltz:
         atom_df['basename'] = atom_df['filename'].str.split('_conf').str[0]
         weighted_df = pd.DataFrame()
         for name in atom_df['basename'].unique():
-            tempdf = atom_df[atom_df['filename'].str.contains(name)]      
+            # select rows that exactly match this basename
+            tempdf = atom_df[atom_df['basename'] == name]
             numerical_cols = tempdf.select_dtypes(include=[np.number]).columns.tolist()
-            numerical_cols.remove('Weight')  # Exclude the 'Weight' column itself
-            numerical_cols.remove('atom_index')  # Exclude the 'Weight' column itself
-            # Multiply numerical columns by 'Weight'
-
+            # remove columns if present (safe removal)
+            for col_to_remove in ['Weight', 'atom_index']:
+                if col_to_remove in numerical_cols:
+                    numerical_cols.remove(col_to_remove)
+            # Group by atom index to compute weighted averages
             grouped = tempdf.groupby('atom_index')
             weighted_avgs = grouped.apply(
     lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),
@@ -133,11 +137,13 @@ class boltz:
         bond_df['basename'] = bond_df['filename'].str.split('_conf').str[0]
         weighted_df = pd.DataFrame()
         for name in bond_df['basename'].unique():
-            tempdf = bond_df[bond_df['filename'].str.contains(name)]      
+            # select rows that exactly match this basename
+            tempdf = bond_df[bond_df['basename'] == name]
             numerical_cols = tempdf.select_dtypes(include=[np.number]).columns.tolist()
-            numerical_cols.remove('Weight')  # Exclude the 'Weight' column itself
-            numerical_cols.remove('atom1_idx') 
-            numerical_cols.remove('atom2_idx')
+            # safe removal of index/weight columns
+            for col_to_remove in ['Weight', 'atom1_idx', 'atom2_idx']:
+                if col_to_remove in numerical_cols:
+                    numerical_cols.remove(col_to_remove)
             grouped = tempdf.groupby(['atom1_idx', 'atom2_idx'])
             weighted_avgs = grouped.apply(
     lambda x: pd.Series({col: (x[col] * x['Weight']).sum() / x['Weight'].sum() for col in numerical_cols}),

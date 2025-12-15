@@ -8,7 +8,7 @@ import time
 import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import add_cpu_times, get_filename, initiate_data_dict
+from moldscript.utils import get_filename, initiate_data_dict, record_cpu_time, format_timedelta
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
@@ -21,8 +21,9 @@ class nbo:
         self.args = load_variables(kwargs, "NBO", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
+        self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data)
+            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         self.fnames = self.data_dict.keys()
 
         if len(self.data.keys()) == 0:
@@ -34,19 +35,27 @@ class nbo:
 
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
-            try:
-                total_cpu = add_cpu_times(self.file_data)
-                self.args.log.write(f"\n   NBO calculations complete in {total_cpu} seconds")
-            except: pass
+            module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
+            if self.module_cpu_seconds:
+                self.args.log.write(f"\n   NBO calculations CPU time: {format_timedelta(module_cpu_td)}")
             self.args.log.write(f"-- NBO Parameter Collection complete in {elapsed_time} seconds\n")
             self.args.log.finalize()
 
     def get_data(self):
 
         self.args.log.write(f"-- NBO Parameter Collection starting")
-        for i, file_name in enumerate(self.data.keys()):
+        self.module_cpu_seconds = 0.0
+        total = len(self.data)
+        last_step = 0
+        for i, file_name in enumerate(self.data.keys(), start=1):
+            percent = int((i / total) * 100) if total else 100
+            step = percent // 5
+            if step > last_step:
+                for s in range(last_step + 1, step + 1):
+                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
+                last_step = step
             nbo_data = self.parse_cc_data(file_name, self.data[file_name])
-            
+
             if i == 0:
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
                 try:
@@ -54,33 +63,23 @@ class nbo:
                     self.args.log.write(f"   NBO version used: {nbo_version}")
                     self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}\n")
-                except: 
+                except:
                     pass
 
             if nbo_data != None:
-                self.args.log.write(f"o  Parsing NBO data from {file_name}")
+                self.args.log.write_only(f"o  Parsing NBO data from {file_name}")
                 file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
                 self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
                 if nbo_data.bondorders_matrix != []:
                     self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
 
-                
+
             else:
                 self.args.log.write(f"Skipping file {file_name} as NBO data didnt exist\n")
 
-            if self.data[file_name] in self.data_dict['CPU_time']:
-                pass
-            else:
-                try: 
-                    for time in nbo_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict["CPU_time"].append(self.data[file_name])
-                except:
-                    self.data_dict[file_name]["CPU_time"] = datetime.timedelta(0)  # initialize cpu time
-                    for time in nbo_data.metadata["cpu_time"]:
-                        self.data_dict[file_name]["CPU_time"] += time  # add cpu time
-                    self.data_dict['CPU_time'].append(self.data[file_name])
+            cpu_times = nbo_data.metadata.get("cpu_time") if nbo_data and hasattr(nbo_data, "metadata") else None
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
 
         return self.data_dict
 
@@ -97,7 +96,7 @@ class nbo:
         return version
     def get_filename(self):
         pass
-        
+
     def parse_cc_data(self, file_name, file):
 
         ### parse data
@@ -144,11 +143,11 @@ class nbo:
         return wiberg_bos
 
     def bondorders_matrix(self, file, cc_data):
-        
+
         start_wiberg_ind, end_wiberg_ind = None, None
         outfile = open(file, "r")
         lines = outfile.readlines()
-        
+
         for i, line in enumerate(lines):
             if line.find("Wiberg bond index matrix ") > -1:
                 start_wiberg_ind = i + 2
@@ -181,4 +180,5 @@ class nbo:
             for i in range(start_npop, end_npop):
                 nat_charges.append(float(lines[i].split()[2]))
         return nat_charges
-        
+
+
