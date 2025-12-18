@@ -36,8 +36,8 @@ Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; com
 ## Core Inputs & Flags
 - `--opt PATH` (required) - baseline optimization files and conformer metadata.
 - `--spc PATH` - single-point energies that replace optimization SCF energies.
-- `--nbo`, `--nmr`, `--charges`, `--fmo` PATH - add module-specific descriptors; pair with `--suffix_*` when filenames include extra tokens.
-- `--fukui_neutral`, `--fukui_reduced`, `--fukui_oxidized` PATH - supply all three charge states for vertical IE/EA and condensed Fukui functions.
+- `--nbo`, `--nmr`, `--charges`, `--fmo` PATH - add module-specific descriptors; pair with `--suffix_*` to specify filename tokens specific to calculation type (required for proper comformer matching). 
+- `--fukui_neutral`, `--fukui_reduced`, `--fukui_oxidized` PATH - supply all three charge states for vertical IE/EA and condensed Fukui functions. Again, pair with `--suffix_*` for proper conformer matching.
 - `--substructure SMARTS` - limit atom/bond descriptors to a SMARTS match; combine with `--volume` or `--vall` and optional `--radius` list for DBSTEP buried volumes.
 - `--boltz`, `--min_max`, `--lowe` - compute Boltzmann-weighted averages, min/max/range tables (using `--cut`), and lowest-energy snapshots. Adjust `--temp` (K) as needed.
 - `--output PREFIX` - prepend every generated filename; append a slash to target a directory. Use `--no_mol`, `--no_atom`, `--no_bond`, or `--no_bond_filter` to tailor CSV output.
