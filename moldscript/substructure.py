@@ -75,14 +75,14 @@ class substructure:
                     obConversion.CloseOutFile()
                     mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
                 except:
-                    self.args.log.write_only('!Unable to encode structure for substructure match!')
-                    self.args.log.write_only('!Including all atoms in the molecule!')
+                    self.args.log.write('!Unable to encode structure for substructure match!')
+                    self.args.log.write('!Including all atoms in the molecule!')
                     whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
                     return whole_mol
                 else:
-                    self.args.log.write_only('!Unable to encode structure for substructure match!')
-                    self.args.log.write_only('!Including all atoms in the molecule!')
-                    self.args.log.write_only('!Consider installing OpenBabel for another encoder optiion!')
+                    self.args.log.write('!Unable to encode structure for substructure match!')
+                    self.args.log.write('!Including all atoms in the molecule!')
+                    self.args.log.write('!Consider installing OpenBabel for another encoder optiion!')
                     whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
                     return whole_mol
 
@@ -90,8 +90,8 @@ class substructure:
         Draw.MolToImage(substructure, size=(100, 100))
         indexsall = mol.GetSubstructMatches(substructure)
         if indexsall == ():
-            self.args.log.write_only('!No substructure match found!')
-            self.args.log.write_only('!Including all atoms in the molecule!')
+            self.args.log.write('!No substructure match found!')
+            self.args.log.write('!Including all atoms in the molecule!')
             indexsall = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
         else:
             indexsall = tuple(x + 1 for x in indexsall[0])
