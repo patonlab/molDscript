@@ -139,7 +139,7 @@ def main():
             data_dicts = fukui_data.data_dict
     
     if args.substructure != "":
-        substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt)
+        substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt, suffix=args.suffix_opt)
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure).file_data
     
     if args.volume != False or args.vall != False:
