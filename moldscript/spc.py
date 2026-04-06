@@ -88,7 +88,7 @@ class spc:
             findex = flist.index(tempname)
             keyname = flist[findex]
             return keyname
-        except ValueError:
+        except:
             pass
         for i in range(fullname.count("_")):
             try:
@@ -97,7 +97,7 @@ class spc:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-        self.args.log.write_only(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
+
+        self.args.log.write(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
         raise SystemExit
 
