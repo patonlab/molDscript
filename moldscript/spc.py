@@ -84,6 +84,12 @@ class spc:
     def get_filename(self, fullname):
         flist = list(self.data_dict.keys())
         tempname = fullname
+        try:
+            findex = flist.index(tempname)
+            keyname = flist[findex]
+            return keyname
+        except ValueError:
+            pass
         for i in range(fullname.count("_")):
             try:
                 findex = flist.index(tempname)

@@ -87,6 +87,12 @@ class sterics:
         except:
             pass
         tempname = fullname
+        try:
+            findex = flist.index(tempname)
+            keyname = flist[findex]
+            return keyname
+        except ValueError:
+            pass
         for i in range(fullname.count("_")):
             try:
                 findex = flist.index(tempname)
