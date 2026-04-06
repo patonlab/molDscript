@@ -88,7 +88,7 @@ class spc:
             findex = flist.index(tempname)
             keyname = flist[findex]
             return keyname
-        except:
+        except ValueError:
             pass
         for i in range(fullname.count("_")):
             try:
