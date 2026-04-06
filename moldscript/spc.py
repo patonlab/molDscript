@@ -97,9 +97,7 @@ class spc:
                 return keyname
             except:
                 tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-        print(tempname)
-        print(type(tempname))
+
         self.args.log.write(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
         raise SystemExit
 
