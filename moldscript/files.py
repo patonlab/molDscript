@@ -34,63 +34,21 @@ class files:
                     self.files.append(j)
         self.data_dict = data_dict
 
-        # if self.calc == "link":
-        #     self.file_data = self.get_link()
-        if self.calc == "opt":
-            self.file_data = self.get_opt_or_substructure()
-        if self.calc == "spc":
-            self.file_data = self.get_spc()
-        if self.calc == "charges":
-            self.file_data = self.get_chg()
-        if self.calc == "fmo":
-            self.file_data = self.get_fmo()
-        if self.calc == "nmr":
-            self.file_data = self.get_nmr()
-        if self.calc == "nbo":
-            self.file_data = self.get_nbo()
-        if self.calc == "fukui":
+        # Most calc types map each file to a single basename key.
+        SIMPLE_CALCS = {"opt", "spc", "charges", "fmo", "nmr", "nbo", "substructure"}
+        if self.calc in SIMPLE_CALCS:
+            self.file_data = self._collect_by_basename()
+        elif self.calc == "fukui":
             self.file_data = self.get_fukui()
-
-        if self.calc == "ad_ie_ea":
+        elif self.calc == "ad_ie_ea":
             self.file_data = self.get_ad_ie_ea()
-        if self.calc == "substructure":
-            self.file_data = self.get_opt_or_substructure()
 
         if create_dat:
             self.args.log.finalize()
 
-    def get_opt_or_substructure(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            key_name = self.get_filename(file, self.suffix)
-            file_data[key_name] = file
-        return file_data
-
-    def get_spc(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            key_name = self.get_filename(file, self.suffix)
-            file_data[key_name] = file
-        return file_data
-    def get_chg(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            key_name = self.get_filename(file, self.suffix)
-            file_data[key_name] = file
-        return file_data
-    def get_fmo(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            key_name = self.get_filename(file, self.suffix)
-            file_data[key_name] = file
-        return file_data
-    def get_nmr(self):
-        file_data = defaultdict(dict)
-        for file in self.files:
-            key_name = self.get_filename(file, self.suffix)
-            file_data[key_name] = file
-        return file_data
-    def get_nbo(self):
+    def _collect_by_basename(self):
+        """Map each file path to its stripped basename key. Used by every
+        calc type except fukui (which has three sub-paths per molecule)."""
         file_data = defaultdict(dict)
         for file in self.files:
             key_name = self.get_filename(file, self.suffix)

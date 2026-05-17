@@ -1,14 +1,20 @@
 ######################################################.
-#        This file stores the spc class               #
+#        This file stores the FMO class               #
 ######################################################.
 
 
 import sys, os
 import time
 import datetime
-import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    format_timedelta,
+    get_filename,
+    initiate_data_dict,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 import numpy as np
 
 class fmo:
@@ -42,26 +48,19 @@ class fmo:
         self.args.log.write(f"-- FMO Collection starting")
         self.module_cpu_seconds = 0.0
 
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            if self.data[file_name].rsplit('.',1)[1] == 'log':
+        for idx, file_name in progress_iter(self.data.keys(), self.args.log):
+            if self.data[file_name].rsplit('.', 1)[1] == 'log':
                 self.fmo_program = 'gaussian'
-            elif self.data[file_name].rsplit('.', 1)[1] =='out':
+            elif self.data[file_name].rsplit('.', 1)[1] == 'out':
                 self.fmo_program = 'orca'
-            fmo_data = self.parse_cc_data(file_name, self.data[file_name])
-            file_name = self.get_filename(file_name)
-            try:
-                if list(self.data.keys()).index(file_name) == 0:
+            fmo_data = safe_parse(self.data[file_name], logger=self.args.log, context="FMO and moment data")
+            file_name = get_filename(file_name, self.data_dict, logger=self.args.log)
+            if idx == 1 and fmo_data is not None:
+                try:
                     self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
-            except: pass
+                except (AttributeError, KeyError):
+                    pass
 
             self.args.log.write_only(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
 
@@ -80,51 +79,18 @@ class fmo:
             try:
                 quadrupole_moments = fmo_data.moments[2]
                 quadrupole_matrix = np.array([
-    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
-    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
-    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]]
-])
+                    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
+                    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
+                    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]],
+                ])
                 trace = np.trace(quadrupole_matrix)
-                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
-            except:
+                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = trace
+            except (AttributeError, IndexError):
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
 
             cpu_times = fmo_data.metadata.get("cpu_time") if fmo_data and hasattr(fmo_data, "metadata") else None
             record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
 
-
         return self.data_dict
-
-    def parse_cc_data(self, file_name, file):
-
-        try:
-            cc_data = cc.io.ccread(file)
-        except:
-            self.args.log.write(
-                f"\nx  Could not parse {file_name} to obtain spc energy information"
-            )
-            cc_data = None
-        return cc_data
-
-
-    def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")+1):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-            self.args.log.write_only('Issue matching one of your filenames')
-        raise SystemExit
 
 

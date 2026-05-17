@@ -11,6 +11,7 @@ import pandas as pd
 import time
 import ast
 from moldscript.argument_parser import load_variables
+from moldscript.utils import progress_iter
 
 class sterics:
     def __init__(self, opt_data, data_dict, volume, vall, radii=3):
@@ -29,20 +30,10 @@ class sterics:
     def get_params(self, vall=False, volume=False):
         try:
             self.rad = [float(self.rad)]
-        except:
+        except (TypeError, ValueError):
             self.rad = ast.literal_eval(self.rad)
-        total = len(self.data)
-        last_step = 0
-        for i, fname in enumerate(self.data.keys(), start=1):
+        for i, fname in progress_iter(self.data.keys(), self.args.log):
             file_name = self.data[fname]
-            percent = int((i / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    # progress printed to stdout and written to file
-                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
-                last_step = step
-            # per-file messages go to the module .dat only
             self.args.log.write_only(f'o  Calculating steric parameters for {fname}')
             if vall:
                 ccdata = cclib.io.ccread(file_name)
@@ -79,30 +70,4 @@ class sterics:
         tmp_xyz = f_woe + '_transform.xyz'
         os.remove(tmp_py)
         os.remove(tmp_xyz)
-
-    def get_filename(self, fullname):
-        flist = list(self.dd.keys())
-        try:
-            fullname = fullname.split("/")[-1]
-        except:
-            pass
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-        self.args.log.write_only(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
-
-            
 

@@ -6,10 +6,17 @@
 import sys, os
 import time
 import datetime
-import cclib as cc
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    eV_to_hartree,
+    format_timedelta,
+    parse_cc_data,
+    parse_npa_charges,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
 
@@ -44,15 +51,7 @@ class fukui:
 
         first = False
         self.args.log.write(f"-- Fukui Parameter Collection starting")
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(list(self.data.keys()), start=1):
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
+        for idx, file_name in progress_iter(list(self.data.keys()), self.args.log):
             neutral_data, oxidized_data, reduced_data = None, None, None
             if "neutral" in self.data[file_name].keys():
                 neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
@@ -111,33 +110,15 @@ class fukui:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-
+        cc_data = safe_parse(file, logger=self.args.log, context="Fukui coefficients")
+        if cc_data is None:
+            return None
         try:
-            cc_data = cc.io.ccread(file)
-        except:
-            self.args.log.write(f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients")
-            cc_data = None
-
-        try: cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
-        except: pass
-
+            cc_data.atomcharges["natural"] = parse_npa_charges(file, len(cc_data.atomnos), which="first")
+        except Exception:
+            pass
         return cc_data
 
-    def npa_data(self, file, cc_data):
-        start_npop = None
-        outfile = open(file, "r")
-        lines = outfile.readlines()
-        list_npop = []
-        for i, line in enumerate(lines):
-            if line.find(" Summary of Natural Population Analysis:") > -1:
-                list_npop.append(i + 6)
-        start_npop = list_npop[0]
-        if start_npop != None:
-            nat_charges = []
-            end_npop = start_npop + len(cc_data.atomnos)
-            for i in range(start_npop, end_npop):
-                nat_charges.append(float(lines[i].split()[2]))
-        return nat_charges
     def find_first_match(self, list_a, list_b):
         for element in list_a:
             if element in list_b:

@@ -6,9 +6,16 @@
 import sys, os
 import time
 import datetime
-import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree, initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    eV_to_hartree,
+    format_timedelta,
+    get_filename,
+    initiate_data_dict,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 
 class spc:
     """
@@ -44,25 +51,16 @@ class spc:
         self.args.log.write(f"   --- Single Point Energy Collection starting")
         self.module_cpu_seconds = 0.0
 
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            spc_data = self.parse_cc_data(file_name, self.data[file_name])
+        for idx, file_name in progress_iter(self.data.keys(), self.args.log):
+            spc_data = safe_parse(self.data[file_name], logger=self.args.log, context="spc energy")
+            filename = get_filename(file_name, self.data_dict, logger=self.args.log)
 
-            filename = self.get_filename(file_name)
-
-            try:
-                if list(self.data.keys()).index(file_name) == 0:
+            if idx == 1 and spc_data is not None:
+                try:
                     self.args.log.write(f"   Functional used: {spc_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
-            except:
-                pass
+                except (AttributeError, KeyError):
+                    pass
             self.args.log.write_only(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
             self.data_dict[filename]['mol']['scfenergy'] = (
                 spc_data.scfenergies[-1] * eV_to_hartree)
@@ -70,34 +68,4 @@ class spc:
             cpu_times = spc_data.metadata.get("cpu_time") if spc_data and hasattr(spc_data, "metadata") else None
             self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
         return self.data_dict
-
-    def parse_cc_data(self, file_name, file):
-
-        try:
-            cc_data = cc.io.ccread(file)
-
-        except:
-            self.args.log.write(f"\nx  Could not parse {file_name} to obtain spc energy information")
-            cc_data = None
-        return cc_data
-
-    def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-
-        self.args.log.write(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.")
-        raise SystemExit
 

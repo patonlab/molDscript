@@ -1,14 +1,20 @@
 ######################################################.
-#        This file stores the spc class               #
+#        This file stores the charges class           #
 ######################################################.
 
 
 import sys, os
 import time
 import datetime
-import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    format_timedelta,
+    get_filename,
+    initiate_data_dict,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 
 class charges:
     """
@@ -19,7 +25,7 @@ class charges:
 
         start_time_overall = time.time()
         # load default and user-specified variables
-        self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
+        self.args = load_variables(kwargs, "CHARGES", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
@@ -39,24 +45,16 @@ class charges:
 
         self.args.log.write(f"-- Charges Collection starting")
         self.module_cpu_seconds = 0.0
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            chg_data = self.parse_cc_data(file_name, self.data[file_name])
-            filename = self.get_filename(file_name)
+        for idx, file_name in progress_iter(self.data.keys(), self.args.log):
+            chg_data = safe_parse(self.data[file_name], logger=self.args.log, context="charge data")
+            filename = get_filename(file_name, self.data_dict, logger=self.args.log)
 
-            try:
-                if list(self.data.keys()).index(file_name) == 0:
+            if idx == 1 and chg_data is not None:
+                try:
                     self.args.log.write(f"   Functional used: {chg_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {chg_data.metadata['basis_set']}")
-            except:
-                pass
+                except (AttributeError, KeyError):
+                    pass
             self.args.log.write_only(f"o  Parsing Charge Data from {os.path.basename(file_name)}")
             if len(chg_data.atomcharges.keys()) == 1 and 'mulliken' in chg_data.atomcharges:
                 self.data_dict[filename]['atom']['mulliken_charge'] = chg_data.atomcharges['mulliken']
@@ -65,46 +63,10 @@ class charges:
                     if 'mulliken' not in i and 'sum' not in i:
                         self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
 
-
             cpu_times = chg_data.metadata.get("cpu_time") if chg_data and hasattr(chg_data, "metadata") else None
             self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- Charges CPU time: {format_timedelta(module_cpu_td)}")
         return self.data_dict
-
-    def parse_cc_data(self, file_name, file):
-
-        parser = cc.io.ccopen(file)
-
-        try:
-            cc_data = parser.parse()
-        except:
-            self.args.log.write_only(
-                f"\nx  Could not parse {file_name} to obtain charge energy information")
-            cc_data = None
-        return cc_data
-
-    def get_filename(self, fullname):
-        try:
-            flist = list(self.data_dict.keys())
-            tempname = fullname
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except ValueError:
-                pass
-            for i in range(fullname.count("_")+1):
-                try:
-                    findex = flist.index(tempname)
-                    keyname = flist[findex]
-                    return keyname
-                except:
-                    tempname = tempname.rsplit("_", 1)[0]
-                    self.args.log.write_only(tempname)
-
-        except:
-            self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')
-            raise SystemExit
 

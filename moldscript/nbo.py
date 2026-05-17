@@ -6,9 +6,16 @@
 import sys, os
 import time
 import datetime
-import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import get_filename, initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    format_timedelta,
+    get_filename,
+    initiate_data_dict,
+    parse_npa_charges,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
@@ -45,28 +52,20 @@ class nbo:
 
         self.args.log.write(f"-- NBO Parameter Collection starting")
         self.module_cpu_seconds = 0.0
-        total = len(self.data)
-        last_step = 0
-        for i, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((i / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
-                last_step = step
+        for i, file_name in progress_iter(self.data.keys(), self.args.log):
             nbo_data = self.parse_cc_data(file_name, self.data[file_name])
 
-            if i == 0:
+            if i == 1 and nbo_data is not None:
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
                 try:
                     nbo_version = self.parse_nbo_version(self.data[file_name])
                     self.args.log.write(f"   NBO version used: {nbo_version}")
                     self.args.log.write(f"   Functional used: {nbo_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {nbo_data.metadata['basis_set']}\n")
-                except:
+                except (AttributeError, KeyError):
                     pass
 
-            if nbo_data != None:
+            if nbo_data is not None:
                 self.args.log.write_only(f"o  Parsing NBO data from {file_name}")
                 file_name = get_filename(file_name, self.data_dict)
                 self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
@@ -94,32 +93,18 @@ class nbo:
         if start_version != None:
             version = ' '.join(lines[start_version].split()[1:3])
         return version
-    def get_filename(self):
-        pass
-
     def parse_cc_data(self, file_name, file):
-
-        ### parse data
-        parser = cc.io.ccopen(file)
-        try:
-            cc_data = parser.parse()
-
-        except:
-            self.args.log.write(
-                f"\nx  Could not parse {file_name} to obtain information for calculating Fukui Coefficients"
-            )
-            cc_data = None
-
+        cc_data = safe_parse(file, logger=self.args.log, context="NBO data")
+        if cc_data is None:
+            return None
         try:
             setattr(cc_data, "bondorders", self.bondorders(file, cc_data))
-        except:
+        except Exception:
             setattr(cc_data, "bondorders", None)
-
         setattr(cc_data, "bondorders_matrix", self.bondorders_matrix(file, cc_data))
-
         try:
-            cc_data.atomcharges["natural"] = self.npa_data(file, cc_data)
-        except:
+            cc_data.atomcharges["natural"] = parse_npa_charges(file, len(cc_data.atomnos), which="last")
+        except Exception:
             cc_data.atomcharges["natural"] = None
         return cc_data
 
@@ -165,20 +150,4 @@ class nbo:
                                 wbo_ind.append(lines[k].split()[j + 1])
                             wiberg_bos_matrix.append(wbo_ind)
         return wiberg_bos_matrix
-
-    def npa_data(self, file, cc_data):
-        start_npop = None
-        outfile = open(file, "r")
-        lines = outfile.readlines()
-        for i, line in enumerate(lines):
-            if line.find(" Summary of Natural Population Analysis:") > -1:
-                start_npop = i + 6
-
-        if start_npop != None:
-            nat_charges = []
-            end_npop = start_npop + len(cc_data.atomnos)
-            for i in range(start_npop, end_npop):
-                nat_charges.append(float(lines[i].split()[2]))
-        return nat_charges
-
 

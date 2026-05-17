@@ -10,7 +10,7 @@ from collections import defaultdict
 from moldscript.argument_parser import load_variables
 import numpy as np
 from rdkit import Chem
-from moldscript.utils import eV_to_hartree, initiate_data_dict, parse_cc_data, record_cpu_time, format_timedelta
+from moldscript.utils import eV_to_hartree, initiate_data_dict, parse_cc_data, progress_iter, record_cpu_time, format_timedelta
 import moldscript.xyz2mol as xyz2mol
 
 class opt:
@@ -58,16 +58,8 @@ class opt:
                     self.args.log.write(f'- Identified XTB opt file')
                     break
 
-        total = len(self.data)
-        last_step = 0
-        for i, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((i / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
-                last_step = step
-                self.args.log.write_only(f"o  Parsing CPU time from {os.path.basename(file_name)}")
+        for i, file_name in progress_iter(self.data.keys(), self.args.log):
+            self.args.log.write_only(f"o  Parsing CPU time from {os.path.basename(file_name)}")
             if xtb == False:
                 # convert log to smiles
                 opt_data = parse_cc_data(file_name, self.data[file_name])

@@ -256,27 +256,90 @@ def find_nth(haystack: str, needle: str, n: int) -> int:
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
-def get_filename(fullname, dd):
-    flist = list(dd.keys())
-    tempname = fullname
-    try:
-        findex = flist.index(tempname)
-        keyname = flist[findex]
-        return keyname
-    except ValueError:
-        pass
-    for i in range(fullname.count("_")+1):
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except:
-            tempname = tempname.rsplit("_", 1)[0]
-            # suppress printing here; callers handle logging
-            pass
-    print(
-        f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
+
+
+def get_filename(fullname, dd, logger=None):
+    """Match a parsed filename to an existing key in `dd` (the shared data_dict).
+
+    Strips any directory prefix, then progressively trims trailing `_<token>`
+    segments until an exact match against `dd.keys()` is found. Raises
+    SystemExit with a descriptive message if no match is reachable.
+    """
+    candidate = fullname.split("/")[-1] if "/" in fullname else fullname
+    keys = dd.keys()
+    while True:
+        if candidate in keys:
+            return candidate
+        if "_" not in candidate:
+            break
+        candidate = candidate.rsplit("_", 1)[0]
+    msg = (
+        f"Error processing file {fullname}. "
+        "Ensure consistent naming as described in the docs."
     )
+    if logger is not None:
+        logger.write(msg)
+    else:
+        print(msg)
     raise SystemExit
+
+
+def safe_parse(file_path, logger=None, context=""):
+    """cclib parse with consistent error handling. Returns the parsed object
+    or None on failure. `context` is included in the failure message
+    (e.g. "single point energy", "NBO data")."""
+    try:
+        cc_data = cc.io.ccread(file_path)
+    except Exception as exc:  # cclib raises various subclasses; treat any as failure
+        msg = f"\nx  Could not parse {file_path}"
+        if context:
+            msg += f" to obtain information for {context}"
+        msg += f" ({type(exc).__name__}: {exc})"
+        if logger is not None:
+            logger.write(msg)
+        else:
+            print(msg)
+        return None
+    return cc_data
+
+
+def progress_iter(items, logger, step_percent=5):
+    """Iterate items with progress logging at `step_percent` intervals.
+
+    Yields (index_1_based, item). Logs lines like
+    ``Progress: 20% (4/20)`` to `logger.write` (which the Logger contract
+    sends to both stdout and the module .dat file).
+    """
+    if not isinstance(items, (list, tuple)):
+        items = list(items)
+    total = len(items)
+    last_step = 0
+    for i, item in enumerate(items, start=1):
+        percent = int((i / total) * 100) if total else 100
+        step = percent // step_percent
+        if step > last_step:
+            for s in range(last_step + 1, step + 1):
+                logger.write(f"Progress: {s * step_percent}% ({i}/{total})")
+            last_step = step
+        yield i, item
+
+
+def parse_npa_charges(file_path, n_atoms, which="last"):
+    """Scrape NBO Natural Population Analysis charges from a Gaussian log.
+
+    `which` selects the first or last occurrence of the NPA summary block
+    (Gaussian writes one per population analysis pass). Returns a list of
+    floats or None if no summary block is present.
+    """
+    with open(file_path) as fh:
+        lines = fh.readlines()
+    matches = [
+        i for i, line in enumerate(lines)
+        if "Summary of Natural Population Analysis:" in line
+    ]
+    if not matches:
+        return None
+    start = matches[-1 if which == "last" else 0] + 6
+    return [float(lines[i].split()[2]) for i in range(start, start + n_atoms)]
 
 

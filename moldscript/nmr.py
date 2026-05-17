@@ -6,10 +6,16 @@
 import sys, os
 import time
 import datetime
-import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    format_timedelta,
+    get_filename,
+    initiate_data_dict,
+    progress_iter,
+    record_cpu_time,
+    safe_parse,
+)
 
 
 class nmr:
@@ -47,28 +53,17 @@ class nmr:
 
         self.args.log.write(f"-- NMR Parameter Collection starting")
         self.module_cpu_seconds = 0.0
-        total = len(self.data)
-        last_step = 0
-        for i, file_name in enumerate(self.data.keys(), start=1):
-            percent = int((i / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
-                last_step = step
-            # try:
-            file_name = self.get_filename(file_name)
+        for i, file_name in progress_iter(self.data.keys(), self.args.log):
+            file_name = get_filename(file_name, self.data_dict, logger=self.args.log)
             nmr_data = self.parse_cc_data(file_name, self.data[file_name])
-            # except:
-            #     nmr_data = None
-            try:
-                if i == 0:
+            if i == 1 and nmr_data is not None:
+                try:
                     self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
                     self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
                     self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
-            except:
-                pass
-            if nmr_data != None:
+                except (AttributeError, KeyError):
+                    pass
+            if nmr_data is not None:
                 self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
                 self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
@@ -82,17 +77,17 @@ class nmr:
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):
-
-        parser = cc.io.ccopen(file)
-        cc_data = parser.parse()
-        if cc_data.metadata['package'].lower() == "gaussian":
+        # Thin wrapper: shared cclib parse + per-package shielding-tensor scrape.
+        cc_data = safe_parse(file, logger=self.args.log, context="NMR shielding tensors")
+        if cc_data is None:
+            return None
+        package = cc_data.metadata['package'].lower()
+        if package == "gaussian":
             cc_data.nmr_shielding = self.gaussian_nmr_shielding(file)
-        elif cc_data.metadata['package'].lower() == "orca":
+        elif package == "orca":
             cc_data.nmr_shielding = self.orca_nmr_shielding(file)
         else:
-            raise ValueError(f"Unsupported nmr tensor program: {cc_data.metadata['package']}")
-
-
+            raise ValueError(f"Unsupported NMR tensor program: {cc_data.metadata['package']}")
         return cc_data
 
     def gaussian_nmr_shielding(self, file):
@@ -130,25 +125,4 @@ class nmr:
             idx += 1
         return nmr_shielding
 
-    def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")+1):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-        self.args.log.write_only(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
-        raise SystemExit
 
