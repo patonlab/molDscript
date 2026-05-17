@@ -54,7 +54,11 @@ class nmr:
         self.args.log.write(f"-- NMR Parameter Collection starting")
         self.module_cpu_seconds = 0.0
         for i, file_name in progress_iter(self.data.keys(), self.args.log):
-            file_name = get_filename(file_name, self.data_dict, logger=self.args.log)
+            # Resolve the matched data_dict key separately from the file-side
+            # key — when opt and nmr files have different suffix-strip levels
+            # (e.g. ORCA QCALC + nmr) the two diverge, and self.data is keyed
+            # by the file-side basename, not the matched dict key.
+            matched_key = get_filename(file_name, self.data_dict, logger=self.args.log)
             nmr_data = self.parse_cc_data(file_name, self.data[file_name])
             if i == 1 and nmr_data is not None:
                 try:
@@ -64,13 +68,13 @@ class nmr:
                 except (AttributeError, KeyError):
                     pass
             if nmr_data is not None:
-                self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
-                self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
+                self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {matched_key}")
+                self.data_dict[matched_key]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
-                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
+                self.args.log.write(f"!  Skipping {matched_key} as NMR data not found")
 
             cpu_times = nmr_data.metadata.get("cpu_time") if nmr_data and hasattr(nmr_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, matched_key, self.data[file_name], cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")

@@ -65,20 +65,21 @@ class nbo:
                 except (AttributeError, KeyError):
                     pass
 
+            # When opt and nbo files have different suffix-strip levels (e.g.
+            # ORCA QCALC + NBO), self.data and self.data_dict are keyed
+            # differently — keep both keys around so neither lookup breaks.
+            matched_key = get_filename(file_name, self.data_dict) if nbo_data is not None else file_name
             if nbo_data is not None:
                 self.args.log.write_only(f"o  Parsing NBO data from {file_name}")
-                file_name = get_filename(file_name, self.data_dict)
-                self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
-                self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
+                self.data_dict[matched_key]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
+                self.data_dict[matched_key]['atom']["bond_orders"] = nbo_data.bondorders
                 if nbo_data.bondorders_matrix != []:
-                    self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
-
-
+                    self.data_dict[matched_key]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
             else:
                 self.args.log.write(f"Skipping file {file_name} as NBO data didnt exist\n")
 
             cpu_times = nbo_data.metadata.get("cpu_time") if nbo_data and hasattr(nbo_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, matched_key, self.data[file_name], cpu_times)
 
         return self.data_dict
 
