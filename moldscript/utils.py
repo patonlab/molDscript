@@ -237,22 +237,16 @@ def parse_cc_data(file_name, file):
             raise SystemExit(f"Error parsing {file_name}: {e}")
         return cc_data
 def get_files(value):
+    """Return all *.log or *.out files in a directory.
 
-        if value[-1]=='/':
-            value = value[:-1]
-        if (Path(f"{value}").exists() and os.getcwd() not in f"{value}"):
-            list_of_val_log = glob.glob(f"{os.getcwd()}/{value}/*.log")
-            list_of_val_out = glob.glob(f"{os.getcwd()}/{value}/*.out")
-        else:
-            list_of_val_log = glob.glob(f"{value}/*.log")
-            list_of_val_out = glob.glob(f"{value}/*.out")
-        length_out = len(list_of_val_out)
-        length_log = len(list_of_val_log)
-        if length_log >= length_out:
-            list_of_val = list_of_val_log
-        else:
-            list_of_val = list_of_val_out
-        return list_of_val
+    Accepts both cwd-relative and absolute paths. `~` is expanded.
+    Whichever extension is more common (log vs out) wins, mirroring the
+    long-standing convention that a directory should be uniform.
+    """
+    directory = Path(value).expanduser().resolve()
+    log_files = glob.glob(f"{directory}/*.log")
+    out_files = glob.glob(f"{directory}/*.out")
+    return log_files if len(log_files) >= len(out_files) else out_files
 
 def find_nth(haystack: str, needle: str, n: int) -> int:
     start = haystack.find(needle)

@@ -74,12 +74,6 @@ class files:
                 file_data[key_name]["oxidized"] = file
         return file_data
 
-    # def get_link(self):
-    #     file_data = defaultdict(dict)
-    #     for file in self.files:
-    #         file_data[file] = file
-    #     return file_data
-
     def get_filename(self, fullname, suffix):
         fullname = fullname.split("/")[-1]
         fullname = fullname.split(".log")[0]

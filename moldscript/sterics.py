@@ -14,10 +14,10 @@ from moldscript.argument_parser import load_variables
 from moldscript.utils import progress_iter
 
 class sterics:
-    def __init__(self, opt_data, data_dict, volume, vall, radii=3):
+    def __init__(self, opt_data, data_dict, volume, vall, radii=3, **kwargs):
         t1 = time.time()
         # create a module logger so messages go to MOLDSCRIPT_STERICS.dat
-        self.args = load_variables({}, "STERICS", create_dat=True)
+        self.args = load_variables(kwargs, "STERICS", create_dat=True)
         self.data = opt_data
         self.dd = data_dict
         self.rad = radii
@@ -37,17 +37,13 @@ class sterics:
             self.args.log.write_only(f'o  Calculating steric parameters for {fname}')
             if vall:
                 ccdata = cclib.io.ccread(file_name)
-                atoms = range(1,len(ccdata.atomnos)+1)
+                atoms = range(1, len(ccdata.atomnos) + 1)
             else:
-                self.args.log.write_only(f"\t - Limiting volume calculation to the following indices: {self.dd[fname]['substructure']}")
-                try:
-                    atoms = self.dd[fname]['substructure']
-                except KeyError:
-                    # Note: the log.write_only call above already accesses
-                    # ['substructure'] unconditionally and will KeyError first
-                    # if the key is missing, so this branch is effectively dead.
+                if 'substructure' not in self.dd[fname]:
                     self.args.log.write_only('\tPlease include a --substructure or specify --vall to get all buried volumes.')
                     break
+                atoms = self.dd[fname]['substructure']
+                self.args.log.write_only(f"\t - Limiting volume calculation to the following indices: {atoms}")
             self.dd[fname]['sterics'] = {}              
             for radius in self.rad:
                 radius = float(radius)

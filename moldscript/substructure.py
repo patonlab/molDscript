@@ -5,7 +5,6 @@
 
 import sys, os
 import time
-from rdkit.Chem import Draw
 from rdkit import Chem
 import cclib as cc
 from collections import defaultdict
@@ -60,13 +59,22 @@ class substructure:
         return self.data_dict
 
     def get_mol(self, file):
+        # Parse cclib first so we always have an atom count for the
+        # "include all atoms" fallback, even if mol-encoding later fails.
+        parser = cc.io.ccopen(file)
+        cc_data = parser.parse()
+        n_atoms = len(cc_data.atomnos.tolist())
+
+        # Try xyz2mol → RDKit; fall back to OpenBabel if importable; else
+        # signal failure with mol=None.
+        mol = None
         try:
-            parser = cc.io.ccopen(file)
-            cc_data = parser.parse()
-            mol = xyz2mol.xyz2mol(cc_data.atomnos.tolist(), cc_data.atomcoords[-1].tolist(), charge=cc_data.charge)[0]
+            mol = xyz2mol.xyz2mol(
+                cc_data.atomnos.tolist(),
+                cc_data.atomcoords[-1].tolist(),
+                charge=cc_data.charge,
+            )[0]
         except Exception:
-            # cclib / xyz2mol can raise a wide range of parse and bond-perception
-            # failures; fall back to OpenBabel if it's importable.
             if self.openbabel:
                 try:
                     obConversion = ob.OBConversion()
@@ -77,28 +85,22 @@ class substructure:
                     obConversion.CloseOutFile()
                     mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
                 except Exception:
-                    self.args.log.write('!Unable to encode structure for substructure match!')
-                    self.args.log.write('!Including all atoms in the molecule!')
-                    whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
-                    return whole_mol
-                else:
-                    self.args.log.write('!Unable to encode structure for substructure match!')
-                    self.args.log.write('!Including all atoms in the molecule!')
-                    self.args.log.write('!Consider installing OpenBabel for another encoder optiion!')
-                    whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
-                    return whole_mol
+                    mol = None
+
+        if mol is None:
+            self.args.log.write('!Unable to encode structure for substructure match!')
+            self.args.log.write('!Including all atoms in the molecule!')
+            if not self.openbabel:
+                self.args.log.write('!Consider installing OpenBabel for another encoder option!')
+            return tuple(x + 1 for x in range(n_atoms))
 
         substructure = Chem.MolFromSmarts(self.substructure)
-        Draw.MolToImage(substructure, size=(100, 100))
         indexsall = mol.GetSubstructMatches(substructure)
         if indexsall == ():
             self.args.log.write('!No substructure match found!')
             self.args.log.write('!Including all atoms in the molecule!')
-            indexsall = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
-        else:
-            indexsall = tuple(x + 1 for x in indexsall[0])
-        
-        return indexsall
+            return tuple(x + 1 for x in range(n_atoms))
+        return tuple(x + 1 for x in indexsall[0])
     
     def file_base(self, string):
         # Returns the substring up to the last trailing digit (used to strip

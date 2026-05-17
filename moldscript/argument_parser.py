@@ -26,7 +26,6 @@ var_dict = {
     "fukui_neutral": False,
     "fukui_oxidized": False,
     "fukui_reduced": False,
-    "link": False,
     "boltz": False,
     "min_max": False,
     "lowe" : False,
@@ -139,7 +138,6 @@ def build_parser():
     paths.add_argument("--fukui_neutral", help="neutral charge state output directory")
     paths.add_argument("--fukui_reduced", help="reduced charge state output directory")
     paths.add_argument("--fukui_oxidized", help="oxidized charge state output directory")
-    paths.add_argument("--link", help="combined opt/nmr/nbo Gaussian link files (experimental)")
 
     suffixes = parser.add_argument_group(
         "filename suffixes (load-bearing for conformer matching across modules)"

@@ -32,12 +32,12 @@ setup(
 
     ],
     install_requires=[
-        "pandas>=2.0.2",
+        "pandas>=2.1.0",
         "cclib @ git+https://github.com/cclib/cclib.git",
         "dbstep",
         'rdkit',
         'networkx',
     ],
-    python_requires=">=3.0",
+    python_requires=">=3.9",
     include_package_data=True,
 )

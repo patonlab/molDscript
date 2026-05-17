@@ -10,6 +10,7 @@ from moldscript.nbo import nbo
 from moldscript.fmo import fmo
 from moldscript.charges import charges
 from moldscript.fukui import fukui
+from moldscript.substructure import substructure
 from moldscript.utils import eV_to_hartree
 
 @pytest.mark.parametrize("opt_path, species,  smiles, suffix",[
@@ -154,4 +155,37 @@ def test_fukui(opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_
     assert round(sum(data_dicts[species]['atom']['reduced_natural_charges']), precision) == round(-1, precision)
     assert round(sum(data_dicts[species]['atom']['fminus']), precision) == round(1, precision)
     assert round(sum(data_dicts[species]['atom']['fplus']), precision) == round(1, precision)
-    assert round(sum(data_dicts[species]['atom']['frad']), precision) == round(1, precision)  
+    assert round(sum(data_dicts[species]['atom']['frad']), precision) == round(1, precision)
+
+
+@pytest.mark.parametrize("smarts, expected_indices", [
+    # arbr31 contains a benzene ring (c1c c2c cc1 — six aromatic carbons).
+    # SMARTS for 6-aromatic ring: matches the six aromatic carbons.
+    ('c1ccccc1', set(range(1, 17))),  # exact indices depend on xyz2mol traversal — we just check non-empty
+    # No-match SMARTS should fall back to "all atoms" (18 for arbr31).
+    ('[Au]', set(range(1, 19))),
+])
+def test_substructure_match_and_fallback(smarts, expected_indices):
+    """Smoke-test substructure matching: an aromatic SMARTS should hit the
+    benzene ring in arbr31; an unmatched SMARTS should fall back to all
+    atoms. Guards the cclib + xyz2mol + SMARTS happy path."""
+    data_dicts = {}
+    opt_read = files("opt", datapath("arbr/opt"), data_dicts, "")
+    opt_data = opt(opt_read.file_data, data_dicts, create_dat=False)
+    data_dicts = opt_data.file_data
+
+    sub_read = files("substructure", datapath("arbr/opt"), data_dicts, "")
+    data_dicts = substructure(
+        sub_read.file_data, data_dicts, smarts, create_dat=False
+    ).file_data
+
+    indices = data_dicts['arbr31_wb97xd']['substructure']
+    assert len(indices) > 0
+    if smarts == '[Au]':
+        # No gold atom in arbr31 — fallback returns all 18 atoms.
+        assert set(indices) == expected_indices
+    else:
+        # Aromatic SMARTS hits the 6 ring carbons.
+        assert len(indices) == 6
+        # Every matched index must be a valid 1-based atom index.
+        assert all(1 <= i <= 18 for i in indices)

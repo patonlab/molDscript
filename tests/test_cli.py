@@ -6,7 +6,6 @@ fidelity (test_moldscript.py covers that) — it's catching wiring regressions
 in argument parsing, module orchestration, and CSV emission.
 """
 import os
-import shutil
 import subprocess
 import sys
 
@@ -16,6 +15,8 @@ import pandas as pd
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 ARBR_OPT = os.path.join("moldscript", "examples", "arbr", "opt")
 ARBR_NMR = os.path.join("moldscript", "examples", "arbr", "nmr")
+ARBR_OPT_ABS = os.path.join(REPO_ROOT, ARBR_OPT)
+ARBR_NMR_ABS = os.path.join(REPO_ROOT, ARBR_NMR)
 
 
 def run_cli(args, cwd=REPO_ROOT):
@@ -66,19 +67,11 @@ def test_cli_opt_plus_nmr_produces_csvs(tmp_path):
 
 
 def test_cli_writes_module_audit_logs(tmp_path):
-    # Run the CLI from cwd=tmp_path so .dat files land in tmp_path rather
-    # than the repo root. Known wart: --output controls the CSV prefix but
-    # does NOT reach the per-module .dat files (modules re-read defaults
-    # from var_dict and never see CLI args), so the .dat tracks cwd.
-    # Fixtures are copied in because get_files() in utils.py only resolves
-    # cwd-relative paths, not absolute ones from a foreign cwd.
-    shutil.copytree(os.path.join(REPO_ROOT, ARBR_OPT), tmp_path / "opt")
-    shutil.copytree(os.path.join(REPO_ROOT, ARBR_NMR), tmp_path / "nmr")
     env = {**os.environ, "PYTHONPATH": REPO_ROOT}
     result = subprocess.run(
         [sys.executable, "-m", "moldscript",
-         "--opt", "opt",
-         "--nmr", "nmr",
+         "--opt", ARBR_OPT_ABS,
+         "--nmr", ARBR_NMR_ABS,
          "--suffix_nmr", "nmr"],
         cwd=str(tmp_path),
         env=env,
@@ -97,6 +90,36 @@ def test_cli_writes_module_audit_logs(tmp_path):
         contents = log.read_text()
         assert "MOLDSCRIPT" in contents
         assert "Command line used in MOLDSCRIPT" in contents
+
+
+def test_cli_output_prefix_reaches_dat_files(tmp_path):
+    """--output should control both the CSV prefix and the per-module .dat
+    audit logs. Run with cwd ≠ --output to prove the .dat tracks --output
+    and not cwd."""
+    cwd_dir = tmp_path / "cwd"
+    out_dir = tmp_path / "out"
+    cwd_dir.mkdir()
+    out_dir.mkdir()
+    out_prefix = str(out_dir) + os.sep
+    env = {**os.environ, "PYTHONPATH": REPO_ROOT}
+    result = subprocess.run(
+        [sys.executable, "-m", "moldscript",
+         "--opt", ARBR_OPT_ABS,
+         "--output", out_prefix],
+        cwd=str(cwd_dir),
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, f"CLI failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+
+    # CSVs and .dat must both land at the --output prefix, not in cwd.
+    assert (out_dir / "molecule_level.csv").exists()
+    assert (out_dir / "MOLDSCRIPT_OPT.dat").exists()
+    assert not (cwd_dir / "MOLDSCRIPT_OPT.dat").exists(), (
+        "MOLDSCRIPT_OPT.dat leaked into cwd instead of the --output prefix"
+    )
 
 
 def test_cli_rejects_unknown_flag():
