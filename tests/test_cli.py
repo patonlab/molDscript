@@ -13,10 +13,8 @@ import pandas as pd
 
 
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-ARBR_OPT = os.path.join("moldscript", "examples", "arbr", "opt")
-ARBR_NMR = os.path.join("moldscript", "examples", "arbr", "nmr")
-ARBR_OPT_ABS = os.path.join(REPO_ROOT, ARBR_OPT)
-ARBR_NMR_ABS = os.path.join(REPO_ROOT, ARBR_NMR)
+ARBR_OPT_ABS = os.path.join(REPO_ROOT, "tests", "data", "arbr", "opt")
+ARBR_NMR_ABS = os.path.join(REPO_ROOT, "tests", "data", "arbr", "nmr")
 
 
 def run_cli(args, cwd=REPO_ROOT):
@@ -41,8 +39,8 @@ def test_cli_help_exits_zero():
 def test_cli_opt_plus_nmr_produces_csvs(tmp_path):
     prefix = str(tmp_path) + os.sep
     result = run_cli([
-        "--opt", ARBR_OPT,
-        "--nmr", ARBR_NMR,
+        "--opt", ARBR_OPT_ABS,
+        "--nmr", ARBR_NMR_ABS,
         "--suffix_nmr", "nmr",
         "--output", prefix,
     ])
@@ -131,8 +129,8 @@ def test_cli_rejects_unknown_flag():
 def test_cli_varfile_loads_defaults(tmp_path):
     varfile = tmp_path / "inputs.txt"
     varfile.write_text(
-        "opt : " + ARBR_OPT + "\n"
-        "nmr : " + ARBR_NMR + "\n"
+        "opt : " + ARBR_OPT_ABS + "\n"
+        "nmr : " + ARBR_NMR_ABS + "\n"
         "suffix_nmr : nmr\n"
         "output : " + str(tmp_path) + os.sep + "\n"
     )
@@ -147,7 +145,7 @@ def test_cli_flag_overrides_varfile(tmp_path):
     real_prefix = str(tmp_path) + os.sep
     varfile = tmp_path / "inputs.txt"
     varfile.write_text(
-        "opt : " + ARBR_OPT + "\n"
+        "opt : " + ARBR_OPT_ABS + "\n"
         "output : " + bogus_prefix + "\n"
     )
     result = run_cli([

@@ -4,19 +4,17 @@
 import os
 import pytest
 
-try:
-    import moldscript
-    BASEPATH = os.path.join(moldscript.__path__[0])
-except ImportError:
-    here = os.path.dirname(os.path.abspath(__file__))
-    BASEPATH = os.path.normpath(os.path.join(here, '..', 'moldscript'))
-
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def datapath(path):
-    """Path under moldscript/examples/ — Gaussian fixtures shipped with the package."""
-    return os.path.join(BASEPATH, 'examples', path)
+    """Path under tests/data/ — Gaussian fixtures used by the test suite.
+
+    These used to live at moldscript/examples/ but were moved out of the
+    installed package to avoid shipping ~2 MB of .log files to every
+    user who pip-installs moldscript.
+    """
+    return os.path.join(TESTS_DIR, 'data', path)
 
 
 def fixturepath(path):
