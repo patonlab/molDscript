@@ -2,7 +2,8 @@
 #      This file contains the argument parser        #
 #####################################################.
 
-import os, time, getopt, sys, shlex
+import argparse
+import os, time, sys, shlex
 from moldscript.utils import format_lists, Logger, build_log_path
 
 moldscript_version = "0.1"
@@ -110,111 +111,102 @@ def set_options(kwargs):
     return options
 
 
+def build_parser():
+    """Build the argparse parser. Defaults come from `var_dict` so the CLI,
+    the `--varfile` loader, and programmatic instantiation share one source
+    of truth.
+
+    Defaults are intentionally suppressed at the argument level
+    (`default=argparse.SUPPRESS`) so we can distinguish "user passed this
+    flag" from "user did not" — needed for `--varfile` override semantics.
+    """
+    parser = argparse.ArgumentParser(
+        prog="moldscript",
+        description=(
+            f"MOLDSCRIPT v{moldscript_version} — converts DFT/QM outputs "
+            "into molecule/bond/atom-level descriptor CSVs."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    paths = parser.add_argument_group("calculation paths")
+    paths.add_argument("--opt", help="optimization output directory")
+    paths.add_argument("--spc", help="single-point output directory (overrides opt SCF energies)")
+    paths.add_argument("--nmr", help="NMR output directory")
+    paths.add_argument("--nbo", help="NBO output directory")
+    paths.add_argument("--charges", help="atomic-charge output directory")
+    paths.add_argument("--fmo", help="FMO output directory (HOMO/LUMO + dipole/quadrupole)")
+    paths.add_argument("--fukui_neutral", help="neutral charge state output directory")
+    paths.add_argument("--fukui_reduced", help="reduced charge state output directory")
+    paths.add_argument("--fukui_oxidized", help="oxidized charge state output directory")
+    paths.add_argument("--link", help="combined opt/nmr/nbo Gaussian link files (experimental)")
+
+    suffixes = parser.add_argument_group(
+        "filename suffixes (load-bearing for conformer matching across modules)"
+    )
+    for calc in ("opt", "spc", "nbo", "nmr", "charges", "fmo",
+                 "fukui_neutral", "fukui_reduced", "fukui_oxidized"):
+        suffixes.add_argument(f"--suffix_{calc}",
+            help=f"trailing _<token> in {calc} filenames used to recover the base key")
+
+    sub = parser.add_argument_group("substructure & sterics")
+    sub.add_argument("--substructure", help="SMARTS pattern to filter atom/bond descriptors")
+    sub.add_argument("--volume", action="store_true",
+        help="compute DBSTEP buried volume on substructure match")
+    sub.add_argument("--vall", action="store_true",
+        help="compute DBSTEP buried volume for every atom")
+    sub.add_argument("--radius",
+        help="sphere radius for buried volume: float or list literal '[r1,r2,...]'")
+
+    ensemble = parser.add_argument_group("conformer ensemble aggregation")
+    ensemble.add_argument("--boltz", action="store_true",
+        help="emit Boltzmann-weighted ensemble CSVs")
+    ensemble.add_argument("--min_max", action="store_true",
+        help="emit min/max/range CSVs (uses --cut)")
+    ensemble.add_argument("--lowe", action="store_true",
+        help="emit lowest-energy conformer CSVs")
+    ensemble.add_argument("--temp", type=float, help="temperature (K) for Boltzmann weights")
+    ensemble.add_argument("--cut", type=float,
+        help="population cutoff for min_max filtering (default 0.95)")
+
+    out = parser.add_argument_group("output")
+    out.add_argument("--output", help="prefix prepended to every generated filename")
+    out.add_argument("--no_bond_filter", action="store_true",
+        help="disable the default bond_order>=0.1 / bond_length<=3 filter on bond CSV")
+    out.add_argument("--no_mol", action="store_true", help="skip molecule_level.csv")
+    out.add_argument("--no_atom", action="store_true", help="skip atom_level.csv")
+    out.add_argument("--no_bond", action="store_true", help="skip bond_level.csv")
+    out.add_argument("--mol_vector", action="store_true", help="emit molecule-level vector encoding")
+
+    parser.add_argument("--varfile",
+        help="path to a `key : value` defaults file; CLI flags override file values")
+
+    # Suppress defaults so the namespace only contains explicitly-passed args.
+    # Defaults are applied later via var_dict + varfile + CLI precedence.
+    for action in parser._actions:
+        if action.dest != "help":
+            action.default = argparse.SUPPRESS
+
+    return parser
+
+
 def command_line_args():
-    """
-    Load default and user-defined arguments specified through command lines. Arrguments are loaded as a dictionary
-    """
+    """Parse CLI args with argparse, layer them on top of `var_dict` defaults
+    plus optional `--varfile` overrides, and return a populated `options_add`
+    namespace via `load_variables`.
 
-    # First, create dictionary with user-defined arguments
+    Precedence (low → high): var_dict defaults → varfile entries → CLI flags.
+    """
+    parser = build_parser()
+    cli_args = vars(parser.parse_args())  # only contains keys actually passed
+
     kwargs = {}
-    available_args = ["help"]
-    bool_args = [
-        "boltz",
-        "min_max",
-        "lowe",
-        "vall",
-        "volume",
-        'no_bond_filter',
-        'no_mol',
-        'no_atom',
-        'no_bond',
-        'mol_vector'
-    ]
-    list_args = ["skip_list"]
-    int_args = ["syllables"]
-    float_args = [
-        "temp",
-        "cut"
-    ]
-    str_args = [
-        "output",
-        "struct",
-        "varfile",
-        "opt",
-        "spc",
-        "nmr",
-        "nbo",
-        "charges",
-        "fukui_neutral",
-        "fukui_oxidized",
-        "fukui_reduced",
-        "link",
-        "substructure",
-        "varfile",
-        "radius",
-        "fmo",
-        "opt_suffix",
-        "spc_suffix",
-        "nbo_suffix",
-        "nmr_suffix",
-        "fukui_neutral_suffix",
-        "fukui_reduced_suffix",
-        "fukui_oxidized_suffix",
-        "charges_suffix",
-        "fmo_suffix"
-    ]
+    varfile_path = cli_args.get("varfile")
+    if varfile_path:
+        kwargs.update(load_arguments_from_file(varfile_path))
+    kwargs.update(cli_args)
 
-    for arg in var_dict:
-        if arg in bool_args:
-            available_args.append(f"{arg}")
-        else:
-            available_args.append(f"{arg} =")
-
-    try:
-        opts, _ = getopt.getopt(sys.argv[1:], "h", available_args)
-    except getopt.GetoptError as err:
-        print(err)
-        sys.exit()
-
-    for arg, value in opts:
-        if arg.find("--") > -1:
-            arg_name = arg.split("--")[1].strip()
-        elif arg.find("-") > -1:
-            arg_name = arg.split("-")[1].strip()
-
-        if arg_name in ("h", "help"):
-            print(
-                f"o  MOLDSCRIPT v {moldscript_version} is installed correctly! For more information about the available options, see the documentation in XXX"
-            )
-            sys.exit()
-        else:
-            # this converts the string parameters to lists
-            if arg_name == "varfile" and value:
-                # Load arguments from the .txt file
-                file_kwargs = load_arguments_from_file(value)
-                kwargs.update(file_kwargs)
-            if arg_name in bool_args:
-                value = True
-            elif arg_name.lower() in list_args:
-                value = format_lists(value)
-            elif arg_name.lower() in int_args:
-                value = int(value)
-            elif arg_name.lower() in float_args:
-                value = float(value)
-            elif arg_name.lower() in str_args:
-                value = str(value)
-            elif value == "None":
-                value = None
-            elif value == "False":
-                value = False
-            elif value == "True":
-                value = True
-
-            kwargs[arg_name] = value
-    # Second, load all the default variables as an "add_option" object
-    args = load_variables(kwargs, "command")
-
-    return args
+    return load_variables(kwargs, "command")
 
 
 def load_variables(kwargs, moldscript_module, create_dat=True):
