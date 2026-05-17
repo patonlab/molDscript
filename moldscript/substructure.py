@@ -21,7 +21,7 @@ class substructure:
         try:
             from openbabel import openbabel as ob
             self.openbabel = True
-        except:
+        except ImportError:
             self.openbabel = False
         start_time_overall = time.time()
         # load default and user-specified variables
@@ -64,7 +64,9 @@ class substructure:
             parser = cc.io.ccopen(file)
             cc_data = parser.parse()
             mol = xyz2mol.xyz2mol(cc_data.atomnos.tolist(), cc_data.atomcoords[-1].tolist(), charge=cc_data.charge)[0]
-        except:
+        except Exception:
+            # cclib / xyz2mol can raise a wide range of parse and bond-perception
+            # failures; fall back to OpenBabel if it's importable.
             if self.openbabel:
                 try:
                     obConversion = ob.OBConversion()
@@ -74,7 +76,7 @@ class substructure:
                     obConversion.WriteFile(ob_mol, file.split(".")[0] + ".mol")
                     obConversion.CloseOutFile()
                     mol = Chem.MolFromMolFile(file.split(".")[0] + ".mol", removeHs=False)
-                except:
+                except Exception:
                     self.args.log.write('!Unable to encode structure for substructure match!')
                     self.args.log.write('!Including all atoms in the molecule!')
                     whole_mol = tuple(x + 1 for x in range(len(cc_data.atomnos.tolist())))
@@ -99,20 +101,22 @@ class substructure:
         return indexsall
     
     def file_base(self, string):
+        # Returns the substring up to the last trailing digit (used to strip
+        # trailing extension/suffix characters). If the string already ends
+        # in a digit, return it unchanged.
         try:
             int(string[-1])
-        except:
+        except (ValueError, IndexError):
             pass
         else:
             return string
         for i in string[::-1]:
             try:
                 int(i)
-            except:
+            except ValueError:
                 pass
             else:
                 lastidx = string.rfind(i) + 1
-
                 break
-        startidx = string.rfind('/') +1
+        startidx = string.rfind('/') + 1
         return string[startidx:lastidx]

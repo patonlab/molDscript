@@ -171,7 +171,9 @@ def initiate_data_dict(data, logger=None):
         try:
             mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
             smi = Chem.MolToSmiles(mol)
-        except:
+        except Exception:
+            # xyz2mol / RDKit raise a wide range of bond-perception failures;
+            # log and fall back to an empty SMILES.
             if logger:
                 logger.write("Encountered an issue with the mol embedding. Skipping smiles string.")
             else:
@@ -207,9 +209,11 @@ def format_lists(value):
                 value.remove('')
     return value
 def bond_data_matrix(data):
+        # Accepts either a cclib data object (has .atomcoords) or a raw
+        # coordinate array — callers pass both shapes.
         try:
             coords = data.atomcoords[-1]
-        except:
+        except AttributeError:
             coords = data
         bond_data_matrix_list = []
         for atom1 in range(len(coords)):

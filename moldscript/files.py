@@ -81,19 +81,9 @@ class files:
     #     return file_data
 
     def get_filename(self, fullname, suffix):
-
-        try:
-            fullname = fullname.split("/")[-1]
-        except:
-            pass
-        try:
-            fullname = fullname.split(".log")[0]
-        except:
-            pass
-        try:
-            fullname = fullname.split(".out")[0]
-        except:
-            pass
+        fullname = fullname.split("/")[-1]
+        fullname = fullname.split(".log")[0]
+        fullname = fullname.split(".out")[0]
         if suffix != '':
             fullname = fullname.split("_" + suffix)[0]
         elif self.warn_suffix == False:

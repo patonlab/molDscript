@@ -40,14 +40,12 @@ class get_df:
         filenames.remove("CPU_time")
         data = self.dd
 
+        moldf = None
         for fname in filenames:
             mol_level_data = data[fname]["mol"]
             mol_level_data["filename"] = fname
             tmpdf = pd.DataFrame([mol_level_data])
-            try:
-                moldf = pd.concat([moldf, tmpdf])
-            except:
-                moldf = tmpdf
+            moldf = tmpdf if moldf is None else pd.concat([moldf, tmpdf])
         col = moldf.pop("filename")
         for prop in list(moldf.keys()):
             print(f"\t- {prop}")
@@ -155,11 +153,7 @@ class get_df:
             a_labs = vfunc(atypes)
             tempdic["atom_type"] = a_labs
             tempdf = pd.DataFrame(tempdic)
-            if not atomdf.empty:
-                try:atomdf = pd.concat([atomdf, tempdf])
-                except:pass
-            else:
-                atomdf = tempdf
+            atomdf = pd.concat([atomdf, tempdf]) if not atomdf.empty else tempdf
         col = atomdf.pop("filename")
         atomdf.insert(0, "filename", col)
 
@@ -172,9 +166,9 @@ class get_df:
                 filtered_df = temp_df.loc[temp_df['atom_index'].isin(idx)]
                 final_df = pd.concat([final_df, filtered_df])
             atomdf = final_df  
-        try:
-            filename = filenames[0]
-            list(self.dd[filename]['sterics'].keys())
+        # Only merge sterics if the sterics module ran; otherwise the
+        # 'sterics' key is absent from data_dict entries and we skip.
+        if filenames and 'sterics' in self.dd[filenames[0]]:
             print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
             steric_df = pd.DataFrame()
             for filename in filenames:
@@ -182,18 +176,13 @@ class get_df:
                 props.remove('atom_index')
                 idxes = self.dd[filename]['sterics']['atom_index']
                 fnames = [filename for i in idxes]
-                tempdic = {}
-                tempdic['filename'] = fnames
-                tempdic['atom_index'] = idxes
+                tempdic = {'filename': fnames, 'atom_index': idxes}
                 for prop in props:
-                    values =  self.dd[filename]['sterics'][prop]
-                    tempdic[str(prop)] = values
-                temp_df = pd.DataFrame(tempdic)
-                steric_df = pd.concat([steric_df, temp_df])
+                    tempdic[str(prop)] = self.dd[filename]['sterics'][prop]
+                steric_df = pd.concat([steric_df, pd.DataFrame(tempdic)])
             for prop in props:
-                    print(f"\t- {prop}")
+                print(f"\t- {prop}")
             atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
-        except:pass
 
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in atomdf.columns if col not in ['filename', 'atom_index', 'atom_type']]
         atomdf = atomdf[columns_order]

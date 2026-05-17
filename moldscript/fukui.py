@@ -60,7 +60,8 @@ class fukui:
                         self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
                         self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
                         self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
-                    except: pass
+                    except (AttributeError, KeyError):
+                        pass
             if "oxidized" in self.data[file_name].keys():
                 oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
             if "reduced" in self.data[file_name].keys():
@@ -102,7 +103,7 @@ class fukui:
                     cpu_times = dataset.metadata.get('cpu_time') if hasattr(dataset, 'metadata') else None
                     self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source, cpu_times)
 
-            except:
+            except (AttributeError, KeyError):
                 self.args.log.write(f'!!Could not obtain CPU time for {file_name}, skipping!!')
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
@@ -139,7 +140,9 @@ class fukui:
             try:
                 mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
                 smi = Chem.MolToSmiles(mol)
-            except:
+            except Exception:
+                # xyz2mol / RDKit raise a wide range of bond-perception failures;
+                # log and fall back to an empty SMILES.
                 self.args.log.write("Encountered an issue with the mol embedding. Skipping smiles string.")
             data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
             data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos

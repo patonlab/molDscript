@@ -41,10 +41,13 @@ class sterics:
             else:
                 self.args.log.write_only(f"\t - Limiting volume calculation to the following indices: {self.dd[fname]['substructure']}")
                 try:
-                    atoms = self.dd[fname]['substructure'] 
-                except:
+                    atoms = self.dd[fname]['substructure']
+                except KeyError:
+                    # Note: the log.write_only call above already accesses
+                    # ['substructure'] unconditionally and will KeyError first
+                    # if the key is missing, so this branch is effectively dead.
                     self.args.log.write_only('\tPlease include a --substructure or specify --vall to get all buried volumes.')
-                    break           
+                    break
             self.dd[fname]['sterics'] = {}              
             for radius in self.rad:
                 radius = float(radius)
