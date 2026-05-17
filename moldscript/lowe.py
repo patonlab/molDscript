@@ -57,9 +57,8 @@ class lowe:
         print('\u25A1  INCLUDING ONLY LOWEST ENERGY CONFORMER ATOM DATA INTO {}'.format(ensemble_atom_csv))
         # Map the weights to the atomic DataFrame based on 'filename
 
-        weighted_df = atom_df[atom_df['filename'].isin(self.low_confs)]
-
-        weighted_df['filename'] = [k.rsplit('_conf',1)[0] for k in weighted_df['filename']]
+        weighted_df = atom_df[atom_df['filename'].isin(self.low_confs)].copy()
+        weighted_df['filename'] = [k.rsplit('_conf', 1)[0] for k in weighted_df['filename']]
         columns_order = ['filename', 'atom_index', 'atom_type'] + [col for col in weighted_df.columns if col not in ['filename', 'atom_index', 'atom_type']]
         weighted_df = weighted_df[columns_order]
         weighted_df = weighted_df.round(4)  
@@ -71,8 +70,8 @@ class lowe:
         ensemble_bond_csv =str(self.prefix) +  'lowest_energy_bond_level.csv'
         print('\u25A1  INCLUDING ONLY LOWEST ENERGY CONFORMER BOND DATA INTO {}\n'.format(ensemble_bond_csv))
         # Map the weights to the atomic DataFrame based on 'filename'
-        weighted_df = bond_df[bond_df['filename'].isin(self.low_confs)]
-        weighted_df['filename'] = [k.rsplit('_conf',1)[0] for k in weighted_df['filename']]
+        weighted_df = bond_df[bond_df['filename'].isin(self.low_confs)].copy()
+        weighted_df['filename'] = [k.rsplit('_conf', 1)[0] for k in weighted_df['filename']]
         columns_order = ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2'] + [col for col in weighted_df.columns if col not in ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2']]
         weighted_df = weighted_df[columns_order]
         weighted_df = weighted_df.round(4)  
