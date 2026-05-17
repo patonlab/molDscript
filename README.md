@@ -9,7 +9,7 @@ MolDscript is a Python workflow that converts Density Functional Theory (DFT) an
 ## Highlights
 - Parse optimization, single-point, NBO, NMR, charge, FMO, and Fukui calculations without manual file editing.
 - Match conformer ensembles, apply SMARTS-based substructure filters, and compute DBSTEP buried volumes on demand.
-- Generate ensembles (Boltzmann weighted, min/mnax within population windows, lowest-energy snapshots) in a single run.
+- Generate ensembles (Boltzmann weighted, min/max within population windows, lowest-energy snapshots) in a single run.
 - Emit descriptor CSVs alongside module logs (`MOLDSCRIPT_*.dat`) for traceability.
 
 ## Installation
@@ -26,12 +26,29 @@ conda install -c conda-forge openbabel
 ## Quick Start
 ```shell
 python -m moldscript \
-  --opt calculations/opt --fmo calculations/fmo 
-  --suffix_fmo fmo_suffix --suffix_nbo nbo_suffix
-  --nbo calculations/nbo  
-
+  --opt calculations/opt --fmo calculations/fmo \
+  --suffix_fmo fmo_suffix --suffix_nbo nbo_suffix \
+  --nbo calculations/nbo
 ```
 Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; command-line flags override values loaded from the file.
+
+## File Naming Conventions
+Two filename conventions are load-bearing — get them wrong and MOLDSCRIPT will silently produce wrong output, not crash.
+
+**Per-calculation suffix.** For every calculation type beyond `opt`, the filename must end in `_<token>` *before* the extension, and you must pass that token via `--suffix_<calc>`. The token is how MOLDSCRIPT matches an NMR/NBO/charge/etc. file back to its parent opt entry.
+
+| Calculation | Example filename | Required flag |
+| --- | --- | --- |
+| `opt` | `mol1_conf1.log` | (no suffix needed) |
+| `--nmr` | `mol1_conf1_nmr.log` | `--suffix_nmr nmr` |
+| `--nbo` | `mol1_conf1_popn.log` | `--suffix_nbo popn` |
+| `--charges` | `mol1_conf1_apt.log` | `--suffix_charges apt` |
+| `--fmo` | `mol1_conf1_fmo.log` | `--suffix_fmo fmo` |
+| `--fukui_*` | `mol1_conf1_ox.log` | `--suffix_fukui_oxidized ox` |
+
+If you omit `--suffix_<calc>` MOLDSCRIPT logs a warning and falls back to the full basename — which will not match the opt entry, so the descriptors get silently dropped.
+
+**Conformer grouping.** For ensemble aggregation (`--boltz`, `--min_max`, `--lowe`), conformer files must end in `_conf<N>` before the suffix token, e.g. `mol1_conf1_nmr.log`, `mol1_conf2_nmr.log`. The aggregator splits filenames on `_conf` to group conformers under the parent name `mol1`. Use any other delimiter and each conformer becomes its own molecule in the output CSVs.
 
 ## Core Inputs & Flags
 - `--opt PATH` (required) - baseline optimization files and conformer metadata.
