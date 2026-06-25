@@ -11,6 +11,7 @@ from moldscript.min_max import min_max
 from moldscript.sterics import sterics
 from moldscript.charges import charges
 from moldscript.lowe import lowe
+from moldscript.MLIP import mlip
 from moldscript.argument_parser import (
     command_line_args,
     moldscript_version,
@@ -130,6 +131,16 @@ def main():
                 first_read = nbo_read.file_data
             nbo_data = nbo(nbo_read.file_data, data_dicts)
             data_dicts = nbo_data.file_data
+
+        # MLIP / MACE-Polar extxyz
+        if args.mlip_neutral:
+            mlip_data = mlip(
+                neutral=args.mlip_neutral,
+                reduced=args.mlip_reduced,
+                oxidized=args.mlip_oxidized,
+                data_dict=data_dicts,
+            )
+            data_dicts = mlip_data.file_data
 
         # FUKUI
         if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
