@@ -6,6 +6,7 @@
 import sys, os
 import time
 import datetime
+import numpy as np
 import cclib as cc
 from moldscript.argument_parser import load_variables
 from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
@@ -65,6 +66,8 @@ class charges:
                     if 'mulliken' not in i and 'sum' not in i:
                         self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
 
+            for spin_type, spins in self.get_atom_spins(chg_data, self.data[file_name]).items():
+                self.data_dict[filename]['atom'][str(spin_type)+'_spin'] = spins
 
             cpu_times = chg_data.metadata.get("cpu_time") if chg_data and hasattr(chg_data, "metadata") else None
             self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
@@ -84,6 +87,49 @@ class charges:
                 f"\nx  Could not parse {file_name} to obtain charge energy information")
             cc_data = None
         return cc_data
+
+    def get_atom_spins(self, cc_data, file):
+        atom_spins = getattr(cc_data, "atomspins", None) if cc_data is not None else None
+        if atom_spins:
+            return atom_spins
+
+        mulliken_spins = self.parse_gaussian_mulliken_spins(file)
+        if mulliken_spins is None:
+            return {}
+        return {"mulliken": mulliken_spins}
+
+    @staticmethod
+    def parse_gaussian_mulliken_spins(file):
+        spin_tables = []
+        with open(file, encoding="utf-8", errors="replace") as handle:
+            lines = handle.readlines()
+
+        i = 0
+        while i < len(lines):
+            if lines[i].strip() != "Mulliken charges and spin densities:":
+                i += 1
+                continue
+
+            table = []
+            i += 1
+            while i < len(lines):
+                parts = lines[i].split()
+                if len(parts) == 4 and parts[0].isdigit():
+                    try:
+                        table.append(float(parts[3]))
+                    except ValueError:
+                        break
+                elif table:
+                    break
+                i += 1
+
+            if table:
+                spin_tables.append(table)
+            continue
+
+        if not spin_tables:
+            return None
+        return np.array(spin_tables[-1])
 
     def get_filename(self, fullname):
         try:

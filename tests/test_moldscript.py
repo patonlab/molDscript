@@ -131,6 +131,25 @@ def test_charges(opt_path,  species, apt_charges, charges_suffix):
         assert round(data_dicts[species]['atom']['apt_charge'][i], precision) == round(charge, precision)
 
 
+def test_charges_parses_mulliken_spins():
+    path = datapath('spin_examples')
+    data_dicts = {}
+    chg_read = files("charges", path, data_dicts, 'cat_rad_opt')
+    chg_data = charges(chg_read.file_data, data_dicts, create_dat=False)
+    data_dicts = chg_data.file_data
+
+    expected_spins = {
+        'A1a': (19, [-0.329314, 0.570480, 0.135578, -0.022025, -0.008199]),
+        'A1b': (22, [0.025109, -0.341530, 0.550147, 0.140844, -0.022784]),
+        'A1c': (23, [0.000836, -0.001380, -0.312818, 0.639121, 0.116898]),
+    }
+    for species, (expected_len, expected_first_spins) in expected_spins.items():
+        spins = data_dicts[species]['atom']['mulliken_spin']
+        assert len(spins) == expected_len
+        assert sum(spins) == pytest.approx(1.0, abs=1e-5)
+        assert list(spins[:5]) == pytest.approx(expected_first_spins, abs=1e-6)
+
+
 @pytest.mark.parametrize("opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path,  fukui_neutral_suffix, fukui_oxidized_suffix, fukui_reduced_suffix, species, oxidized_charges, reduced_charges", [
     ('arbr/opt', 'arbr/popn', 'arbr/fukui_ox', 'arbr/fukui_red', 'popn', 'ox', 'red', 'arbr31_wb97xd', [-0.07481, 0.55092, -0.42669, -0.43292, 0.09900, -0.24454, 
     -0.00150, 0.17203, -0.22431, -0.11532, -0.16606, 0.28381, 0.28382, 0.26198, 0.26197, 0.25935, 0.26189, 0.25138], [-0.67645, 0.44630,-0.48153, -0.41843, 0.03051, -0.31967, -0.17854, -0.05180, -0.23203, -0.26912, -0.22398, 0.19031, 0.19031, 0.19610, 0.19610, 0.19775, 0.19804, 0.20612]),

@@ -141,10 +141,7 @@ class mlip:
 
             if np.isfinite(e_neutral_ev):
                 entry["mol"]["scfenergy"] = e_neutral_ev * eV_to_hartree
-            elif np.isfinite(e_reduced_ev):
-                entry["mol"]["scfenergy"] = e_reduced_ev * eV_to_hartree
-            elif np.isfinite(e_oxidized_ev):
-                entry["mol"]["scfenergy"] = e_oxidized_ev * eV_to_hartree
+
             else:
                 entry["mol"]["scfenergy"] = np.nan
 
