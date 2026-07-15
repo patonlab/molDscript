@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+from moldscript.utils import emit
 
 
 class lowe:
@@ -20,8 +21,7 @@ class lowe:
         ensemble_mol_csv = str(self.prefix) + 'lowest_energy_molecule_level.csv'
         mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
         mol_df = pd.merge(mol_df, self.energies, on='filename')
-        print('\n')
-        print('\u25A1  INCLUDING ONLY LOWEST ENERGY CONFORMER MOL DATA INTO {}'.format(ensemble_mol_csv))
+        emit('Including only lowest-energy conformer molecule data into {}'.format(ensemble_mol_csv), style="cyan")
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
         weighted_df = pd.DataFrame()
 
@@ -54,7 +54,7 @@ class lowe:
     def atom_lowe(self):
         atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')  
         ensemble_atom_csv =str(self.prefix) +  'lowest_energy_atom_level.csv'
-        print('\u25A1  INCLUDING ONLY LOWEST ENERGY CONFORMER ATOM DATA INTO {}'.format(ensemble_atom_csv))
+        emit('Including only lowest-energy conformer atom data into {}'.format(ensemble_atom_csv), style="cyan")
         # Map the weights to the atomic DataFrame based on 'filename
 
         weighted_df = atom_df[atom_df['filename'].isin(self.low_confs)]
@@ -69,12 +69,11 @@ class lowe:
     def bond_lowe(self):
         bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
         ensemble_bond_csv =str(self.prefix) +  'lowest_energy_bond_level.csv'
-        print('\u25A1  INCLUDING ONLY LOWEST ENERGY CONFORMER BOND DATA INTO {}\n'.format(ensemble_bond_csv))
+        emit('Including only lowest-energy conformer bond data into {}'.format(ensemble_bond_csv), style="cyan")
         # Map the weights to the atomic DataFrame based on 'filename'
         weighted_df = bond_df[bond_df['filename'].isin(self.low_confs)]
         weighted_df['filename'] = [k.rsplit('_conf',1)[0] for k in weighted_df['filename']]
         columns_order = ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2'] + [col for col in weighted_df.columns if col not in ['filename', 'atom1_idx', 'atom1', 'atom2_idx', 'atom2']]
         weighted_df = weighted_df[columns_order]
-        weighted_df = weighted_df.round(4)  
+        weighted_df = weighted_df.round(4)
         weighted_df.to_csv(ensemble_bond_csv, index=False)
-       

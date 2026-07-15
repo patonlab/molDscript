@@ -39,6 +39,7 @@ class fukui:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.finalize()
 
     def get_data(self):
 
@@ -154,6 +155,7 @@ class fukui:
             data_dict[file_name]["mol"] = dict()
             data_dict[file_name]["atom"] = dict()
             data_dict[file_name]["bond"] = dict()
+            self.args.log.write_only(f"o  Initializing Fukui structure data from {file_name}")
             parsed_data = parse_cc_data(file_name, data[file_name]['neutral'])
             try:
                 mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]

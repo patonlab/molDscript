@@ -20,7 +20,7 @@ Key Capabilities
 - Merge descriptors across conformers and calculation types into aligned CSV datasets.
 - Restrict analysis to user-defined SMARTS substructures and optionally compute DBSTEP buried volumes.
 - Generate ensemble statistics such as Boltzmann-weighted averages, population windows, and lowest-energy snapshots.
-- Produce audit logs (``MOLDSCRIPT_*.dat``) alongside descriptor files for reproducibility.
+- Produce a single audit log (``MOLDSCRIPT.dat``) alongside descriptor files for reproducibility.
 
 Installation
 ------------
@@ -28,7 +28,7 @@ Installation
 2. (Optional) create and activate a dedicated environment.
 3. Install the package from the repository root: ``pip install -e .`` (or ``pip install .`` for a standard install).
 
-Required Python dependencies are declared in ``setup.py`` and include ``pandas>=2.0.2``, ``cclib`` (latest from GitHub), ``dbstep``, ``rdkit``, ``networkx``, ``numpy``, and ``periodictable``. Install RDKit and Open Babel via conda-forge when pip wheels are not available:
+Required Python dependencies are declared in ``setup.py`` and include ``pandas>=2.0.2``, ``cclib`` (latest from GitHub), ``dbstep``, ``rdkit``, ``networkx``, ``numpy``, ``periodictable``, ``rich``, and ``tqdm``. Install RDKit and Open Babel via conda-forge when pip wheels are not available:
 
 .. code-block:: shell
 
@@ -180,7 +180,7 @@ Running molDscript creates the following artefacts in the working directory (or 
 - ``atom_level.csv`` - atomic descriptors including charges, Fukui indices, NMR shielding, and buried volumes when requested.
 - ``boltzmann_weights.csv`` plus ``ensemble_*.csv`` tables when ``--boltz`` is enabled.
 - ``min_max_range_*.csv`` tables when ``--min_max`` is enabled and ``lowest_energy_*.csv`` tables when ``--lowe`` is requested.
-- Module logs named ``MOLDSCRIPT_<MODULE>.dat`` that document parsing steps and CPU-time summaries.
+- ``MOLDSCRIPT.dat`` - a single run log that documents command provenance, parsed files, module sections, and CPU-time summaries.
 
 Each run also reports the cumulative CPU time associated with the parsed quantum chemistry jobs.
 

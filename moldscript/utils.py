@@ -5,6 +5,7 @@
 
 import os
 import ast
+import re
 from pathlib import Path
 import glob
 import datetime
@@ -13,21 +14,264 @@ import cclib as cc
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
 
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        TextColumn,
+        TimeElapsedColumn,
+        TimeRemainingColumn,
+    )
+except ImportError:  # pragma: no cover - fallback for editable checkouts before deps install
+    Console = None
+    Panel = None
+    Progress = None
+
+try:
+    from tqdm.auto import tqdm
+except ImportError:  # pragma: no cover - final fallback for minimal environments
+    tqdm = None
+
 k_B_hartree = 3.1668114e-6  # hartree/K
 J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
 eV_to_hartree = 0.0367493
 
+_LOG_PATHS_INITIALIZED = set()
+_RUN_LOG_PATH = None
+_PROGRESS_RE = re.compile(r"Progress:\s*\d+%\s*\((\d+)\s*/\s*(\d+)\)")
+
+
+class Terminal:
+    """Terminal output backed by Rich, then tqdm, then plain text."""
+
+    def __init__(self):
+        self.console = Console(highlight=False) if Console else None
+        self.progress = None
+        self.progress_backend = None
+        self.task_id = None
+        self.task_description = "Processing files"
+        self.pending_description = "Processing files"
+
+    def print(self, message="", style=None):
+        if self.console:
+            self.console.print(message, style=style)
+        elif tqdm and self.progress_backend == "tqdm" and self.progress is not None:
+            tqdm.write(str(message))
+        else:
+            print(message)
+
+    def panel(self, message, title=None, border_style="cyan"):
+        if self.console and Panel:
+            self.console.print(
+                Panel.fit(message, title=title, border_style=border_style)
+            )
+        else:
+            if title:
+                self.print(title)
+            self.print(message)
+
+    def set_pending_progress(self, description):
+        if description:
+            self.pending_description = description
+
+    def update_progress(self, current, total):
+        if total <= 0:
+            return
+
+        description = self.pending_description or "Processing files"
+        if Progress:
+            if self.progress is None or description != self.task_description:
+                self.finish_progress()
+                self.task_description = description
+                self.progress_backend = "rich"
+                self.progress = Progress(
+                    TextColumn("[bold cyan]{task.description}"),
+                    BarColumn(),
+                    MofNCompleteColumn(),
+                    TextColumn("{task.percentage:>3.0f}%"),
+                    TimeElapsedColumn(),
+                    TimeRemainingColumn(),
+                    console=self.console,
+                    transient=False,
+                )
+                self.progress.start()
+                self.task_id = self.progress.add_task(description, total=total)
+
+            self.progress.update(self.task_id, total=total, completed=current)
+        elif tqdm:
+            if self.progress is None or description != self.task_description:
+                self.finish_progress()
+                self.task_description = description
+                self.progress_backend = "tqdm"
+                self.progress = tqdm(total=total, desc=description, unit="file")
+
+            if self.progress.total != total:
+                self.progress.total = total
+            delta = current - self.progress.n
+            if delta > 0:
+                self.progress.update(delta)
+            elif delta < 0:
+                self.progress.n = current
+                self.progress.refresh()
+        else:
+            return
+
+        if current >= total:
+            self.finish_progress()
+
+    def finish_progress(self):
+        if self.progress is not None:
+            if self.progress_backend == "rich":
+                self.progress.stop()
+            elif self.progress_backend == "tqdm":
+                self.progress.close()
+            self.progress = None
+            self.progress_backend = None
+            self.task_id = None
+
+
+terminal = Terminal()
+
+
+def _log_key(path):
+    try:
+        return str(Path(path).resolve())
+    except OSError:
+        return str(Path(path).absolute())
+
+
+def append_run_log(message):
+    """Append a line to the active run log, if one has been configured."""
+    if _RUN_LOG_PATH is None:
+        return
+    path = Path(_RUN_LOG_PATH)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(f"{message}\n")
+
+
+def terminal_print(message="", style=None):
+    terminal.print(message, style=style)
+
+
+def terminal_info(message):
+    terminal.print(message, style="cyan")
+
+
+def terminal_success(message):
+    terminal.finish_progress()
+    terminal.print(message, style="bold green")
+
+
+def terminal_warning(message):
+    terminal.print(message, style="yellow")
+
+
+def terminal_error(message):
+    terminal.finish_progress()
+    terminal.print(message, style="bold red")
+
+
+def emit(message, style=None, log=True):
+    """Write a concise status line to the terminal and the active run log."""
+    if log:
+        append_run_log(message)
+    terminal.print(message, style=style)
+
+
+def print_run_header(version, timestamp, reference, argv=None):
+    args = " ".join(argv or [])
+    body = f"{timestamp}\n{reference}"
+    if args:
+        body += f"\n\nArguments: {args}"
+    terminal.panel(body, title=f"molDscript v {version}", border_style="cyan")
+
+
+def _display_log_message(message):
+    text = str(message).strip()
+    if not text:
+        return
+
+    progress_match = _PROGRESS_RE.search(text)
+    if progress_match:
+        current, total = [int(value) for value in progress_match.groups()]
+        terminal.update_progress(current, total)
+        return
+
+    lowered = text.lower()
+    if lowered.startswith("command line used"):
+        return
+    if lowered.startswith(("functional used", "basis set used", "package used")):
+        return
+    if " version used" in lowered or lowered.startswith("charges used"):
+        return
+
+    if "starting" in lowered:
+        description = _clean_task_description(text)
+        terminal.set_pending_progress(description)
+        terminal_info(description)
+        return
+
+    if "complete" in lowered or "finished" in lowered:
+        terminal_success(_clean_completion_message(text))
+        return
+
+    if text.startswith("x") or "error" in lowered:
+        terminal_error(text)
+    elif text.startswith("!") or "warning" in lowered or "skipping" in lowered:
+        terminal_warning(text)
+    else:
+        terminal_print(text)
+
+
+def _clean_task_description(message):
+    text = message.strip().lstrip("-").strip()
+    replacements = [
+        "Parameter Collection starting",
+        "Energy Collection starting",
+        "Collection starting",
+    ]
+    for value in replacements:
+        text = text.replace(value, "").strip(" -")
+    return text or "Processing files"
+
+
+def _clean_completion_message(message):
+    return message.strip().lstrip("-").strip()
+
+
+def initialize_run_log(output_prefix, version, timestamp, reference, argv=None):
+    """Create the single run-level .dat file and write run provenance."""
+    logger = Logger(build_log_path(output_prefix), verbose=False)
+    logger.write_only(
+        f"   MOLDSCRIPT v {version} {timestamp} \n   Citation: {reference}\n"
+    )
+    command_line = " ".join(["python", "-m", "moldscript", *(argv or [])])
+    logger.write_only(f"Command line used in MOLDSCRIPT: {command_line}")
+    logger.finalize()
+
+
 # class for logging
 class Logger:
-    """Simple file logger used to emit MOLDSCRIPT_*.dat audit files."""
+    """Simple file logger used to emit the run-level MOLDSCRIPT.dat audit file."""
 
     def __init__(self, file_path=None, verbose=True):
+        global _RUN_LOG_PATH
         self.verbose = verbose
         self.path = Path(file_path) if file_path else None
         self._handle = None
-        if self.verbose and self.path:
+        self.started_new_file = False
+        if self.path:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self._handle = self.path.open("w", encoding="utf-8")
+            key = _log_key(self.path)
+            self.started_new_file = key not in _LOG_PATHS_INITIALIZED
+            mode = "w" if self.started_new_file else "a"
+            self._handle = self.path.open(mode, encoding="utf-8")
+            _LOG_PATHS_INITIALIZED.add(key)
+            _RUN_LOG_PATH = self.path
 
     @classmethod
     def silent(cls):
@@ -35,11 +279,12 @@ class Logger:
         return cls(file_path=None, verbose=False)
 
     def write(self, message):
-        """Write a message to the log file (if enabled) and echo to stdout."""
+        """Write a message to the log file and route concise output to the terminal."""
         if self._handle:
             self._handle.write(f"{message}\n")
             self._handle.flush()
-        print(message)
+        if self.verbose:
+            _display_log_message(message)
 
     def write_only(self, message):
         """Write a message only to the log file (if enabled)."""
@@ -54,10 +299,10 @@ class Logger:
             self._handle = None
 
 
-def build_log_path(output_prefix: str, module_code: str, suffix: str = "dat") -> Path:
-    """Return the filesystem path for a module audit log."""
+def build_log_path(output_prefix: str, module_code: str = None, suffix: str = "dat") -> Path:
+    """Return the filesystem path for the single run audit log."""
     prefix = output_prefix or ""
-    filename = f"{prefix}MOLDSCRIPT_{module_code}.{suffix}"
+    filename = f"{prefix}MOLDSCRIPT.{suffix}"
     path = Path(filename)
     if not path.is_absolute():
         path = Path.cwd() / path
@@ -136,7 +381,7 @@ def initiate_data_dict(data, logger=None):
     if logger:
         logger.write(f"Initializing data parsing with SMILES and geometry data")
     else:
-        print(f"Initializing data parsing with SMILES and geometry data")
+        emit(f"Initializing data parsing with SMILES and geometry data")
 
     total = len(data)
     data_dict = {}
@@ -146,7 +391,7 @@ def initiate_data_dict(data, logger=None):
         if logger:
             logger.write("No files to process.")
         else:
-            print("No files to process.")
+            emit("No files to process.", style="yellow")
         return data_dict
 
     last_step = 0  # tracks 5% steps printed (0..20)
@@ -160,13 +405,15 @@ def initiate_data_dict(data, logger=None):
                 if logger:
                     logger.write(f"Progress: {s * 5}% ({i}/{total})")
                 else:
-                    print(f"Progress: {s * 5}% ({i}/{total})")
+                    terminal.update_progress(i, total)
             last_step = step
 
         data_dict[file_name] = dict()
         data_dict[file_name]["mol"] = dict()
         data_dict[file_name]["atom"] = dict()
         data_dict[file_name]["bond"] = dict()
+        if logger:
+            logger.write_only(f"o  Initializing structure data from {os.path.basename(file_name)}")
         parsed_data = parse_cc_data(file_name, data[file_name])
         try:
             mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
@@ -175,7 +422,7 @@ def initiate_data_dict(data, logger=None):
             if logger:
                 logger.write("Encountered an issue with the mol embedding. Skipping smiles string.")
             else:
-                print("Encountered an issue with the mol embedding. Skipping smiles string.")
+                emit("Encountered an issue with the mol embedding. Skipping smiles string.", style="yellow")
             smi = ''
         data_dict[file_name]["mol"]["smiles"] = smi
         data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
@@ -188,7 +435,7 @@ def initiate_data_dict(data, logger=None):
             if logger:
                 logger.write(f"Progress: {s * 5}% ({total}/{total})")
             else:
-                print(f"Progress: {s * 5}% ({total}/{total})")
+                terminal.update_progress(total, total)
 
     return data_dict
 
@@ -274,9 +521,7 @@ def get_filename(fullname, dd):
             tempname = tempname.rsplit("_", 1)[0]
             # suppress printing here; callers handle logging
             pass
-    print(
-        f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-    )
+    emit(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.", style="bold red")
     raise SystemExit
 
 

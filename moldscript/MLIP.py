@@ -4,11 +4,13 @@
 
 import datetime
 import shlex
+import time
 from pathlib import Path
 
 import numpy as np
 from rdkit import Chem
 
+from moldscript.argument_parser import load_variables
 from moldscript.utils import eV_to_hartree
 
 
@@ -41,7 +43,11 @@ class mlip:
         data_dict=None,
         atom_charge_property="q_mace_polar",
         file_glob="*.extxyz",
+        output="",
+        create_dat=True,
     ):
+        start_time_overall = time.time()
+        self.args = load_variables({"output": output}, "MLIP", create_dat=create_dat)
         self.neutral = Path(neutral)
         self.reduced = Path(reduced) if reduced else None
         self.oxidized = Path(oxidized) if oxidized else None
@@ -53,7 +59,7 @@ class mlip:
         self._progress_done = 0
         self._progress_step = 0
 
-        print("-- MLIP Parameter Collection starting", flush=True)
+        self.args.log.write("-- MLIP Parameter Collection starting")
 
         if data_dict is None or data_dict == {}:
             self.data_dict = {"CPU_time": []}
@@ -71,7 +77,9 @@ class mlip:
             self._parse_state_dir(self.oxidized, "oxidized")
 
         self.file_data = self._build_data_dict()
-        print("-- MLIP Parameter Collection complete", flush=True)
+        elapsed_time = round(time.time() - start_time_overall, 2)
+        self.args.log.write(f"-- MLIP Parameter Collection complete in {elapsed_time} seconds")
+        self.args.log.finalize()
 
     def _count_input_files(self):
         total = len(list(self.neutral.glob(self.file_glob)))
@@ -88,9 +96,8 @@ class mlip:
         step = percent // 5
         if step > self._progress_step:
             for marker in range(self._progress_step + 1, step + 1):
-                print(
-                    f"Progress: {marker * 5}% ({self._progress_done}/{self._progress_total})",
-                    flush=True,
+                self.args.log.write(
+                    f"Progress: {marker * 5}% ({self._progress_done}/{self._progress_total})"
                 )
             self._progress_step = step
 
@@ -99,6 +106,7 @@ class mlip:
         total = len(files)
         for file_path in files:
             record = self._read_extxyz(file_path)
+            self.args.log.write_only(f"o  Parsing MLIP data from {file_path.name}")
             key = self._canonical_key(record["header"], file_path)
             if key not in self.state_records:
                 self.state_records[key] = {}
@@ -106,12 +114,12 @@ class mlip:
             self._progress_done += 1
             self._report_progress()
         if total == 0:
-            print(f"!  No MLIP files found in {state_dir}", flush=True)
+            self.args.log.write(f"!  No MLIP files found in {state_dir}")
 
     def _build_data_dict(self):
         total = len(self.state_records)
         if total == 0:
-            print("x  Could not find MLIP files to obtain information", flush=True)
+            self.args.log.write("x  Could not find MLIP files to obtain information")
             return self.data_dict
 
         for key, states in self.state_records.items():

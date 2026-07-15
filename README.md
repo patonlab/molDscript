@@ -10,7 +10,7 @@ MolDscript is a Python workflow that converts Density Functional Theory (DFT) an
 - Parse optimization, single-point, NBO, NMR, charge, FMO, and Fukui calculations without manual file editing.
 - Match conformer ensembles, apply SMARTS-based substructure filters, and compute DBSTEP buried volumes on demand.
 - Generate ensembles (Boltzmann weighted, min/mnax within population windows, lowest-energy snapshots) in a single run.
-- Emit descriptor CSVs alongside module logs (`MOLDSCRIPT_*.dat`) for traceability.
+- Emit descriptor CSVs alongside a single run audit log (`MOLDSCRIPT.dat`) for traceability.
 
 ## Installation
 ```shell
@@ -46,13 +46,13 @@ Prefer storing options in a key:value text file? Use `--varfile inputs.txt`; com
 - `molecule_level.csv`, `bond_level.csv`, `atom_level.csv` - aligned descriptors per calculation, bond pair, or atom.
 - `ensemble_*.csv`, `boltzmann_weights.csv` - created when `--boltz` is enabled.
 - `min_max_range_*.csv`, `lowest_energy_*.csv` - created when `--min_max` or `--lowe` are requested.
-- `MOLDSCRIPT_*.dat` - per-module logs capturing provenance and CPU-time summaries.
+- `MOLDSCRIPT.dat` - a single run log capturing provenance, parsed files, module sections, and CPU-time summaries.
 
 ## Documentation
 The Read the Docs site (coming soon) will provide the full user guide: [https://moldscript.readthedocs.io](https://moldscript.readthedocs.io)
 
 ## Dependencies
-Key Python dependencies include `pandas`, `cclib` (latest GitHub version for the most up-to-date package compatability), `dbstep`, `rdkit`, `networkx`, `numpy`, and `periodictable`.
+Key Python dependencies include `pandas`, `cclib` (latest GitHub version for the most up-to-date package compatability), `dbstep`, `rdkit`, `networkx`, `numpy`, `periodictable`, `rich`, and `tqdm`.
 
 ## Supported Quantum Packages
 - Gaussian

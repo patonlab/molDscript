@@ -3,7 +3,14 @@
 #####################################################.
 
 import os, time, getopt, sys, shlex
-from moldscript.utils import format_lists, Logger, build_log_path
+from moldscript.utils import (
+    format_lists,
+    Logger,
+    build_log_path,
+    terminal_error,
+    terminal_success,
+    terminal_warning,
+)
 
 moldscript_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
@@ -103,12 +110,8 @@ def set_options(kwargs):
         elif key.lower() in var_dict:
             vars(options)[key.lower()] = kwargs[key.lower()]
         else:
-            print(
-                "Warning! Option: [",
-                key,
-                ":",
-                kwargs[key],
-                "] provided but no option exists, try the online documentation to see available options for each module.",
+            terminal_warning(
+                f"Warning! Option: [{key}: {kwargs[key]}] provided but no option exists, try the online documentation to see available options for each module."
             )
     return options
 
@@ -179,7 +182,7 @@ def command_line_args():
     try:
         opts, _ = getopt.getopt(sys.argv[1:], "h", available_args)
     except getopt.GetoptError as err:
-        print(err)
+        terminal_error(str(err))
         sys.exit()
 
     for arg, value in opts:
@@ -189,7 +192,7 @@ def command_line_args():
             arg_name = arg.split("-")[1].strip()
 
         if arg_name in ("h", "help"):
-            print(
+            terminal_success(
                 f"o  MOLDSCRIPT v {moldscript_version} is installed correctly! For more information about the available options, see the documentation in XXX"
             )
             sys.exit()
@@ -243,15 +246,20 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
             "FUKUI": "FUKUI",
             "SUBSTRUCTURE": "SUBSTRUCTURE",
             "FMO": "FMO",
+            "CHARGES": "CHARGES",
+            "STERICS": "STERICS",
+            "MLIP": "MLIP",
         }
         logger_code = module_codes.get(moldscript_module, moldscript_module)
         log_path = build_log_path(self.output, logger_code)
         self.log = Logger(log_path, verbose=self.verbose)
-        self.log.write_only(
-            f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
-        )
-        command_line = shlex.join(["python", "-m", "moldscript", *sys.argv[1:]])
-        self.log.write(f"Command line used in MOLDSCRIPT: {command_line}")
+        if self.log.started_new_file:
+            self.log.write_only(
+                f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
+            )
+            command_line = shlex.join(["python", "-m", "moldscript", *sys.argv[1:]])
+            self.log.write_only(f"Command line used in MOLDSCRIPT: {command_line}")
+        self.log.write_only(f"\n=== {logger_code} ===")
 
     return self
 

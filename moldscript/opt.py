@@ -28,7 +28,7 @@ class opt:
         if self.data_dict == {}:
             self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
         if len(self.data.keys()) == 0:
-            print(
+            self.args.log.write(
                 f"\nx  Could not find files to obtain optimization information. Exiting program"
             )
             sys.exit()
@@ -40,7 +40,8 @@ class opt:
             module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
             if self.module_cpu_seconds:
                 self.args.log.write_only(f"\n   QM optimizations CPU time: {format_timedelta(module_cpu_td)}")
-            self.args.log.write_only(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.write(f"-- Optimization Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.finalize()
 
 
     def get_data(self):
@@ -67,7 +68,7 @@ class opt:
                 for s in range(last_step + 1, step + 1):
                     self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
                 last_step = step
-                self.args.log.write_only(f"o  Parsing CPU time from {os.path.basename(file_name)}")
+            self.args.log.write_only(f"o  Parsing optimization data from {os.path.basename(file_name)}")
             if xtb == False:
                 # convert log to smiles
                 opt_data = parse_cc_data(file_name, self.data[file_name])

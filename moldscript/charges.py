@@ -20,7 +20,7 @@ class charges:
 
         start_time_overall = time.time()
         # load default and user-specified variables
-        self.args = load_variables(kwargs, "SPC", create_dat=create_dat)
+        self.args = load_variables(kwargs, "CHARGES", create_dat=create_dat)
         self.data = data
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
@@ -35,6 +35,7 @@ class charges:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(f"-- Charges Collection complete in {elapsed_time} seconds")
+            self.args.log.finalize()
 
     def get_data(self):
 

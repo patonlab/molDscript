@@ -7,6 +7,7 @@ pd.options.mode.chained_assignment = None
 import math
 import periodictable
 import datetime
+from moldscript.utils import append_run_log, emit
 
 
 class get_df:
@@ -20,22 +21,22 @@ class get_df:
         self.prefix = prefix
         self.no_bond_filter = bond_filter
         if no_mol:
-            print('\n\u25A1  SKIPPING MOLECULE-LEVEL DESCRIPTORS')
+            emit('Skipping molecule-level descriptors', style="yellow")
         else:
             mol_df = self.get_mol_df()
         if no_bond:
-            print('\n\u25A1  SKIPPING BOND-LEVEL DESCRIPTORS')
+            emit('Skipping bond-level descriptors', style="yellow")
         else:
             bond_df = self.get_bond_df()
         if no_atom:
-            print('\n\u25A1  SKIPPING ATOM-LEVEL DESCRIPTORS')
+            emit('Skipping atom-level descriptors', style="yellow")
         else:
             atom_df = self.get_atom_df()
         self.get_time()
 
     def get_mol_df(self):
         mol_csv = str(self.prefix) + "molecule_level.csv"
-        print("\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}".format(mol_csv))
+        emit("Aggregating molecule-level descriptors into {}".format(mol_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -50,7 +51,7 @@ class get_df:
                 moldf = tmpdf
         col = moldf.pop("filename")
         for prop in list(moldf.keys()):
-            print(f"\t- {prop}")
+            append_run_log(f"\t- {prop}")
         moldf.insert(0, "filename", col)
         moldf = moldf.round(4)
         self.energies = moldf[['filename', 'scfenergy']]
@@ -59,13 +60,13 @@ class get_df:
 
     def get_bond_df(self):
         bond_csv = str(self.prefix) + "bond_level.csv"
-        print("\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}".format(bond_csv))
+        emit("Aggregating bond-level descriptors into {}".format(bond_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
         props = list(data[filenames[0]]["bond"].keys())
         for prop in props:
-            print(f"\t- {prop}")
+            append_run_log(f"\t- {prop}")
         bonddf = pd.DataFrame()
         for fname in filenames:
             atoms = np.array(data[fname]["atom"]["atomnos"])
@@ -102,7 +103,7 @@ class get_df:
             else:
                 bonddf = filedf
         if self.substructure != '':
-            print(f'  Filtering bond data by user defined substructure: {self.substructure}')
+            emit(f'Filtering bond data by user defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -113,17 +114,17 @@ class get_df:
         bonddf = bonddf.round(4)
         if not self.no_bond_filter:
             if 'bond_order_matrix' in props:
-                print(f'  Filtering bond data by bond order of 0.1')
+                emit('Filtering bond data by bond order of 0.1', style="cyan")
                 bonddf['bond_order_matrix'] = pd.to_numeric(bonddf['bond_order_matrix'], errors='coerce')
                 bonddf = bonddf[bonddf['bond_order_matrix'] >= 0.1]
             else:
-                print(f'  Filtering bond data by bond length of 3 angstroms')
+                emit('Filtering bond data by bond length of 3 angstroms', style="cyan")
                 bonddf = bonddf[bonddf['bond_length'] <= 3]
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
         atom_csv = str(self.prefix) + "atom_level.csv"
-        print("\n\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
+        emit("Aggregating atom-level descriptors into {}".format(atom_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -132,7 +133,7 @@ class get_df:
         calced_props.remove("atomnos")
         if calced_props != []:
             for prop in calced_props:
-                print(f"\t- {prop}")
+                append_run_log(f"\t- {prop}")
         atomdf = pd.DataFrame()
         for fname in filenames:
             atom_level_data = data[fname]["atom"]
@@ -164,7 +165,7 @@ class get_df:
         atomdf.insert(0, "filename", col)
 
         if self.substructure != '':
-            print(f'  Filtering atom data by user defined substructure: {self.substructure}\n')
+            emit(f'Filtering atom data by user defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -175,7 +176,7 @@ class get_df:
         try:
             filename = filenames[0]
             list(self.dd[filename]['sterics'].keys())
-            print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
+            emit(f'Adding steric parameters to {atom_csv}', style="cyan")
             steric_df = pd.DataFrame()
             for filename in filenames:
                 props = list(self.dd[filename]['sterics'].keys())
@@ -191,7 +192,7 @@ class get_df:
                 temp_df = pd.DataFrame(tempdic)
                 steric_df = pd.concat([steric_df, temp_df])
             for prop in props:
-                    print(f"\t- {prop}")
+                    append_run_log(f"\t- {prop}")
             atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
         except:pass
 
@@ -209,7 +210,7 @@ class get_df:
             cpu_time += self.dd[file]["CPU_time"]
         total_seconds = cpu_time.total_seconds()
         hours = total_seconds / 3600
-        print(f'\n\tThe total CPU time used in the generation of the parsed data is {hours:.0f} hours\n')
+        emit(f'Total parsed-job CPU time: {hours:.0f} hours', style="bold green")
 
     def get_atom_lab(self, num):
         label = periodictable.elements[num]
