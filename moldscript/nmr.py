@@ -9,7 +9,7 @@ import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
 
 
 class nmr:
@@ -50,6 +50,7 @@ class nmr:
         total = len(self.data)
         last_step = 0
         for i, file_name in enumerate(self.data.keys(), start=1):
+            source_path = self.data[file_name]
             percent = int((i / total) * 100) if total else 100
             step = percent // 5
             if step > last_step:
@@ -57,8 +58,8 @@ class nmr:
                     self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
                 last_step = step
             # try:
-            file_name = self.get_filename(file_name)
-            nmr_data = self.parse_cc_data(file_name, self.data[file_name])
+            filename = self.get_filename(file_name)
+            nmr_data = self.parse_cc_data(file_name, source_path)
             # except:
             #     nmr_data = None
             try:
@@ -70,12 +71,12 @@ class nmr:
                 pass
             if nmr_data != None:
                 self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
-                self.data_dict[file_name]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
+                self.data_dict[filename]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
             else:
                 self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
 
             cpu_times = nmr_data.metadata.get("cpu_time") if nmr_data and hasattr(nmr_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, filename, source_path, cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")
@@ -131,24 +132,5 @@ class nmr:
         return nmr_shielding
 
     def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")+1):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-        self.args.log.write_only(
-            f"Error processing file {fullname}. Ensure consistent naming as described in the docs."
-        )
-        raise SystemExit
+        return resolve_data_key(fullname, self.data_dict, module_name="NMR", logger=self.args.log)
 

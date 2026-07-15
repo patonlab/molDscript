@@ -208,11 +208,14 @@ def _display_log_message(message):
         return
     if " version used" in lowered or lowered.startswith("charges used"):
         return
+    if lowered.startswith("initializing data parsing"):
+        description = "Building baseline structures and geometry descriptors"
+        terminal.set_pending_progress(description)
+        return
 
     if "starting" in lowered:
         description = _clean_task_description(text)
         terminal.set_pending_progress(description)
-        terminal_info(description)
         return
 
     if "complete" in lowered or "finished" in lowered:
@@ -229,6 +232,23 @@ def _display_log_message(message):
 
 def _clean_task_description(message):
     text = message.strip().lstrip("-").strip()
+    lowered = text.lower()
+    stage_descriptions = {
+        "optimization parameter collection starting": "Reading optimization files and CPU times",
+        "charges collection starting": "Extracting atomic charges and spin densities",
+        "fmo collection starting": "Extracting frontier orbitals and molecular moments",
+        "nbo parameter collection starting": "Extracting NBO charges and bond orders",
+        "nmr parameter collection starting": "Extracting NMR shielding tensors",
+        "fukui parameter collection starting": "Calculating Fukui descriptors from charge-state files",
+        "mlip parameter collection starting": "Parsing MLIP extxyz descriptor files",
+        "steric parameter collection starting": "Calculating steric buried volumes",
+    }
+    for marker, description in stage_descriptions.items():
+        if marker in lowered:
+            return description
+    if "single point energy collection starting" in lowered:
+        return "Updating molecule energies from single-point files"
+
     replacements = [
         "Parameter Collection starting",
         "Energy Collection starting",
@@ -372,6 +392,80 @@ def add_cpu_times(file_data):
         if cpu_value:
             total_cpu += cpu_value
     return total_cpu
+
+
+def molecule_keys(data_dict):
+    """Return only initialized molecule entries, excluding bookkeeping keys."""
+    return [
+        key
+        for key, value in data_dict.items()
+        if isinstance(value, dict)
+        and {"mol", "atom", "bond"}.issubset(value.keys())
+    ]
+
+
+def filename_match_candidates(fullname):
+    stem = Path(str(fullname).replace("\\", "/")).name
+    if "." in stem:
+        stem = stem.rsplit(".", 1)[0]
+
+    candidates = [stem]
+    tempname = stem
+    while "_" in tempname:
+        tempname = tempname.rsplit("_", 1)[0]
+        candidates.append(tempname)
+    return candidates
+
+
+def _preview_values(values, max_items=8):
+    values = list(values)
+    preview = ", ".join(str(value) for value in values[:max_items])
+    if len(values) > max_items:
+        preview += f", ... ({len(values)} total)"
+    return preview or "none"
+
+
+def filename_match_error(fullname, data_dict, module_name=None):
+    module_label = module_name or "module"
+    module_code = module_label.lower()
+    if module_code == "fukui":
+        suffix_flag = "--suffix_fukui_neutral / --suffix_fukui_reduced / --suffix_fukui_oxidized"
+        suffix_var = "suffix_fukui_neutral / suffix_fukui_reduced / suffix_fukui_oxidized"
+        example_option = suffix_flag
+    else:
+        suffix_flag = f"--suffix_{module_code}"
+        suffix_var = f"suffix_{module_code}"
+        example_option = f"{suffix_flag} {module_code}"
+    available = molecule_keys(data_dict)
+    candidates = filename_match_candidates(fullname)
+
+    return (
+        f"x  Could not match {module_label} file key '{fullname}' to an existing molecule.\n"
+        f"   Tried keys: {_preview_values(candidates)}\n"
+        f"   Existing molecule keys: {_preview_values(available)}\n"
+        f"   This usually means {suffix_flag} is missing or incorrect, or the baseline "
+        f"optimization keys were created without --suffix_opt.\n"
+        f"   Example: if a {module_label} file is named arbr31_wb97xd_{module_code}.log "
+        f"and the matching molecule key should be arbr31_wb97xd, pass the matching "
+        f"suffix option (for example {example_option}) or set {suffix_var} in a varfile."
+    )
+
+
+def resolve_data_key(fullname, data_dict, module_name=None, logger=None):
+    """Resolve a module filename/key to an initialized molecule key."""
+    available = set(molecule_keys(data_dict))
+    for candidate in filename_match_candidates(fullname):
+        if candidate in available:
+            return candidate
+
+    message = filename_match_error(fullname, data_dict, module_name=module_name)
+    if logger:
+        logger.write(message)
+    else:
+        emit(message, style="bold red")
+    raise SystemExit
+
+
 def initiate_data_dict(data, logger=None):
     """
     Initiates a data dictionary to store all the data from the files.
@@ -504,24 +598,6 @@ def find_nth(haystack: str, needle: str, n: int) -> int:
         n -= 1
     return start
 def get_filename(fullname, dd):
-    flist = list(dd.keys())
-    tempname = fullname
-    try:
-        findex = flist.index(tempname)
-        keyname = flist[findex]
-        return keyname
-    except ValueError:
-        pass
-    for i in range(fullname.count("_")+1):
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except:
-            tempname = tempname.rsplit("_", 1)[0]
-            # suppress printing here; callers handle logging
-            pass
-    emit(f"Error processing file {fullname}. Ensure consistent naming as described in the docs.", style="bold red")
-    raise SystemExit
+    return resolve_data_key(fullname, dd)
 
 

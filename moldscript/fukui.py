@@ -9,7 +9,7 @@ import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta
+from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta, resolve_data_key
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
 
@@ -47,7 +47,8 @@ class fukui:
         self.args.log.write(f"-- Fukui Parameter Collection starting")
         total = len(self.data)
         last_step = 0
-        for idx, file_name in enumerate(list(self.data.keys()), start=1):
+        for idx, raw_file_name in enumerate(list(self.data.keys()), start=1):
+            file_name = resolve_data_key(raw_file_name, self.data_dict, module_name="FUKUI", logger=self.args.log)
             percent = int((idx / total) * 100) if total else 100
             step = percent // 5
             if step > last_step:
@@ -55,20 +56,20 @@ class fukui:
                     self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
                 last_step = step
             neutral_data, oxidized_data, reduced_data = None, None, None
-            if "neutral" in self.data[file_name].keys():
-                neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
+            if "neutral" in self.data[raw_file_name].keys():
+                neutral_data = self.parse_cc_data(raw_file_name, self.data[raw_file_name]["neutral"])
                 if first == False:
                     try:
                         self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
                         self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
                         self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
                     except: pass
-            if "oxidized" in self.data[file_name].keys():
-                oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
-            if "reduced" in self.data[file_name].keys():
-                reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
+            if "oxidized" in self.data[raw_file_name].keys():
+                oxidized_data = self.parse_cc_data(raw_file_name, self.data[raw_file_name]["oxidized"])
+            if "reduced" in self.data[raw_file_name].keys():
+                reduced_data = self.parse_cc_data(raw_file_name, self.data[raw_file_name]["reduced"])
             if neutral_data != None and oxidized_data != None and reduced_data != None:
-                self.args.log.write_only(f"o  Parsing Fukui data from {file_name}")
+                self.args.log.write_only(f"o  Parsing Fukui data from {raw_file_name}")
                 neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
                 red_e = reduced_data.scfenergies[-1] * eV_to_hartree
                 ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
@@ -91,12 +92,12 @@ class fukui:
                 self.data_dict[file_name]['atom']['fminus'] = (fminus)
                 self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
             else:
-                self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
+                self.args.log.write(f"x  Skipping file {raw_file_name} as one either neutral, oxidized or reduced does not exist!")
             try:
                 datasets = (
-                    ("neutral", neutral_data, self.data[file_name].get('neutral')),
-                    ("reduced", reduced_data, self.data[file_name].get('reduced')),
-                    ("oxidized", oxidized_data, self.data[file_name].get('oxidized')),
+                    ("neutral", neutral_data, self.data[raw_file_name].get('neutral')),
+                    ("reduced", reduced_data, self.data[raw_file_name].get('reduced')),
+                    ("oxidized", oxidized_data, self.data[raw_file_name].get('oxidized')),
                 )
                 for label, dataset, source in datasets:
                     if not dataset:

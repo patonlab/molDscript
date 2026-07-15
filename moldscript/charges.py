@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
 
 class charges:
     """
@@ -44,13 +44,14 @@ class charges:
         total = len(self.data)
         last_step = 0
         for idx, file_name in enumerate(self.data.keys(), start=1):
+            source_path = self.data[file_name]
             percent = int((idx / total) * 100) if total else 100
             step = percent // 5
             if step > last_step:
                 for s in range(last_step + 1, step + 1):
                     self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
                 last_step = step
-            chg_data = self.parse_cc_data(file_name, self.data[file_name])
+            chg_data = self.parse_cc_data(file_name, source_path)
             filename = self.get_filename(file_name)
 
             try:
@@ -67,11 +68,11 @@ class charges:
                     if 'mulliken' not in i and 'sum' not in i:
                         self.data_dict[filename]['atom'][str(i)+'_charge'] = chg_data.atomcharges[i]
 
-            for spin_type, spins in self.get_atom_spins(chg_data, self.data[file_name]).items():
+            for spin_type, spins in self.get_atom_spins(chg_data, source_path).items():
                 self.data_dict[filename]['atom'][str(spin_type)+'_spin'] = spins
 
             cpu_times = chg_data.metadata.get("cpu_time") if chg_data and hasattr(chg_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, filename, source_path, cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- Charges CPU time: {format_timedelta(module_cpu_td)}")
@@ -133,25 +134,5 @@ class charges:
         return np.array(spin_tables[-1])
 
     def get_filename(self, fullname):
-        try:
-            flist = list(self.data_dict.keys())
-            tempname = fullname
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except ValueError:
-                pass
-            for i in range(fullname.count("_")+1):
-                try:
-                    findex = flist.index(tempname)
-                    keyname = flist[findex]
-                    return keyname
-                except:
-                    tempname = tempname.rsplit("_", 1)[0]
-                    self.args.log.write_only(tempname)
-
-        except:
-            self.args.log.write('Issue matching one of your filenames, make sure you have a charge file for each opt file')
-            raise SystemExit
+        return resolve_data_key(fullname, self.data_dict, module_name="CHARGES", logger=self.args.log)
 

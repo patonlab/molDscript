@@ -19,6 +19,7 @@ class sterics:
         self.data = opt_data
         self.dd = data_dict
         self.rad = radii
+        self.args.log.write("-- Steric Parameter Collection starting")
         if vall != False:
             self.get_params(vall=vall)
         else:

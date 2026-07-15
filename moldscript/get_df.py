@@ -36,7 +36,7 @@ class get_df:
 
     def get_mol_df(self):
         mol_csv = str(self.prefix) + "molecule_level.csv"
-        emit("Aggregating molecule-level descriptors into {}".format(mol_csv), style="cyan")
+        emit("Writing molecule-level descriptor table to {}".format(mol_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -60,7 +60,7 @@ class get_df:
 
     def get_bond_df(self):
         bond_csv = str(self.prefix) + "bond_level.csv"
-        emit("Aggregating bond-level descriptors into {}".format(bond_csv), style="cyan")
+        emit("Writing bond-level pair descriptor table to {}".format(bond_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -103,7 +103,7 @@ class get_df:
             else:
                 bonddf = filedf
         if self.substructure != '':
-            emit(f'Filtering bond data by user defined substructure: {self.substructure}', style="cyan")
+            emit(f'Filtering bond rows to user-defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -114,17 +114,17 @@ class get_df:
         bonddf = bonddf.round(4)
         if not self.no_bond_filter:
             if 'bond_order_matrix' in props:
-                emit('Filtering bond data by bond order of 0.1', style="cyan")
+                emit('Applying default bond filter: bond order >= 0.1', style="cyan")
                 bonddf['bond_order_matrix'] = pd.to_numeric(bonddf['bond_order_matrix'], errors='coerce')
                 bonddf = bonddf[bonddf['bond_order_matrix'] >= 0.1]
             else:
-                emit('Filtering bond data by bond length of 3 angstroms', style="cyan")
+                emit('Applying default bond filter: bond length <= 3 angstroms', style="cyan")
                 bonddf = bonddf[bonddf['bond_length'] <= 3]
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
         atom_csv = str(self.prefix) + "atom_level.csv"
-        emit("Aggregating atom-level descriptors into {}".format(atom_csv), style="cyan")
+        emit("Writing atom-level descriptor table to {}".format(atom_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -165,7 +165,7 @@ class get_df:
         atomdf.insert(0, "filename", col)
 
         if self.substructure != '':
-            emit(f'Filtering atom data by user defined substructure: {self.substructure}', style="cyan")
+            emit(f'Filtering atom rows to user-defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -176,7 +176,7 @@ class get_df:
         try:
             filename = filenames[0]
             list(self.dd[filename]['sterics'].keys())
-            emit(f'Adding steric parameters to {atom_csv}', style="cyan")
+            emit(f'Merging steric buried-volume descriptors into {atom_csv}', style="cyan")
             steric_df = pd.DataFrame()
             for filename in filenames:
                 props = list(self.dd[filename]['sterics'].keys())

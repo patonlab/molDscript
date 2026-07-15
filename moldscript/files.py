@@ -138,9 +138,10 @@ class files:
         except:
             pass
         if suffix != '':
+            suffix = str(suffix).strip().lstrip("_")
             fullname = fullname.split("_" + suffix)[0]
         elif self.warn_suffix == False:
-            emit(f"Warning: no suffix provided for {self.calc}, using full filename", style="yellow")
-            emit("If this is not intentional, it will cause issues with matching filenames", style="yellow")
+            emit(f"Warning: no suffix provided for {self.calc}; matching will use each full filename stem.", style="yellow")
+            emit(f"If {self.calc} filenames include a module tag, pass --suffix_{self.calc} so they match the optimization keys.", style="yellow")
             self.warn_suffix = True
         return fullname

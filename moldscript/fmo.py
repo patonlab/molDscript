@@ -8,7 +8,7 @@ import time
 import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
 import numpy as np
 
 class fmo:
@@ -46,17 +46,18 @@ class fmo:
         total = len(self.data)
         last_step = 0
         for idx, file_name in enumerate(self.data.keys(), start=1):
+            source_path = self.data[file_name]
             percent = int((idx / total) * 100) if total else 100
             step = percent // 5
             if step > last_step:
                 for s in range(last_step + 1, step + 1):
                     self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
                 last_step = step
-            if self.data[file_name].rsplit('.',1)[1] == 'log':
+            if source_path.rsplit('.',1)[1] == 'log':
                 self.fmo_program = 'gaussian'
-            elif self.data[file_name].rsplit('.', 1)[1] =='out':
+            elif source_path.rsplit('.', 1)[1] =='out':
                 self.fmo_program = 'orca'
-            fmo_data = self.parse_cc_data(file_name, self.data[file_name])
+            fmo_data = self.parse_cc_data(file_name, source_path)
             file_name = self.get_filename(file_name)
             try:
                 if list(self.data.keys()).index(file_name) == 0:
@@ -91,7 +92,7 @@ class fmo:
                 self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
 
             cpu_times = fmo_data.metadata.get("cpu_time") if fmo_data and hasattr(fmo_data, "metadata") else None
-            record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source_path, cpu_times)
 
 
         return self.data_dict
@@ -109,23 +110,6 @@ class fmo:
 
 
     def get_filename(self, fullname):
-        flist = list(self.data_dict.keys())
-        tempname = fullname
-        try:
-            findex = flist.index(tempname)
-            keyname = flist[findex]
-            return keyname
-        except ValueError:
-            pass
-        for i in range(fullname.count("_")+1):
-            try:
-                findex = flist.index(tempname)
-                keyname = flist[findex]
-                return keyname
-            except:
-                tempname = tempname.rsplit("_", 1)[0]
-                self.args.log.write_only(tempname)
-            self.args.log.write_only('Issue matching one of your filenames')
-        raise SystemExit
+        return resolve_data_key(fullname, self.data_dict, module_name="FMO", logger=self.args.log)
 
 

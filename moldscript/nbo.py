@@ -8,7 +8,7 @@ import time
 import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import get_filename, initiate_data_dict, record_cpu_time, format_timedelta
+from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
 class nbo:
     """
     Class containing all the functions for the NBO module related to Gaussian output files
@@ -48,13 +48,14 @@ class nbo:
         total = len(self.data)
         last_step = 0
         for i, file_name in enumerate(self.data.keys(), start=1):
+            source_path = self.data[file_name]
             percent = int((i / total) * 100) if total else 100
             step = percent // 5
             if step > last_step:
                 for s in range(last_step + 1, step + 1):
                     self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
                 last_step = step
-            nbo_data = self.parse_cc_data(file_name, self.data[file_name])
+            nbo_data = self.parse_cc_data(file_name, source_path)
 
             if i == 0:
                 self.args.log.write(f"   Package used: {nbo_data.metadata['package']} {nbo_data.metadata['package_version']}")
@@ -68,18 +69,19 @@ class nbo:
 
             if nbo_data != None:
                 self.args.log.write_only(f"o  Parsing NBO data from {file_name}")
-                file_name = get_filename(file_name, self.data_dict)
-                self.data_dict[file_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
-                self.data_dict[file_name]['atom']["bond_orders"] = nbo_data.bondorders
+                matched_name = resolve_data_key(file_name, self.data_dict, module_name="NBO", logger=self.args.log)
+                self.data_dict[matched_name]['atom']["natural_charge"] = nbo_data.atomcharges["natural"]
+                self.data_dict[matched_name]['atom']["bond_orders"] = nbo_data.bondorders
                 if nbo_data.bondorders_matrix != []:
-                    self.data_dict[file_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
+                    self.data_dict[matched_name]['bond']["bond_order_matrix"] = nbo_data.bondorders_matrix
 
 
             else:
                 self.args.log.write(f"Skipping file {file_name} as NBO data didnt exist\n")
+                matched_name = resolve_data_key(file_name, self.data_dict, module_name="NBO", logger=self.args.log)
 
             cpu_times = nbo_data.metadata.get("cpu_time") if nbo_data and hasattr(nbo_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, self.data[file_name], cpu_times)
+            self.module_cpu_seconds += record_cpu_time(self.data_dict, matched_name, source_path, cpu_times)
 
         return self.data_dict
 
