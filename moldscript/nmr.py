@@ -9,7 +9,82 @@ import datetime
 import cclib as cc
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
+from moldscript.utils import (
+    initiate_data_dict,
+    record_cpu_time,
+    format_timedelta,
+    resolve_data_key,
+    run_file_jobs,
+    cpu_times_seconds,
+)
+
+
+def _gaussian_nmr_shielding(file):
+    with open(file, "r") as outfile:
+        lines = outfile.readlines()
+    for i in range(0, len(lines)):
+        if lines[i].find("shielding tensors") > -1:
+            start = i + 2
+        if lines[i].find("End of Minotr F.D.") > -1:
+            end = i - 1
+    nmr_shielding = []
+    for j in range(start, end - 1, 5):
+        nmr = lines[j].split()[4]
+        if nmr == "Anisotropy": #Bad formatting in Gaussian
+            nmr_line = lines[j].split()[3]
+            nmr = nmr_line.strip("=")
+        nmr = float(nmr)
+        nmr_shielding.append(nmr)
+    return nmr_shielding
+
+
+def _orca_nmr_shielding(file):
+    with open(file, "r") as outfile:
+        lines = outfile.readlines()
+    for i in range(0, len(lines)):
+        if lines[i].find("CHEMICAL SHIELDING SUMMARY (ppm)") > -1:
+            idx = i + 6
+    nmr_shielding = []
+    line = True
+    for i in range(idx, len(lines)):
+        line = lines[idx]
+        if line.split() == []:
+            break
+        nmr = float(line.split()[2])
+        nmr_shielding.append(nmr)
+        idx += 1
+    return nmr_shielding
+
+
+def _parse_nmr_job(job):
+    file_name, source_path, matched_name = job
+    try:
+        parser = cc.io.ccopen(source_path)
+        nmr_data = parser.parse()
+        package = nmr_data.metadata["package"].lower()
+        if package == "gaussian":
+            nmr_shielding = _gaussian_nmr_shielding(source_path)
+        elif package == "orca":
+            nmr_shielding = _orca_nmr_shielding(source_path)
+        else:
+            raise ValueError(f"Unsupported nmr tensor program: {nmr_data.metadata['package']}")
+
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "nmr_shielding": nmr_shielding,
+            "metadata": getattr(nmr_data, "metadata", {}),
+            "cpu_times": nmr_data.metadata.get("cpu_time") if hasattr(nmr_data, "metadata") else None,
+            "error": None,
+        }
+    except BaseException as exc:
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "error": f"Could not parse {file_name} to obtain NMR shielding information: {exc}",
+        }
 
 
 class nmr:
@@ -26,7 +101,11 @@ class nmr:
         self.data_dict = data_dicts
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
+            self.data_dict = initiate_data_dict(
+                self.data,
+                logger=self.args.log,
+                workers=self.args.workers,
+            )
         self.flist = list(data_dicts.keys())
 
         if len(self.data.keys()) == 0:
@@ -47,36 +126,33 @@ class nmr:
 
         self.args.log.write(f"-- NMR Parameter Collection starting")
         self.module_cpu_seconds = 0.0
-        total = len(self.data)
-        last_step = 0
-        for i, file_name in enumerate(self.data.keys(), start=1):
+        jobs = []
+        for file_name in self.data.keys():
             source_path = self.data[file_name]
-            percent = int((i / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({i}/{total})")
-                last_step = step
-            # try:
             filename = self.get_filename(file_name)
-            nmr_data = self.parse_cc_data(file_name, source_path)
-            # except:
-            #     nmr_data = None
-            try:
-                if i == 0:
-                    self.args.log.write(f"   Package used: {nmr_data.metadata['package']} {nmr_data.metadata['package_version']}")
-                    self.args.log.write(f"   Functional used: {nmr_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {nmr_data.metadata['basis_set']}\n")
-            except:
-                pass
-            if nmr_data != None:
-                self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {file_name}")
-                self.data_dict[filename]["atom"]["nmr_shielding"] = nmr_data.nmr_shielding
-            else:
-                self.args.log.write(f"!  Skipping {file_name} as NMR data not found")
+            jobs.append((file_name, source_path, filename))
 
-            cpu_times = nmr_data.metadata.get("cpu_time") if nmr_data and hasattr(nmr_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, filename, source_path, cpu_times)
+        for idx, result in enumerate(
+            run_file_jobs(jobs, _parse_nmr_job, workers=self.args.workers, logger=self.args.log)
+        ):
+            if result.get("error"):
+                self.args.log.write(f"\nx  {result['error']}")
+                raise SystemExit
+
+            if idx == 0:
+                metadata = result["metadata"]
+                try:
+                    self.args.log.write(f"   Package used: {metadata['package']} {metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {metadata['basis_set']}\n")
+                except:
+                    pass
+            filename = result["matched_name"]
+            self.args.log.write_only(f"o  Parsing NMR Shielding Tensors from {result['file_name']}")
+            self.data_dict[filename]["atom"]["nmr_shielding"] = result["nmr_shielding"]
+
+            self.module_cpu_seconds += cpu_times_seconds(result["cpu_times"])
+            record_cpu_time(self.data_dict, filename, result["source_path"], result["cpu_times"])
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- NMR CPU time: {format_timedelta(module_cpu_td)}")
@@ -97,39 +173,10 @@ class nmr:
         return cc_data
 
     def gaussian_nmr_shielding(self, file):
-        outfile = open(file, "r")
-        lines = outfile.readlines()
-        for i in range(0, len(lines)):
-            if lines[i].find("shielding tensors") > -1:
-                start = i + 2
-            if lines[i].find("End of Minotr F.D.") > -1:
-                end = i - 1
-        nmr_shielding = []
-        for j in range(start, end - 1, 5):
-            nmr = lines[j].split()[4]
-            if nmr == "Anisotropy": #Bad formatting in Gaussian
-                nmr_line = lines[j].split()[3]
-                nmr = nmr_line.strip("=")
-            nmr = float(nmr)
-            nmr_shielding.append(nmr)
-        return nmr_shielding
+        return _gaussian_nmr_shielding(file)
 
     def orca_nmr_shielding(self, file):
-        outfile = open(file, "r")
-        lines = outfile.readlines()
-        for i in range(0, len(lines)):
-            if lines[i].find("CHEMICAL SHIELDING SUMMARY (ppm)") > -1:
-                idx = i + 6
-        nmr_shielding = []
-        line = True
-        for i in range(idx, len(lines)):
-            line = lines[idx]
-            if line.split() == []:
-                break
-            nmr = float(line.split()[2])
-            nmr_shielding.append(nmr)
-            idx += 1
-        return nmr_shielding
+        return _orca_nmr_shielding(file)
 
     def get_filename(self, fullname):
         return resolve_data_key(fullname, self.data_dict, module_name="NMR", logger=self.args.log)

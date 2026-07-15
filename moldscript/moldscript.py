@@ -92,7 +92,7 @@ def main():
             opt_read = files("opt", args.opt, data_dicts, args.suffix_opt)
             if first_read == '':
                 first_read = opt_read.file_data
-            opt_data = opt(opt_read.file_data, data_dicts, output=args.output)
+            opt_data = opt(opt_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = opt_data.file_data
         
         # SPC
@@ -100,7 +100,7 @@ def main():
             spc_read = files(calc="spc", path=args.spc, data_dict=data_dicts, suffix=args.suffix_spc)
             if first_read == '':
                 first_read = spc_read.file_data
-            spc_data = spc(spc_read.file_data, data_dicts, output=args.output)
+            spc_data = spc(spc_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = spc_data.file_data
         
         # Charges
@@ -108,7 +108,7 @@ def main():
             chg_read = files(calc="charges", path=args.charges, data_dict=data_dicts, suffix=args.suffix_charges)
             if first_read == '':
                 first_read = chg_read.file_data
-            chg_data = charges(chg_read.file_data, data_dicts, output=args.output)
+            chg_data = charges(chg_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = chg_data.file_data
         
         # FMO
@@ -116,7 +116,7 @@ def main():
             fmo_read = files(calc="fmo", path=args.fmo, data_dict=data_dicts, suffix=args.suffix_fmo)
             if first_read == '':
                 first_read = fmo_read.file_data
-            fmo_data = fmo(fmo_read.file_data, data_dicts, output=args.output)
+            fmo_data = fmo(fmo_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = fmo_data.file_data
         
         # NMR
@@ -124,7 +124,7 @@ def main():
             nmr_read = files("nmr", args.nmr, data_dicts, args.suffix_nmr)
             if first_read == '':
                 first_read = nmr_read.file_data
-            nmr_data = nmr(nmr_read.file_data, data_dicts, output=args.output)
+            nmr_data = nmr(nmr_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = nmr_data.file_data
 
         # NBO
@@ -132,7 +132,7 @@ def main():
             nbo_read = files("nbo", args.nbo, data_dicts, args.suffix_nbo)
             if first_read == '':
                 first_read = nbo_read.file_data
-            nbo_data = nbo(nbo_read.file_data, data_dicts, output=args.output)
+            nbo_data = nbo(nbo_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = nbo_data.file_data
 
         # MLIP / MACE-Polar extxyz
@@ -150,7 +150,7 @@ def main():
         if args.fukui_neutral and args.fukui_reduced and args.fukui_oxidized:
             emit(f"FUKUI paths: {[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized]}", style="cyan")
             fukui_read = files(calc="fukui", data_dict=data_dicts, path=[args.fukui_neutral, args.fukui_reduced, args.fukui_oxidized], suffix= [args.suffix_fukui_neutral, args.suffix_fukui_reduced, args.suffix_fukui_oxidized])
-            fukui_data = fukui(fukui_read.file_data, data_dicts, output=args.output)
+            fukui_data = fukui(fukui_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = fukui_data.data_dict
 
     if args.substructure != "":

@@ -8,8 +8,64 @@ import time
 import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
+from moldscript.utils import (
+    initiate_data_dict,
+    record_cpu_time,
+    format_timedelta,
+    resolve_data_key,
+    run_file_jobs,
+    cpu_times_seconds,
+)
 import numpy as np
+
+
+def _parse_fmo_job(job):
+    file_name, source_path, matched_name = job
+    try:
+        fmo_data = cc.io.ccread(source_path)
+        dipole = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
+        homo = fmo_data.moenergies[0][fmo_data.homos[0]]
+        lumo = fmo_data.moenergies[0][fmo_data.homos[0] + 1]
+        softness = lumo - homo
+        chemical_potential = (lumo + homo) / 2
+        global_electrophilicity = chemical_potential**2 / (2 * softness)
+        mol_values = {
+            "dipole": dipole,
+            "HOMO": homo,
+            "LUMO": lumo,
+            "HOMO-LUMO_gap": softness,
+            "chemical_potential": chemical_potential,
+            "global_electrophilicity": global_electrophilicity,
+            "global_nucleophilicity": 1 / global_electrophilicity,
+        }
+        try:
+            quadrupole_moments = fmo_data.moments[2]
+            quadrupole_matrix = np.array([
+                [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
+                [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
+                [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]],
+            ])
+            mol_values["quadrupole_moment_trace"] = np.trace(quadrupole_matrix)
+        except Exception:
+            mol_values["quadrupole_moment_trace"] = None
+
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "mol_values": mol_values,
+            "metadata": getattr(fmo_data, "metadata", {}),
+            "cpu_times": fmo_data.metadata.get("cpu_time") if hasattr(fmo_data, "metadata") else None,
+            "error": None,
+        }
+    except BaseException as exc:
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "error": f"Could not parse {file_name} to obtain FMO and moment information: {exc}",
+        }
+
 
 class fmo:
     """
@@ -25,7 +81,11 @@ class fmo:
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
+            self.data_dict = initiate_data_dict(
+                self.data,
+                logger=self.args.log,
+                workers=self.args.workers,
+            )
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for FMO and moment analysis")
             self.args.log.finalize()
@@ -43,56 +103,34 @@ class fmo:
         self.args.log.write(f"-- FMO Collection starting")
         self.module_cpu_seconds = 0.0
 
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(self.data.keys(), start=1):
+        jobs = []
+        for file_name in self.data.keys():
             source_path = self.data[file_name]
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            if source_path.rsplit('.',1)[1] == 'log':
-                self.fmo_program = 'gaussian'
-            elif source_path.rsplit('.', 1)[1] =='out':
-                self.fmo_program = 'orca'
-            fmo_data = self.parse_cc_data(file_name, source_path)
-            file_name = self.get_filename(file_name)
-            try:
-                if list(self.data.keys()).index(file_name) == 0:
-                    self.args.log.write(f"   Functional used: {fmo_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {fmo_data.metadata['basis_set']}")
-            except: pass
+            matched_name = self.get_filename(file_name)
+            jobs.append((file_name, source_path, matched_name))
 
+        for idx, result in enumerate(
+            run_file_jobs(jobs, _parse_fmo_job, workers=self.args.workers, logger=self.args.log)
+        ):
+            if result.get("error"):
+                self.args.log.write(f"\nx  {result['error']}")
+                raise SystemExit
+
+            if idx == 0:
+                metadata = result["metadata"]
+                try:
+                    self.args.log.write(f"   Functional used: {metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {metadata['basis_set']}")
+                except:
+                    pass
+
+            file_name = result["matched_name"]
             self.args.log.write_only(f"o  Parsing FMO and Moment Data from {os.path.basename(file_name)}")
+            for key, value in result["mol_values"].items():
+                self.data_dict[file_name]["mol"][key] = value
 
-            self.data_dict[file_name]["mol"]["dipole"] = np.sqrt(np.sum((fmo_data.moments[0] - fmo_data.moments[1]) ** 2, axis=0))
-            self.data_dict[file_name]["mol"]["HOMO"] = fmo_data.moenergies[0][fmo_data.homos[0]]
-            self.data_dict[file_name]["mol"]["LUMO"] = fmo_data.moenergies[0][fmo_data.homos[0] + 1]
-
-            softness = self.data_dict[file_name]["mol"]["LUMO"]- self.data_dict[file_name]["mol"]["HOMO"]
-            self.data_dict[file_name]["mol"]["HOMO-LUMO_gap"] = (softness)
-            chemical_potential = (self.data_dict[file_name]["mol"]["LUMO"] + self.data_dict[file_name]["mol"]["HOMO"]) /2
-            self.data_dict[file_name]["mol"]["chemical_potential"] = chemical_potential
-            glob_electrophilicity = chemical_potential**2 / (2*softness)
-            self.data_dict[file_name]["mol"]["global_electrophilicity"] = glob_electrophilicity
-            self.data_dict[file_name]["mol"]["global_nucleophilicity"] = 1/glob_electrophilicity
-
-            try:
-                quadrupole_moments = fmo_data.moments[2]
-                quadrupole_matrix = np.array([
-    [quadrupole_moments[0], quadrupole_moments[1], quadrupole_moments[2]],
-    [quadrupole_moments[1], quadrupole_moments[3], quadrupole_moments[4]],
-    [quadrupole_moments[2], quadrupole_moments[4], quadrupole_moments[5]]
-])
-                trace = np.trace(quadrupole_matrix)
-                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = (trace)
-            except:
-                self.data_dict[file_name]["mol"]["quadrupole_moment_trace"] = None
-
-            cpu_times = fmo_data.metadata.get("cpu_time") if fmo_data and hasattr(fmo_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source_path, cpu_times)
+            self.module_cpu_seconds += cpu_times_seconds(result["cpu_times"])
+            record_cpu_time(self.data_dict, file_name, result["source_path"], result["cpu_times"])
 
 
         return self.data_dict

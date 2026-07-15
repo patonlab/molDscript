@@ -13,6 +13,7 @@ import numpy as np
 import cclib as cc
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 try:
     from rich.console import Console
@@ -376,6 +377,10 @@ def record_cpu_time(data_dict, file_key, source_path, cpu_times):
     return added.total_seconds()
 
 
+def cpu_times_seconds(cpu_times):
+    return sum(span.total_seconds() for span in _normalise_cpu_spans(cpu_times))
+
+
 def format_timedelta(value: datetime.timedelta) -> str:
     total_seconds = value.total_seconds()
     total_hours = total_seconds / 3600.0
@@ -392,6 +397,66 @@ def add_cpu_times(file_data):
         if cpu_value:
             total_cpu += cpu_value
     return total_cpu
+
+
+def normalize_workers(workers):
+    """Return a conservative worker count from CLI/varfile input."""
+    try:
+        workers = int(workers)
+    except (TypeError, ValueError):
+        return 1
+    return max(1, workers)
+
+
+def report_job_progress(logger, current, total, last_step=0):
+    """Emit the same 5% progress markers used by the terminal progress parser."""
+    if total <= 0:
+        return last_step
+    percent = int((current / total) * 100)
+    step = percent // 5
+    if step <= last_step:
+        return last_step
+    message = f"Progress: {step * 5}% ({current}/{total})"
+    if logger:
+        logger.write(message)
+    else:
+        terminal.update_progress(current, total)
+    return step
+
+
+def run_file_jobs(jobs, worker, workers=1, logger=None):
+    """
+    Run independent file jobs sequentially or in a process pool.
+
+    Results are returned in input order so downstream descriptor tables remain
+    deterministic even when jobs complete out of order.
+    """
+    jobs = list(jobs)
+    total = len(jobs)
+    if total == 0:
+        return []
+
+    worker_count = min(normalize_workers(workers), total)
+    results = [None] * total
+    last_step = 0
+
+    if worker_count == 1:
+        for index, job in enumerate(jobs):
+            results[index] = worker(job)
+            last_step = report_job_progress(logger, index + 1, total, last_step)
+        return results
+
+    with ProcessPoolExecutor(max_workers=worker_count) as executor:
+        future_to_index = {
+            executor.submit(worker, job): index for index, job in enumerate(jobs)
+        }
+        completed = 0
+        for future in as_completed(future_to_index):
+            index = future_to_index[future]
+            results[index] = future.result()
+            completed += 1
+            last_step = report_job_progress(logger, completed, total, last_step)
+    return results
 
 
 def molecule_keys(data_dict):
@@ -466,7 +531,43 @@ def resolve_data_key(fullname, data_dict, module_name=None, logger=None):
     raise SystemExit
 
 
-def initiate_data_dict(data, logger=None):
+def _parse_structure_job(job):
+    file_name, source_path = job
+    try:
+        parsed_data = parse_cc_data(file_name, source_path)
+        try:
+            mol = xyz2mol.xyz2mol(
+                parsed_data.atomnos.tolist(),
+                parsed_data.atomcoords[-1].tolist(),
+                charge=parsed_data.charge,
+            )[0]
+            smiles = Chem.MolToSmiles(mol)
+            warning = None
+        except Exception:
+            smiles = ""
+            warning = "Encountered an issue with the mol embedding. Skipping smiles string."
+
+        cpu_times = parsed_data.metadata.get("cpu_time") if hasattr(parsed_data, "metadata") else None
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "smiles": smiles,
+            "atomnos": parsed_data.atomnos,
+            "bond_length": parsed_data.bond_data_matrix,
+            "scfenergy": parsed_data.scfenergies[-1] * eV_to_hartree,
+            "cpu_times": cpu_times,
+            "warning": warning,
+            "error": None,
+        }
+    except BaseException as exc:
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "error": f"Error parsing {file_name}: {exc}",
+        }
+
+
+def initiate_data_dict(data, logger=None, workers=1):
     """
     Initiates a data dictionary to store all the data from the files.
     Progress and informational messages are emitted to `logger` when provided,
@@ -488,19 +589,15 @@ def initiate_data_dict(data, logger=None):
             emit("No files to process.", style="yellow")
         return data_dict
 
-    last_step = 0  # tracks 5% steps printed (0..20)
-    for i, file_name in enumerate(data.keys(), start=1):
-        # Progress reporting every 5%
-        percent = int((i / total) * 100)
-        step = percent // 5
-        if step > last_step:
-            # emit any missed intermediate 5% markers if step jumped
-            for s in range(last_step + 1, step + 1):
-                if logger:
-                    logger.write(f"Progress: {s * 5}% ({i}/{total})")
-                else:
-                    terminal.update_progress(i, total)
-            last_step = step
+    jobs = [(file_name, data[file_name]) for file_name in data.keys()]
+    for result in run_file_jobs(jobs, _parse_structure_job, workers=workers, logger=logger):
+        file_name = result["file_name"]
+        if result.get("error"):
+            if logger:
+                logger.write(f"x  {result['error']}")
+            else:
+                emit(f"x  {result['error']}", style="bold red")
+            raise SystemExit
 
         data_dict[file_name] = dict()
         data_dict[file_name]["mol"] = dict()
@@ -508,28 +605,16 @@ def initiate_data_dict(data, logger=None):
         data_dict[file_name]["bond"] = dict()
         if logger:
             logger.write_only(f"o  Initializing structure data from {os.path.basename(file_name)}")
-        parsed_data = parse_cc_data(file_name, data[file_name])
-        try:
-            mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
-            smi = Chem.MolToSmiles(mol)
-        except:
+        if result["warning"]:
             if logger:
-                logger.write("Encountered an issue with the mol embedding. Skipping smiles string.")
+                logger.write(result["warning"])
             else:
-                emit("Encountered an issue with the mol embedding. Skipping smiles string.", style="yellow")
-            smi = ''
-        data_dict[file_name]["mol"]["smiles"] = smi
-        data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
-        data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
-        data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
-
-    # Ensure 100% is emitted
-    if last_step < 20:
-        for s in range(last_step + 1, 21):
-            if logger:
-                logger.write(f"Progress: {s * 5}% ({total}/{total})")
-            else:
-                terminal.update_progress(total, total)
+                emit(result["warning"], style="yellow")
+        data_dict[file_name]["mol"]["smiles"] = result["smiles"]
+        data_dict[file_name]["atom"]["atomnos"] = result["atomnos"]
+        data_dict[file_name]["bond"]["bond_length"] = result["bond_length"]
+        data_dict[file_name]["mol"]["scfenergy"] = result["scfenergy"]
+        record_cpu_time(data_dict, file_name, result["source_path"], result["cpu_times"])
 
     return data_dict
 
@@ -549,20 +634,11 @@ def format_lists(value):
     return value
 def bond_data_matrix(data):
         try:
-            coords = data.atomcoords[-1]
+            coords = np.asarray(data.atomcoords[-1], dtype=float)
         except:
-            coords = data
-        bond_data_matrix_list = []
-        for atom1 in range(len(coords)):
-            row = []
-            for atom2 in range(len(coords)):
-                p1 = np.array(coords[atom1])
-                p2 = np.array(coords[atom2])
-                squared_dist = np.sum((p1 - p2) ** 2, axis=0)
-                dist = np.sqrt(squared_dist)
-                row.append(dist)
-            bond_data_matrix_list.append(row)
-        return bond_data_matrix_list
+            coords = np.asarray(data, dtype=float)
+        diff = coords[:, None, :] - coords[None, :, :]
+        return np.linalg.norm(diff, axis=-1)
 def parse_cc_data(file_name, file):
         try:
             parser = cc.io.ccopen(file)

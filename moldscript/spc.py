@@ -8,7 +8,37 @@ import time
 import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
-from moldscript.utils import eV_to_hartree, initiate_data_dict, record_cpu_time, format_timedelta, resolve_data_key
+from moldscript.utils import (
+    eV_to_hartree,
+    initiate_data_dict,
+    record_cpu_time,
+    format_timedelta,
+    resolve_data_key,
+    run_file_jobs,
+    cpu_times_seconds,
+)
+
+
+def _parse_spc_job(job):
+    file_name, source_path, matched_name = job
+    try:
+        spc_data = cc.io.ccread(source_path)
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "scfenergy": spc_data.scfenergies[-1] * eV_to_hartree,
+            "metadata": getattr(spc_data, "metadata", {}),
+            "cpu_times": spc_data.metadata.get("cpu_time") if hasattr(spc_data, "metadata") else None,
+            "error": None,
+        }
+    except BaseException as exc:
+        return {
+            "file_name": file_name,
+            "source_path": source_path,
+            "matched_name": matched_name,
+            "error": f"Could not parse {file_name} to obtain spc energy information: {exc}",
+        }
 
 class spc:
     """
@@ -24,7 +54,11 @@ class spc:
         self.data_dict = data_dict
         self.module_cpu_seconds = 0.0
         if self.data_dict == {}:
-            self.data_dict = initiate_data_dict(self.data, logger=self.args.log)
+            self.data_dict = initiate_data_dict(
+                self.data,
+                logger=self.args.log,
+                workers=self.args.workers,
+            )
         if len(self.data.keys()) == 0:
             self.args.log.write(f"\nx  Could not find files to obtain information for single point correction")
             self.args.log.finalize()
@@ -44,32 +78,32 @@ class spc:
         self.args.log.write(f"   --- Single Point Energy Collection starting")
         self.module_cpu_seconds = 0.0
 
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(self.data.keys(), start=1):
+        jobs = []
+        for file_name in self.data.keys():
             source_path = self.data[file_name]
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            spc_data = self.parse_cc_data(file_name, source_path)
-
             filename = self.get_filename(file_name)
+            jobs.append((file_name, source_path, filename))
 
-            try:
-                if list(self.data.keys()).index(file_name) == 0:
-                    self.args.log.write(f"   Functional used: {spc_data.metadata['functional']}")
-                    self.args.log.write(f"   Basis set used: {spc_data.metadata['basis_set']}")
-            except:
-                pass
-            self.args.log.write_only(f"o  Parsing SPC Energy Data from {os.path.basename(file_name)}")
-            self.data_dict[filename]['mol']['scfenergy'] = (
-                spc_data.scfenergies[-1] * eV_to_hartree)
+        for idx, result in enumerate(
+            run_file_jobs(jobs, _parse_spc_job, workers=self.args.workers, logger=self.args.log)
+        ):
+            if result.get("error"):
+                self.args.log.write(f"\nx  {result['error']}")
+                raise SystemExit
 
-            cpu_times = spc_data.metadata.get("cpu_time") if spc_data and hasattr(spc_data, "metadata") else None
-            self.module_cpu_seconds += record_cpu_time(self.data_dict, filename, source_path, cpu_times)
+            if idx == 0:
+                metadata = result["metadata"]
+                try:
+                    self.args.log.write(f"   Functional used: {metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {metadata['basis_set']}")
+                except:
+                    pass
+            self.args.log.write_only(f"o  Parsing SPC Energy Data from {os.path.basename(result['file_name'])}")
+            filename = result["matched_name"]
+            self.data_dict[filename]['mol']['scfenergy'] = result["scfenergy"]
+
+            self.module_cpu_seconds += cpu_times_seconds(result["cpu_times"])
+            record_cpu_time(self.data_dict, filename, result["source_path"], result["cpu_times"])
         return self.data_dict
 
     def parse_cc_data(self, file_name, file):

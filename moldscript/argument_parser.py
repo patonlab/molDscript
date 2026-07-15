@@ -60,6 +60,7 @@ var_dict = {
     'no_atom' : False,
     'no_bond' : False,
     'mol_vector' : False,
+    "workers": 1,
 
 }
 
@@ -137,7 +138,7 @@ def command_line_args():
         'mol_vector'
     ]
     list_args = ["skip_list"]
-    int_args = ["syllables"]
+    int_args = ["syllables", "workers"]
     float_args = [
         "temp",
         "cut"
