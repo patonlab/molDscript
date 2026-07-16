@@ -61,6 +61,7 @@ var_dict = {
     'no_bond' : False,
     'mol_vector' : False,
     "workers": 1,
+    "write_args": "",
 
 }
 
@@ -88,6 +89,10 @@ def load_arguments_from_file(filename):
                 value = True
             elif value.lower() == "false":
                 value = False
+            elif value.lower() == "none":
+                value = None
+            elif value.startswith("[") and value.endswith("]"):
+                value = format_lists(value)
             elif value.isdigit():
                 value = int(value)
             else:
@@ -171,7 +176,8 @@ def command_line_args():
         "fukui_reduced_suffix",
         "fukui_oxidized_suffix",
         "charges_suffix",
-        "fmo_suffix"
+        "fmo_suffix",
+        "write_args",
     ]
 
     for arg in var_dict:
@@ -225,6 +231,44 @@ def command_line_args():
     args = load_variables(kwargs, "command")
 
     return args
+
+
+def _format_argument_file_value(value):
+    if value is None:
+        return "None"
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if isinstance(value, (list, tuple)):
+        return repr(list(value))
+    return str(value)
+
+
+def write_arguments_file(args, filename=None):
+    """Write a varfile that can reproduce the effective options for this run."""
+    target = filename if filename is not None else getattr(args, "write_args", "")
+    if target is True:
+        target = "arguments.txt"
+    if not target:
+        return None
+
+    target = str(target)
+    if target.lower() == "true":
+        target = "arguments.txt"
+
+    directory = os.path.dirname(target)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    with open(target, "w", encoding="utf-8") as handle:
+        handle.write("# MOLDSCRIPT arguments generated from the current run.\n")
+        handle.write("# Re-run with: python -m moldscript --varfile {}\n\n".format(target))
+        for key in var_dict:
+            if key in ("varfile", "write_args"):
+                continue
+            value = getattr(args, key, var_dict[key])
+            handle.write(f"{key}: {_format_argument_file_value(value)}\n")
+
+    return target
 
 
 def load_variables(kwargs, moldscript_module, create_dat=True):

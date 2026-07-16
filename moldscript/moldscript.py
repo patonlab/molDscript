@@ -17,6 +17,7 @@ from moldscript.argument_parser import (
     moldscript_version,
     moldscript_ref,
     time_run,
+    write_arguments_file,
 )
 from moldscript.boltz import boltz
 from moldscript.fmo import fmo
@@ -69,9 +70,11 @@ def main():
 
     initialize_run_log(args.output, moldscript_version, time_run, moldscript_ref, sys.argv[1:])
     print_run_header(moldscript_version, time_run, moldscript_ref, sys.argv[1:])
+    arguments_file = write_arguments_file(args)
+    if arguments_file:
+        emit(f"Saved reproducible argument file to {arguments_file}", style="cyan")
 
 
-    
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
