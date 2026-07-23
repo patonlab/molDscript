@@ -535,17 +535,35 @@ def _parse_structure_job(job):
     file_name, source_path = job
     try:
         parsed_data = parse_cc_data(file_name, source_path)
-        try:
-            mol = xyz2mol.xyz2mol(
-                parsed_data.atomnos.tolist(),
-                parsed_data.atomcoords[-1].tolist(),
-                charge=parsed_data.charge,
-            )[0]
-            smiles = Chem.MolToSmiles(mol)
-            warning = None
-        except Exception:
+        unsupported_atomnos = sorted(
+            {
+                int(atomno)
+                for atomno in parsed_data.atomnos
+                if not xyz2mol.atomic_valence.get(int(atomno))
+            }
+        )
+        if unsupported_atomnos:
             smiles = ""
-            warning = "Encountered an issue with the mol embedding. Skipping smiles string."
+            warning = (
+                "Could not generate a SMILES string because xyz2mol does not "
+                f"support atomic numbers {unsupported_atomnos}. Geometry data "
+                "will still be collected."
+            )
+        else:
+            try:
+                mol = xyz2mol.xyz2mol(
+                    parsed_data.atomnos.tolist(),
+                    parsed_data.atomcoords[-1].tolist(),
+                    charge=parsed_data.charge,
+                )[0]
+                smiles = Chem.MolToSmiles(mol)
+                warning = None
+            except (Exception, SystemExit):
+                smiles = ""
+                warning = (
+                    "Encountered an issue with the molecular graph embedding. "
+                    "Geometry data will still be collected without a SMILES string."
+                )
 
         cpu_times = parsed_data.metadata.get("cpu_time") if hasattr(parsed_data, "metadata") else None
         return {

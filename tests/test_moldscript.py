@@ -10,6 +10,7 @@ from moldscript.files import files
 from moldscript.MLIP import mlip
 from moldscript.get_df import get_df
 from moldscript.opt import opt
+from moldscript.spc import spc
 from moldscript.nmr import nmr
 from moldscript.nbo import nbo
 from moldscript.fmo import fmo
@@ -148,6 +149,55 @@ def test_charges_parses_mulliken_spins():
         assert len(spins) == expected_len
         assert sum(spins) == pytest.approx(1.0, abs=1e-5)
         assert list(spins[:5]) == pytest.approx(expected_first_spins, abs=1e-6)
+
+
+@pytest.mark.skipif(
+    not Path(datapath("exampleNHCs/singlepoint")).exists(),
+    reason="exampleNHCs files are not included in this checkout",
+)
+def test_example_nhcs_spc_and_analysis_modules():
+    spc_path = datapath("exampleNHCs/singlepoint")
+    data_dicts = {}
+
+    spc_read = files("spc", spc_path, data_dicts, "singlepoint")
+    data_dicts = spc(
+        spc_read.file_data,
+        data_dicts,
+        create_dat=False,
+    ).file_data
+
+    for calc, parser in (
+        ("charges", charges),
+        ("fmo", fmo),
+        ("nmr", nmr),
+        ("nbo", nbo),
+    ):
+        module_read = files(calc, spc_path, data_dicts, "singlepoint")
+        data_dicts = parser(
+            module_read.file_data,
+            data_dicts,
+            create_dat=False,
+        ).file_data
+
+    expected_atom_counts = {
+        "core_1_r_10_r_10_X_X": 46,
+        "core_1_r_11_r_11_X_X": 40,
+        "core_1_r_12_r_1_X_X": 70,
+        "core_1_r_13_r_13_X_X": 58,
+        "core_1_r_1_r_1_X_X": 60,
+    }
+    assert set(data_dicts) == {"CPU_time", *expected_atom_counts}
+
+    for species, atom_count in expected_atom_counts.items():
+        entry = data_dicts[species]
+        assert len(entry["atom"]["atomnos"]) == atom_count
+        assert "mulliken_charge" not in entry["atom"]
+        assert len(entry["atom"]["natural_charge"]) == atom_count
+        assert len(entry["atom"]["nmr_shielding"]) == atom_count
+        assert entry["mol"]["smiles"] == ""
+        assert entry["mol"]["scfenergy"] < 0
+        assert entry["mol"]["HOMO"] < entry["mol"]["LUMO"]
+        assert entry["mol"]["dipole"] > 0
 
 
 @pytest.mark.parametrize("opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path,  fukui_neutral_suffix, fukui_oxidized_suffix, fukui_reduced_suffix, species, oxidized_charges, reduced_charges", [
