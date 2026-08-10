@@ -19,6 +19,7 @@ Key Capabilities
 - Automate ingestion of optimization, single-point, NBO, NMR, Fukui, charge, and frontier-orbital calculations without hand editing.
 - Merge descriptors across conformers and calculation types into aligned CSV datasets.
 - Restrict analysis to user-defined SMARTS substructures and optionally compute DBSTEP buried volumes.
+- Summarize steric variation in CREST or ORCA GOAT multi-frame XYZ ensembles without creating raw conformer tables.
 - Generate ensemble statistics such as Boltzmann-weighted averages, population windows, and lowest-energy snapshots.
 - Produce a single audit log (``MOLDSCRIPT.dat``) alongside descriptor files for reproducibility.
 
@@ -98,13 +99,18 @@ The following options can be combined as needed. Paths can be absolute or relati
 Core inputs
 ^^^^^^^^^^^
 ``--opt PATH``
-  Directory containing optimization log/out files. Required; provides the structural baseline, SCF energies, and conformer metadata.
+  Directory containing optimization log/out files. Provides the structural baseline, SCF energies, and conformer metadata when used.
 
 ``--spc PATH``
   Directory of single-point energy calculations. Overrides the SCF energies captured during the optimization step.
 
 ``--suffix_opt TEXT`` / ``--suffix_spc TEXT``
   Trailing text to strip from filenames before matching stems (for example, ``_opt`` or ``_spc``).
+
+``--ensemble PATH``
+  A multi-frame XYZ file, or a directory containing standard CREST
+  ``crest_conformers.xyz`` / ``*_crest_conformers.xyz`` files or ORCA GOAT
+  ``*.finalensemble.xyz`` files. Nonstandard XYZ names can be passed directly.
 
 Property modules
 ^^^^^^^^^^^^^^^^
@@ -140,8 +146,55 @@ Substructure and sterics
 ``--radius VALUE`` or ``--radius "[3.0, 3.5]"``
   Probe radii (in Angstrom) passed to DBSTEP. Accepts a single float or a Python-like list string.
 
+XYZ ensemble sterics
+^^^^^^^^^^^^^^^^^^^^
+``--ensemble_radii "[3.5]"``
+  Sphere radii used for atom-level percent-buried-volume descriptors. Every
+  atom is evaluated as a center. For each atom and radius, molDscript reports
+  the minimum, maximum, Boltzmann-weighted mean, and value from the
+  lowest-energy conformer. Use ``[]`` to omit buried volume while retaining
+  molecule-level size and shape summaries.
+
+``--ensemble_grid 0.25``
+  Buried-volume voxel spacing in Angstrom. The default is 0.25 Angstrom.
+
+``--ensemble_include_h`` / ``--ensemble_exclude "[1, 2]"``
+  Control which atoms contribute to buried-volume occupancy.
+  ``--ensemble_include_h`` includes hydrogens as occupancy atoms; otherwise
+  they are omitted from occupancy. ``--ensemble_exclude`` removes additional
+  1-based atoms from occupancy. These controls do not remove atom rows or
+  centers: every atom, including a hydrogen or excluded atom, still receives
+  centered buried-volume descriptors.
+
+``--suffix_ensemble TEXT``
+  Strip a trailing XYZ filename tag when matching ensemble data to existing
+  quantum-output molecule keys.
+
+Ensemble XYZ input adds molecule-level min/max/range descriptors only for
+mass-weighted radius of gyration and relative shape anisotropy; buried volume
+is not a molecule-level descriptor. Requested buried volumes are written to
+``atom_level.csv`` as the min, max, Boltzmann mean, and
+lowest-energy-conformer value for every atom and radius. The Boltzmann mean
+uses the temperature supplied by ``--temp``.
+
+A standalone ensemble run with buried volume writes ``molecule_level.csv`` and
+``atom_level.csv`` but no bond table. With ``--ensemble_radii "[]"``, it
+writes only the molecule table. When combined with quantum outputs, ensemble
+values are merged into the existing molecule and atom tables and the normal
+bond table remains available. No raw conformer table, separate results folder,
+or other ensemble-specific CSV is created.
+
+These atom-level summaries require stable atom identity and ordering in every
+frame, including among same-element atoms. Different element ordering is
+rejected. Same-element permutations are usually impossible to detect from XYZ
+element labels alone, but they are unsupported because they mix atom
+identities across conformers.
+
 Ensemble statistics
 ^^^^^^^^^^^^^^^^^^^
+These reducers operate on quantum-chemistry conformer rows and are ignored for
+ensemble-only XYZ input.
+
 ``--boltz``
   Produce Boltzmann-weighted averages at the temperature specified by ``--temp`` (default 298.15 K), along with the conformer weights.
 
@@ -152,7 +205,8 @@ Ensemble statistics
   Keep only the lowest-energy conformer for each molecule.
 
 ``--temp FLOAT``
-  Temperature (in Kelvin) used for Boltzmann and min/max population analyses.
+  Temperature (in Kelvin) used for Boltzmann and min/max population analyses,
+  as well as the atom-level ensemble buried-volume Boltzmann mean.
 
 ``--cut FLOAT``
   Cumulative Boltzmann weight cutoff for ``--min_max`` (expressed as the retained population fraction).
@@ -180,6 +234,10 @@ Running molDscript creates the following artefacts in the working directory (or 
 - ``atom_level.csv`` - atomic descriptors including charges, Fukui indices, NMR shielding, and buried volumes when requested.
 - ``boltzmann_weights.csv`` plus ``ensemble_*.csv`` tables when ``--boltz`` is enabled.
 - ``min_max_range_*.csv`` tables when ``--min_max`` is enabled and ``lowest_energy_*.csv`` tables when ``--lowe`` is requested.
+- ``--ensemble`` writes radius-of-gyration and shape summaries directly into
+  ``molecule_level.csv`` and requested per-atom buried-volume summaries into
+  ``atom_level.csv``. It creates no additional ensemble-specific table or
+  directory.
 - ``MOLDSCRIPT.dat`` - a single run log that documents command provenance, parsed files, module sections, and CPU-time summaries.
 
 Each run also reports the cumulative CPU time associated with the parsed quantum chemistry jobs.

@@ -20,6 +20,36 @@ class get_df:
         self.substructure = substructure
         self.prefix = prefix
         self.no_bond_filter = bond_filter
+        descriptor_entries = [
+            value
+            for key, value in data_dicts.items()
+            if key != "CPU_time"
+            and isinstance(value, dict)
+            and {"mol", "atom", "bond"}.issubset(value)
+        ]
+        has_bond_descriptors = any(
+            bool(entry["bond"]) for entry in descriptor_entries
+        )
+        has_atom_descriptors = any(
+            bool(set(entry["atom"]) - {"atomnos"})
+            for entry in descriptor_entries
+        )
+        if descriptor_entries and not has_bond_descriptors:
+            if not no_bond:
+                emit(
+                    "No bond-level ensemble descriptors requested; "
+                    "skipping the bond-level table",
+                    style="yellow",
+                )
+            no_bond = True
+            if not has_atom_descriptors:
+                if not no_atom:
+                    emit(
+                        "No atom-level ensemble descriptors requested; "
+                        "writing only the molecule-level table",
+                        style="yellow",
+                    )
+                no_atom = True
         if no_mol:
             emit('Skipping molecule-level descriptors', style="yellow")
         else:
@@ -128,9 +158,14 @@ class get_df:
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
-        props = list(data[filenames[0]]["atom"].keys())
-        calced_props = props.copy()
-        calced_props.remove("atomnos")
+        props = []
+        for fname in filenames:
+            for prop in data[fname]["atom"]:
+                if prop not in props:
+                    props.append(prop)
+        calced_props = [
+            prop for prop in props if prop != "atomnos"
+        ]
         if calced_props != []:
             for prop in calced_props:
                 append_run_log(f"\t- {prop}")
@@ -140,16 +175,13 @@ class get_df:
             atoms = data[fname]["atom"]["atomnos"]
             tempdic = {}
             for prop in props:
-                try:
-                    values = atom_level_data[prop]
-                    if values is None:
-                        raise Exception
-                except Exception:
-                    values = [''] * len(atoms)
+                values = atom_level_data.get(prop)
+                if values is None:
+                    values = [np.nan] * len(atoms)
                 tempdic[str(prop)] = values
-            fnames = [fname for i in range(len(values))]
+            fnames = [fname for i in range(len(atoms))]
             tempdic["filename"] = fnames
-            atom_idx = [i + 1 for i in range(len(values))]
+            atom_idx = [i + 1 for i in range(len(atoms))]
             tempdic["atom_index"] = atom_idx
             vfunc = np.vectorize(self.get_atom_lab)
             atypes = np.array(atoms)

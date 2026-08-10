@@ -242,6 +242,9 @@ def _clean_task_description(message):
         "nmr parameter collection starting": "Extracting NMR shielding tensors",
         "fukui parameter collection starting": "Calculating Fukui descriptors from charge-state files",
         "mlip parameter collection starting": "Parsing MLIP extxyz descriptor files",
+        "xyz ensemble parameter collection starting": (
+            "Calculating XYZ ensemble steric summaries"
+        ),
         "steric parameter collection starting": "Calculating steric buried volumes",
     }
     for marker, description in stage_descriptions.items():

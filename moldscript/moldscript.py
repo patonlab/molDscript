@@ -9,6 +9,7 @@ from moldscript.substructure import substructure
 from moldscript.get_df import get_df
 from moldscript.min_max import min_max
 from moldscript.sterics import sterics
+from moldscript.ensemble import ensemble
 from moldscript.charges import charges
 from moldscript.lowe import lowe
 from moldscript.MLIP import mlip
@@ -26,9 +27,11 @@ from moldscript.utils import (
     append_run_log,
     emit,
     initialize_run_log,
+    molecule_keys,
     print_run_header,
     terminal_error,
     terminal_success,
+    terminal_warning,
 )
 
 header = """
@@ -75,6 +78,7 @@ def main():
         emit(f"Saved reproducible argument file to {arguments_file}", style="cyan")
 
 
+    first_read = ""
     if args.link:
         # ALL DATA
         all_read = files(calc="link", path=args.link, program=args.program)
@@ -90,7 +94,6 @@ def main():
 
     else:
         # OPT
-        first_read = ''
         if args.opt:
             opt_read = files("opt", args.opt, data_dicts, args.suffix_opt)
             if first_read == '':
@@ -156,22 +159,89 @@ def main():
             fukui_data = fukui(fukui_read.file_data, data_dicts, output=args.output, workers=args.workers)
             data_dicts = fukui_data.data_dict
 
-    if args.substructure != "":
+    ensemble_only = bool(args.ensemble) and not molecule_keys(data_dicts)
+    if args.ensemble:
+        try:
+            ensemble_data = ensemble(
+                path=args.ensemble,
+                data_dict=data_dicts,
+                radii=args.ensemble_radii,
+                grid=args.ensemble_grid,
+                temp=args.temp,
+                include_h=args.ensemble_include_h,
+                exclude=args.ensemble_exclude,
+                suffix=args.suffix_ensemble,
+                output=args.output,
+                workers=args.workers,
+            )
+            data_dicts = ensemble_data.file_data
+        except (OSError, ValueError) as exc:
+            terminal_error(f"x  Could not analyze XYZ ensemble: {exc}")
+            raise SystemExit(1) from exc
+
+    if args.substructure != "" and molecule_keys(data_dicts) and first_read:
         substructure_read = files(data_dict=data_dicts, calc="substructure", path=args.opt, suffix=args.suffix_opt)
         data_dicts = substructure(substructure_read.file_data, data_dicts, args.substructure, output=args.output).file_data
+    elif args.substructure != "" and molecule_keys(data_dicts):
+        terminal_warning(
+            "SMARTS substructure matching requires a quantum-chemistry "
+            "structure; it is not applied to ensemble-only XYZ input."
+        )
 
-    if args.volume != False or args.vall != False:
+    if (
+        (args.volume != False or args.vall != False)
+        and molecule_keys(data_dicts)
+        and first_read
+    ):
         data_dicts = sterics(first_read, data_dicts, args.volume, args.vall, args.radius, output=args.output).dd
+    elif (
+        (args.volume != False or args.vall != False)
+        and molecule_keys(data_dicts)
+    ):
+        terminal_warning(
+            "--volume and --vall require quantum-chemistry structure files; "
+            "use --ensemble_radii for ensemble XYZ buried volumes."
+        )
 
-    df_getter = get_df(data_dicts, substructure=args.substructure, prefix = args.output, bond_filter=args.no_bond_filter, no_mol=args.no_mol, no_atom=args.no_atom, no_bond=args.no_bond, mol_vector=args.mol_vector)
+    df_getter = None
+    if molecule_keys(data_dicts):
+        df_getter = get_df(
+            data_dicts,
+            substructure=args.substructure,
+            prefix=args.output,
+            bond_filter=args.no_bond_filter,
+            no_mol=args.no_mol,
+            no_atom=args.no_atom,
+            no_bond=args.no_bond or ensemble_only,
+            mol_vector=args.mol_vector,
+        )
+    else:
+        terminal_error(
+            "x  No supported calculation or ensemble input files were requested"
+        )
+        raise SystemExit(1)
 
-    if args.boltz:
-        boltz(temp=args.temp, prefix=args.output, energies = df_getter.energies)
-    
-    if args.min_max:
-        min_max(temp=args.temp, cut=args.cut,  prefix=args.output, energies = df_getter.energies)
-    if args.lowe:
-        lowe(prefix=args.output, energies = df_getter.energies)
+    if ensemble_only and (args.boltz or args.min_max or args.lowe):
+        terminal_warning(
+            "--boltz, --min_max, and --lowe operate on quantum-chemistry "
+            "conformer tables and are ignored for ensemble-only XYZ input."
+        )
+    else:
+        if args.boltz and df_getter is not None:
+            boltz(
+                temp=args.temp,
+                prefix=args.output,
+                energies=df_getter.energies,
+            )
+        if args.min_max and df_getter is not None:
+            min_max(
+                temp=args.temp,
+                cut=args.cut,
+                prefix=args.output,
+                energies=df_getter.energies,
+            )
+        if args.lowe and df_getter is not None:
+            lowe(prefix=args.output, energies=df_getter.energies)
     
     tfin = time.time()
     message = f"MolDscript finished running in {round(tfin - tstart, 2)} seconds"

@@ -35,6 +35,11 @@ var_dict = {
     "mlip_neutral": False,
     "mlip_reduced": False,
     "mlip_oxidized": False,
+    "ensemble": False,
+    "ensemble_radii": [3.5],
+    "ensemble_grid": 0.25,
+    "ensemble_include_h": False,
+    "ensemble_exclude": "",
     "link": False,
     "boltz": False,
     "min_max": False,
@@ -56,6 +61,7 @@ var_dict = {
     "suffix_fukui_oxidized": "",
     "suffix_charges": "",
     "suffix_fmo": "",
+    "suffix_ensemble": "",
     "no_mol" : False,
     'no_atom' : False,
     'no_bond' : False,
@@ -140,13 +146,15 @@ def command_line_args():
         'no_mol',
         'no_atom',
         'no_bond',
-        'mol_vector'
+        'mol_vector',
+        "ensemble_include_h",
     ]
     list_args = ["skip_list"]
     int_args = ["syllables", "workers"]
     float_args = [
         "temp",
-        "cut"
+        "cut",
+        "ensemble_grid",
     ]
     str_args = [
         "output",
@@ -163,6 +171,9 @@ def command_line_args():
         "mlip_neutral",
         "mlip_reduced",
         "mlip_oxidized",
+        "ensemble",
+        "ensemble_radii",
+        "ensemble_exclude",
         "link",
         "substructure",
         "varfile",
@@ -177,6 +188,7 @@ def command_line_args():
         "fukui_oxidized_suffix",
         "charges_suffix",
         "fmo_suffix",
+        "suffix_ensemble",
         "write_args",
     ]
 
@@ -184,7 +196,7 @@ def command_line_args():
         if arg in bool_args:
             available_args.append(f"{arg}")
         else:
-            available_args.append(f"{arg} =")
+            available_args.append(f"{arg}=")
 
     try:
         opts, _ = getopt.getopt(sys.argv[1:], "h", available_args)
@@ -293,6 +305,7 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
             "FMO": "FMO",
             "CHARGES": "CHARGES",
             "STERICS": "STERICS",
+            "ENSEMBLE": "ENSEMBLE",
             "MLIP": "MLIP",
         }
         logger_code = module_codes.get(moldscript_module, moldscript_module)
