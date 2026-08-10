@@ -7,6 +7,7 @@ pd.options.mode.chained_assignment = None
 import math
 import periodictable
 import datetime
+from moldscript.utils import append_run_log, emit
 
 
 class get_df:
@@ -19,23 +20,53 @@ class get_df:
         self.substructure = substructure
         self.prefix = prefix
         self.no_bond_filter = bond_filter
+        descriptor_entries = [
+            value
+            for key, value in data_dicts.items()
+            if key != "CPU_time"
+            and isinstance(value, dict)
+            and {"mol", "atom", "bond"}.issubset(value)
+        ]
+        has_bond_descriptors = any(
+            bool(entry["bond"]) for entry in descriptor_entries
+        )
+        has_atom_descriptors = any(
+            bool(set(entry["atom"]) - {"atomnos"})
+            for entry in descriptor_entries
+        )
+        if descriptor_entries and not has_bond_descriptors:
+            if not no_bond:
+                emit(
+                    "No bond-level ensemble descriptors requested; "
+                    "skipping the bond-level table",
+                    style="yellow",
+                )
+            no_bond = True
+            if not has_atom_descriptors:
+                if not no_atom:
+                    emit(
+                        "No atom-level ensemble descriptors requested; "
+                        "writing only the molecule-level table",
+                        style="yellow",
+                    )
+                no_atom = True
         if no_mol:
-            print('\n\u25A1  SKIPPING MOLECULE-LEVEL DESCRIPTORS')
+            emit('Skipping molecule-level descriptors', style="yellow")
         else:
             mol_df = self.get_mol_df()
         if no_bond:
-            print('\n\u25A1  SKIPPING BOND-LEVEL DESCRIPTORS')
+            emit('Skipping bond-level descriptors', style="yellow")
         else:
             bond_df = self.get_bond_df()
         if no_atom:
-            print('\n\u25A1  SKIPPING ATOM-LEVEL DESCRIPTORS')
+            emit('Skipping atom-level descriptors', style="yellow")
         else:
             atom_df = self.get_atom_df()
         self.get_time()
 
     def get_mol_df(self):
         mol_csv = str(self.prefix) + "molecule_level.csv"
-        print("\n\u25A1  AGGREGATING MOLECULE-LEVEL DESCRIPTORS INTO {}".format(mol_csv))
+        emit("Writing molecule-level descriptor table to {}".format(mol_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
@@ -50,7 +81,7 @@ class get_df:
                 moldf = tmpdf
         col = moldf.pop("filename")
         for prop in list(moldf.keys()):
-            print(f"\t- {prop}")
+            append_run_log(f"\t- {prop}")
         moldf.insert(0, "filename", col)
         moldf = moldf.round(4)
         self.energies = moldf[['filename', 'scfenergy']]
@@ -59,13 +90,13 @@ class get_df:
 
     def get_bond_df(self):
         bond_csv = str(self.prefix) + "bond_level.csv"
-        print("\n\u25A1  AGGREGATING BOND-LEVEL DESCRIPTORS INTO {}".format(bond_csv))
+        emit("Writing bond-level pair descriptor table to {}".format(bond_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
         props = list(data[filenames[0]]["bond"].keys())
         for prop in props:
-            print(f"\t- {prop}")
+            append_run_log(f"\t- {prop}")
         bonddf = pd.DataFrame()
         for fname in filenames:
             atoms = np.array(data[fname]["atom"]["atomnos"])
@@ -102,7 +133,7 @@ class get_df:
             else:
                 bonddf = filedf
         if self.substructure != '':
-            print(f'  Filtering bond data by user defined substructure: {self.substructure}')
+            emit(f'Filtering bond rows to user-defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -113,42 +144,44 @@ class get_df:
         bonddf = bonddf.round(4)
         if not self.no_bond_filter:
             if 'bond_order_matrix' in props:
-                print(f'  Filtering bond data by bond order of 0.1')
+                emit('Applying default bond filter: bond order >= 0.1', style="cyan")
                 bonddf['bond_order_matrix'] = pd.to_numeric(bonddf['bond_order_matrix'], errors='coerce')
                 bonddf = bonddf[bonddf['bond_order_matrix'] >= 0.1]
             else:
-                print(f'  Filtering bond data by bond length of 3 angstroms')
+                emit('Applying default bond filter: bond length <= 3 angstroms', style="cyan")
                 bonddf = bonddf[bonddf['bond_length'] <= 3]
         bonddf.to_csv(bond_csv, index=False)
 
     def get_atom_df(self):
         atom_csv = str(self.prefix) + "atom_level.csv"
-        print("\n\u25A1  AGGREGATING ATOM-LEVEL DESCRIPTORS INTO {}".format(atom_csv))
+        emit("Writing atom-level descriptor table to {}".format(atom_csv), style="cyan")
         filenames = list(self.dd.keys())
         filenames.remove("CPU_time")
         data = self.dd
-        props = list(data[filenames[0]]["atom"].keys())
-        calced_props = props.copy()
-        calced_props.remove("atomnos")
+        props = []
+        for fname in filenames:
+            for prop in data[fname]["atom"]:
+                if prop not in props:
+                    props.append(prop)
+        calced_props = [
+            prop for prop in props if prop != "atomnos"
+        ]
         if calced_props != []:
             for prop in calced_props:
-                print(f"\t- {prop}")
+                append_run_log(f"\t- {prop}")
         atomdf = pd.DataFrame()
         for fname in filenames:
             atom_level_data = data[fname]["atom"]
             atoms = data[fname]["atom"]["atomnos"]
             tempdic = {}
             for prop in props:
-                try:
-                    values = atom_level_data[prop]
-                    if values is None:
-                        raise Exception
-                except Exception:
-                    values = [''] * len(atoms)
+                values = atom_level_data.get(prop)
+                if values is None:
+                    values = [np.nan] * len(atoms)
                 tempdic[str(prop)] = values
-            fnames = [fname for i in range(len(values))]
+            fnames = [fname for i in range(len(atoms))]
             tempdic["filename"] = fnames
-            atom_idx = [i + 1 for i in range(len(values))]
+            atom_idx = [i + 1 for i in range(len(atoms))]
             tempdic["atom_index"] = atom_idx
             vfunc = np.vectorize(self.get_atom_lab)
             atypes = np.array(atoms)
@@ -164,7 +197,7 @@ class get_df:
         atomdf.insert(0, "filename", col)
 
         if self.substructure != '':
-            print(f'  Filtering atom data by user defined substructure: {self.substructure}\n')
+            emit(f'Filtering atom rows to user-defined substructure: {self.substructure}', style="cyan")
             final_df = pd.DataFrame()
             for filename in filenames:
                 idx = self.dd[filename]['substructure']
@@ -175,7 +208,7 @@ class get_df:
         try:
             filename = filenames[0]
             list(self.dd[filename]['sterics'].keys())
-            print(f'\u25A1  ADDING STERIC PARAMETERS TO {atom_csv}')
+            emit(f'Merging steric buried-volume descriptors into {atom_csv}', style="cyan")
             steric_df = pd.DataFrame()
             for filename in filenames:
                 props = list(self.dd[filename]['sterics'].keys())
@@ -191,7 +224,7 @@ class get_df:
                 temp_df = pd.DataFrame(tempdic)
                 steric_df = pd.concat([steric_df, temp_df])
             for prop in props:
-                    print(f"\t- {prop}")
+                    append_run_log(f"\t- {prop}")
             atomdf = pd.merge(atomdf, steric_df, on=['filename', 'atom_index'], how='outer')
         except:pass
 
@@ -209,7 +242,7 @@ class get_df:
             cpu_time += self.dd[file]["CPU_time"]
         total_seconds = cpu_time.total_seconds()
         hours = total_seconds / 3600
-        print(f'\n\tThe total CPU time used in the generation of the parsed data is {hours:.0f} hours\n')
+        emit(f'Total parsed-job CPU time: {hours:.0f} hours', style="bold green")
 
     def get_atom_lab(self, num):
         label = periodictable.elements[num]

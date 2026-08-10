@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from pathlib import Path
+
+import pandas as pd
 import pytest
 from conftest import datapath
 from moldscript.files import files
+from moldscript.MLIP import mlip
+from moldscript.get_df import get_df
 from moldscript.opt import opt
+from moldscript.spc import spc
 from moldscript.nmr import nmr
 from moldscript.nbo import nbo
 from moldscript.fmo import fmo
@@ -126,6 +132,74 @@ def test_charges(opt_path,  species, apt_charges, charges_suffix):
         assert round(data_dicts[species]['atom']['apt_charge'][i], precision) == round(charge, precision)
 
 
+def test_charges_parses_mulliken_spins():
+    path = datapath('spin_examples')
+    data_dicts = {}
+    chg_read = files("charges", path, data_dicts, 'cat_rad_opt')
+    chg_data = charges(chg_read.file_data, data_dicts, create_dat=False)
+    data_dicts = chg_data.file_data
+
+    expected_spins = {
+        'A1a': (19, [-0.329314, 0.570480, 0.135578, -0.022025, -0.008199]),
+        'A1b': (22, [0.025109, -0.341530, 0.550147, 0.140844, -0.022784]),
+        'A1c': (23, [0.000836, -0.001380, -0.312818, 0.639121, 0.116898]),
+    }
+    for species, (expected_len, expected_first_spins) in expected_spins.items():
+        spins = data_dicts[species]['atom']['mulliken_spin']
+        assert len(spins) == expected_len
+        assert sum(spins) == pytest.approx(1.0, abs=1e-5)
+        assert list(spins[:5]) == pytest.approx(expected_first_spins, abs=1e-6)
+
+
+@pytest.mark.skipif(
+    not Path(datapath("exampleNHCs/singlepoint")).exists(),
+    reason="exampleNHCs files are not included in this checkout",
+)
+def test_example_nhcs_spc_and_analysis_modules():
+    spc_path = datapath("exampleNHCs/singlepoint")
+    data_dicts = {}
+
+    spc_read = files("spc", spc_path, data_dicts, "singlepoint")
+    data_dicts = spc(
+        spc_read.file_data,
+        data_dicts,
+        create_dat=False,
+    ).file_data
+
+    for calc, parser in (
+        ("charges", charges),
+        ("fmo", fmo),
+        ("nmr", nmr),
+        ("nbo", nbo),
+    ):
+        module_read = files(calc, spc_path, data_dicts, "singlepoint")
+        data_dicts = parser(
+            module_read.file_data,
+            data_dicts,
+            create_dat=False,
+        ).file_data
+
+    expected_atom_counts = {
+        "core_1_r_10_r_10_X_X": 46,
+        "core_1_r_11_r_11_X_X": 40,
+        "core_1_r_12_r_1_X_X": 70,
+        "core_1_r_13_r_13_X_X": 58,
+        "core_1_r_1_r_1_X_X": 60,
+    }
+    assert set(data_dicts) == {"CPU_time", *expected_atom_counts}
+
+    for species, atom_count in expected_atom_counts.items():
+        entry = data_dicts[species]
+        assert len(entry["atom"]["atomnos"]) == atom_count
+        assert "mulliken_charge" not in entry["atom"]
+        assert len(entry["atom"]["natural_charge"]) == atom_count
+        assert len(entry["atom"]["nmr_shielding"]) == atom_count
+        assert entry["mol"]["smiles"] == ""
+        assert entry["mol"]["scfenergy"] < 0
+        assert entry["mol"]["HOMO"] < entry["mol"]["LUMO"]
+        assert entry["mol"]["dipole"] > 0
+
+
 @pytest.mark.parametrize("opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_path,  fukui_neutral_suffix, fukui_oxidized_suffix, fukui_reduced_suffix, species, oxidized_charges, reduced_charges", [
     ('arbr/opt', 'arbr/popn', 'arbr/fukui_ox', 'arbr/fukui_red', 'popn', 'ox', 'red', 'arbr31_wb97xd', [-0.07481, 0.55092, -0.42669, -0.43292, 0.09900, -0.24454, 
     -0.00150, 0.17203, -0.22431, -0.11532, -0.16606, 0.28381, 0.28382, 0.26198, 0.26197, 0.25935, 0.26189, 0.25138], [-0.67645, 0.44630,-0.48153, -0.41843, 0.03051, -0.31967, -0.17854, -0.05180, -0.23203, -0.26912, -0.22398, 0.19031, 0.19031, 0.19610, 0.19610, 0.19775, 0.19804, 0.20612]),
@@ -155,3 +229,64 @@ def test_fukui(opt_path, fukui_neutral_path, fukui_oxidized_path, fukui_reduced_
     assert round(sum(data_dicts[species]['atom']['fminus']), precision) == round(1, precision)
     assert round(sum(data_dicts[species]['atom']['fplus']), precision) == round(1, precision)
     assert round(sum(data_dicts[species]['atom']['frad']), precision) == round(1, precision)  
+
+
+def build_arbr141_parser():
+    return mlip(
+        neutral=datapath("arbr/mlip/neutral"),
+        reduced=datapath("arbr/mlip/reduced"),
+        oxidized=datapath("arbr/mlip/oxidized"),
+    )
+
+
+def test_mlip_parses_arbr141_dictionary_shape():
+    parser = build_arbr141_parser()
+
+    assert "CPU_time" in parser.file_data
+    assert "arbr141_wb97xd" in parser.file_data
+
+    entry = parser.file_data["arbr141_wb97xd"]
+    assert set(entry.keys()) == {"mol", "atom", "bond", "CPU_time"}
+    assert entry["bond"]["bond_length"].shape == (15, 15)
+    assert len(entry["atom"]["atomnos"]) == 15
+
+
+def test_mlip_arbr141_numeric_values():
+    parser = build_arbr141_parser()
+    entry = parser.file_data["arbr141_wb97xd"]
+
+    assert entry["mol"]["scfenergy"] == pytest.approx(-3176.0668656171874, rel=0, abs=1e-9)
+    assert entry["mol"]["vertical_ie"] == pytest.approx(0.33734708984375, rel=0, abs=1e-12)
+    assert entry["mol"]["vertical_ea"] == pytest.approx(0.04105585859375, rel=0, abs=1e-12)
+    assert entry["mol"]["dipole_x"] == pytest.approx(-1.1098721027374268, rel=0, abs=1e-12)
+    assert entry["mol"]["dipole_y"] == pytest.approx(-0.11217078566551208, rel=0, abs=1e-12)
+    assert entry["mol"]["dipole_z"] == pytest.approx(-0.17991302907466888, rel=0, abs=1e-12)
+    assert entry["mol"]["dipole"] == pytest.approx(1.1299411788329683, rel=0, abs=1e-12)
+
+    assert entry["atom"]["charges_neutral"].sum() == pytest.approx(0.0, abs=1e-6)
+    assert entry["atom"]["fplus"].sum() == pytest.approx(1.0, abs=1e-6)
+    assert entry["atom"]["fminus"].sum() == pytest.approx(1.0, abs=1e-6)
+    assert entry["atom"]["frad"].sum() == pytest.approx(1.0, abs=1e-6)
+
+
+def test_mlip_get_df_writes_csvs(tmp_path):
+    parser = build_arbr141_parser()
+
+    prefix = str(tmp_path / "mlip_")
+    get_df(parser.file_data, prefix=prefix)
+
+    mol_csv = Path(f"{prefix}molecule_level.csv")
+    atom_csv = Path(f"{prefix}atom_level.csv")
+    bond_csv = Path(f"{prefix}bond_level.csv")
+
+    assert mol_csv.exists()
+    assert atom_csv.exists()
+    assert bond_csv.exists()
+
+    mol_df = pd.read_csv(mol_csv)
+    atom_df = pd.read_csv(atom_csv)
+    bond_df = pd.read_csv(bond_csv)
+
+    assert list(mol_df["filename"]) == ["arbr141_wb97xd"]
+    assert {"filename", "atom_index", "atom_type", "fplus", "fminus", "frad"}.issubset(atom_df.columns)
+    assert {"filename", "atom1_idx", "atom2_idx", "bond_length"}.issubset(bond_df.columns)

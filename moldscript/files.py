@@ -7,6 +7,7 @@ import sys, os
 import time
 from moldscript.utils import (
     get_files,
+    emit,
 )
 from collections import defaultdict
 from moldscript.argument_parser import load_variables
@@ -137,13 +138,10 @@ class files:
         except:
             pass
         if suffix != '':
+            suffix = str(suffix).strip().lstrip("_")
             fullname = fullname.split("_" + suffix)[0]
         elif self.warn_suffix == False:
-            try:
-                self.args.log.write(f"Warning: no suffix provided for {self.calc}, using full filename")
-                self.args.log.write("If this is not intentional, it will cause issues with matching filenames")
-            except Exception:
-                print(f"Warning: no suffix provided for {self.calc}, using full filename")
-                print("If this is not intentional, it will cause issues with matching filenames")
+            emit(f"Warning: no suffix provided for {self.calc}; matching will use each full filename stem.", style="yellow")
+            emit(f"If {self.calc} filenames include a module tag, pass --suffix_{self.calc} so they match the optimization keys.", style="yellow")
             self.warn_suffix = True
         return fullname

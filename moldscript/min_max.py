@@ -4,6 +4,7 @@
 
 import pandas as pd
 import numpy as np
+from moldscript.utils import emit
 
 class min_max:
     def __init__(self, cut=0.95, temp = 298.15,  energies =None, prefix=''):
@@ -22,7 +23,7 @@ class min_max:
         mol_df = pd.read_csv(str(self.prefix) + 'molecule_level.csv')
         mol_df = pd.merge(mol_df, self.energies, on='filename')
         
-        print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR MOLECULE-LEVEL DESCRIPTORS INTO {}'.format(ensemble_mol_csv))
+        emit('Calculating min, max, and range for molecule-level descriptors into {}'.format(ensemble_mol_csv), style="cyan")
         basenames = mol_df['filename'].str.split('_conf').str[0].unique()
         result_df = pd.DataFrame()       
         for name in basenames:
@@ -39,7 +40,7 @@ class min_max:
             threshold = self.threshold  # Assume threshold is defined in your class
             tempdf = tempdf[tempdf['Boltzmann_weight_normalized'] >= threshold]
             if tempdf.empty:
-                print(f"All conformers of {name} have Boltzmann weights below the threshold. Skipping.")
+                emit(f"All conformers of {name} have Boltzmann weights below the threshold. Skipping.", style="yellow")
                 continue  # Skip to next molecule
             # Update weight dictionary with conformers that passed the threshold
             filtered_weights = pd.Series(tempdf['Boltzmann_weight_normalized'].values, index=tempdf['filename']).to_dict()
@@ -87,7 +88,7 @@ class min_max:
     def atom_min_max_range(self):
         atom_df = pd.read_csv(str(self.prefix) + 'atom_level.csv')
         ensemble_atom_csv = str(self.prefix) + 'min_max_range_atom_level.csv'
-        print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR ATOM-LEVEL DESCRIPTORS INTO {}'.format(ensemble_atom_csv))
+        emit('Calculating min, max, and range for atom-level descriptors into {}'.format(ensemble_atom_csv), style="cyan")
         
         # Map the weights to the atomic DataFrame based on 'filename'
         # Only include conformers that passed the threshold (weights exist in self.weight_dict)
@@ -99,7 +100,7 @@ class min_max:
         for name in atom_df['basename'].unique():
             tempdf = atom_df[atom_df['basename'] == name]
             if tempdf.empty:
-                print(f"No conformers of {name} passed the threshold. Skipping.")
+                emit(f"No conformers of {name} passed the threshold. Skipping.", style="yellow")
                 continue  # Skip to next molecule
             numerical_cols = tempdf.select_dtypes(include=[np.number]).columns.tolist()
             # Exclude columns that are not descriptors
@@ -150,7 +151,7 @@ class min_max:
     def bond_min_max_range(self):
         bond_df = pd.read_csv(str(self.prefix) + 'bond_level.csv')
         ensemble_bond_csv =str(self.prefix) +  'min_max_range_bond_level.csv'
-        print('\u25A1  CALCULATING MIN, MAX, AND RANGE FOR BOND-LEVEL DESCRIPTORS INTO {}'.format(ensemble_bond_csv))
+        emit('Calculating min, max, and range for bond-level descriptors into {}'.format(ensemble_bond_csv), style="cyan")
         bond_df = bond_df[bond_df['filename'].isin(self.weight_dict.keys())].copy()
         bond_df['Weight'] = bond_df['filename'].map(self.weight_dict)
         bond_df['basename'] = bond_df['filename'].str.split('_conf').str[0]
@@ -158,7 +159,7 @@ class min_max:
         for name in bond_df['basename'].unique():
             tempdf = bond_df[bond_df['basename'] == name]
             if tempdf.empty:
-                print(f"No conformers of {name} passed the threshold. Skipping.")
+                emit(f"No conformers of {name} passed the threshold. Skipping.", style="yellow")
                 continue  # Skip to next molecule
             numerical_cols = tempdf.select_dtypes(include=[np.number]).columns.tolist()
             # Exclude columns that are not descriptors

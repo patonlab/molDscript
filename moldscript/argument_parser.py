@@ -3,7 +3,14 @@
 #####################################################.
 
 import os, time, getopt, sys, shlex
-from moldscript.utils import format_lists, Logger, build_log_path
+from moldscript.utils import (
+    format_lists,
+    Logger,
+    build_log_path,
+    terminal_error,
+    terminal_success,
+    terminal_warning,
+)
 
 moldscript_version = "0.1"
 time_run = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
@@ -25,6 +32,14 @@ var_dict = {
     "fukui_neutral": False,
     "fukui_oxidized": False,
     "fukui_reduced": False,
+    "mlip_neutral": False,
+    "mlip_reduced": False,
+    "mlip_oxidized": False,
+    "ensemble": False,
+    "ensemble_radii": [3.5],
+    "ensemble_grid": 0.25,
+    "ensemble_include_h": False,
+    "ensemble_exclude": "",
     "link": False,
     "boltz": False,
     "min_max": False,
@@ -46,10 +61,13 @@ var_dict = {
     "suffix_fukui_oxidized": "",
     "suffix_charges": "",
     "suffix_fmo": "",
+    "suffix_ensemble": "",
     "no_mol" : False,
     'no_atom' : False,
     'no_bond' : False,
     'mol_vector' : False,
+    "workers": 1,
+    "write_args": "",
 
 }
 
@@ -77,6 +95,10 @@ def load_arguments_from_file(filename):
                 value = True
             elif value.lower() == "false":
                 value = False
+            elif value.lower() == "none":
+                value = None
+            elif value.startswith("[") and value.endswith("]"):
+                value = format_lists(value)
             elif value.isdigit():
                 value = int(value)
             else:
@@ -100,12 +122,8 @@ def set_options(kwargs):
         elif key.lower() in var_dict:
             vars(options)[key.lower()] = kwargs[key.lower()]
         else:
-            print(
-                "Warning! Option: [",
-                key,
-                ":",
-                kwargs[key],
-                "] provided but no option exists, try the online documentation to see available options for each module.",
+            terminal_warning(
+                f"Warning! Option: [{key}: {kwargs[key]}] provided but no option exists, try the online documentation to see available options for each module."
             )
     return options
 
@@ -128,13 +146,15 @@ def command_line_args():
         'no_mol',
         'no_atom',
         'no_bond',
-        'mol_vector'
+        'mol_vector',
+        "ensemble_include_h",
     ]
     list_args = ["skip_list"]
-    int_args = ["syllables"]
+    int_args = ["syllables", "workers"]
     float_args = [
         "temp",
-        "cut"
+        "cut",
+        "ensemble_grid",
     ]
     str_args = [
         "output",
@@ -148,6 +168,12 @@ def command_line_args():
         "fukui_neutral",
         "fukui_oxidized",
         "fukui_reduced",
+        "mlip_neutral",
+        "mlip_reduced",
+        "mlip_oxidized",
+        "ensemble",
+        "ensemble_radii",
+        "ensemble_exclude",
         "link",
         "substructure",
         "varfile",
@@ -161,19 +187,21 @@ def command_line_args():
         "fukui_reduced_suffix",
         "fukui_oxidized_suffix",
         "charges_suffix",
-        "fmo_suffix"
+        "fmo_suffix",
+        "suffix_ensemble",
+        "write_args",
     ]
 
     for arg in var_dict:
         if arg in bool_args:
             available_args.append(f"{arg}")
         else:
-            available_args.append(f"{arg} =")
+            available_args.append(f"{arg}=")
 
     try:
         opts, _ = getopt.getopt(sys.argv[1:], "h", available_args)
     except getopt.GetoptError as err:
-        print(err)
+        terminal_error(str(err))
         sys.exit()
 
     for arg, value in opts:
@@ -183,7 +211,7 @@ def command_line_args():
             arg_name = arg.split("-")[1].strip()
 
         if arg_name in ("h", "help"):
-            print(
+            terminal_success(
                 f"o  MOLDSCRIPT v {moldscript_version} is installed correctly! For more information about the available options, see the documentation in XXX"
             )
             sys.exit()
@@ -217,6 +245,44 @@ def command_line_args():
     return args
 
 
+def _format_argument_file_value(value):
+    if value is None:
+        return "None"
+    if isinstance(value, bool):
+        return "True" if value else "False"
+    if isinstance(value, (list, tuple)):
+        return repr(list(value))
+    return str(value)
+
+
+def write_arguments_file(args, filename=None):
+    """Write a varfile that can reproduce the effective options for this run."""
+    target = filename if filename is not None else getattr(args, "write_args", "")
+    if target is True:
+        target = "arguments.txt"
+    if not target:
+        return None
+
+    target = str(target)
+    if target.lower() == "true":
+        target = "arguments.txt"
+
+    directory = os.path.dirname(target)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    with open(target, "w", encoding="utf-8") as handle:
+        handle.write("# MOLDSCRIPT arguments generated from the current run.\n")
+        handle.write("# Re-run with: python -m moldscript --varfile {}\n\n".format(target))
+        for key in var_dict:
+            if key in ("varfile", "write_args"):
+                continue
+            value = getattr(args, key, var_dict[key])
+            handle.write(f"{key}: {_format_argument_file_value(value)}\n")
+
+    return target
+
+
 def load_variables(kwargs, moldscript_module, create_dat=True):
     """
     Load default and user-defined variables
@@ -237,15 +303,21 @@ def load_variables(kwargs, moldscript_module, create_dat=True):
             "FUKUI": "FUKUI",
             "SUBSTRUCTURE": "SUBSTRUCTURE",
             "FMO": "FMO",
+            "CHARGES": "CHARGES",
+            "STERICS": "STERICS",
+            "ENSEMBLE": "ENSEMBLE",
+            "MLIP": "MLIP",
         }
         logger_code = module_codes.get(moldscript_module, moldscript_module)
         log_path = build_log_path(self.output, logger_code)
         self.log = Logger(log_path, verbose=self.verbose)
-        self.log.write_only(
-            f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
-        )
-        command_line = shlex.join(["python", "-m", "moldscript", *sys.argv[1:]])
-        self.log.write(f"Command line used in MOLDSCRIPT: {command_line}")
+        if self.log.started_new_file:
+            self.log.write_only(
+                f"   MOLDSCRIPT v {moldscript_version} {time_run} \n   Citation: {moldscript_ref}\n"
+            )
+            command_line = shlex.join(["python", "-m", "moldscript", *sys.argv[1:]])
+            self.log.write_only(f"Command line used in MOLDSCRIPT: {command_line}")
+        self.log.write_only(f"\n=== {logger_code} ===")
 
     return self
 

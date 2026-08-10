@@ -9,9 +9,122 @@ import datetime
 import cclib as cc
 from moldscript.argument_parser import load_variables
 import numpy as np
-from moldscript.utils import eV_to_hartree, parse_cc_data, record_cpu_time, format_timedelta
+from moldscript.utils import (
+    eV_to_hartree,
+    parse_cc_data,
+    record_cpu_time,
+    format_timedelta,
+    resolve_data_key,
+    initiate_data_dict,
+    run_file_jobs,
+    cpu_times_seconds,
+)
 import moldscript.xyz2mol as xyz2mol
 from rdkit import Chem
+
+
+def _fukui_npa_data(file, cc_data):
+    start_npop = None
+    with open(file, "r") as outfile:
+        lines = outfile.readlines()
+    list_npop = []
+    for i, line in enumerate(lines):
+        if line.find(" Summary of Natural Population Analysis:") > -1:
+            list_npop.append(i + 6)
+    if list_npop:
+        start_npop = list_npop[0]
+    if start_npop is None:
+        return None
+    nat_charges = []
+    end_npop = start_npop + len(cc_data.atomnos)
+    for i in range(start_npop, end_npop):
+        nat_charges.append(float(lines[i].split()[2]))
+    return nat_charges
+
+
+def _find_first_match(list_a, list_b):
+    for element in list_a:
+        if element in list_b:
+            return element
+    return None
+
+
+def _parse_fukui_state(file_name, source_path):
+    if not source_path:
+        return None
+    cc_data = cc.io.ccread(source_path)
+    try:
+        natural = _fukui_npa_data(source_path, cc_data)
+        if natural is not None:
+            cc_data.atomcharges["natural"] = natural
+    except Exception:
+        pass
+    return {
+        "source_path": source_path,
+        "energy": cc_data.scfenergies[-1] * eV_to_hartree,
+        "atomcharges": dict(cc_data.atomcharges),
+        "metadata": getattr(cc_data, "metadata", {}),
+        "cpu_times": cc_data.metadata.get("cpu_time") if hasattr(cc_data, "metadata") else None,
+    }
+
+
+def _parse_fukui_job(job):
+    raw_file_name, matched_name, file_paths = job
+    try:
+        neutral_data = _parse_fukui_state(raw_file_name, file_paths.get("neutral"))
+        oxidized_data = _parse_fukui_state(raw_file_name, file_paths.get("oxidized"))
+        reduced_data = _parse_fukui_state(raw_file_name, file_paths.get("reduced"))
+
+        if neutral_data is None or oxidized_data is None or reduced_data is None:
+            return {
+                "raw_file_name": raw_file_name,
+                "matched_name": matched_name,
+                "skip": True,
+                "error": None,
+            }
+
+        chg = _find_first_match(["natural", "hirshfeld", "mulliken"], list(neutral_data["atomcharges"].keys()))
+        if chg is None:
+            raise ValueError("No compatible charge set found for Fukui calculation")
+
+        reduced_charges = np.array(reduced_data["atomcharges"][chg])
+        neutral_charges = np.array(neutral_data["atomcharges"][chg])
+        oxidized_charges = np.array(oxidized_data["atomcharges"][chg])
+        fplus = -1 * (reduced_charges - neutral_charges)
+        fminus = -1 * (neutral_charges - oxidized_charges)
+        rad_fukui = (fplus + fminus) / 2
+
+        return {
+            "raw_file_name": raw_file_name,
+            "matched_name": matched_name,
+            "skip": False,
+            "charge_type": chg,
+            "metadata": neutral_data["metadata"],
+            "mol_values": {
+                "vertical_ie": oxidized_data["energy"] - neutral_data["energy"],
+                "vertical_ea": reduced_data["energy"] - neutral_data["energy"],
+            },
+            "atom_values": {
+                f"oxidized_{chg}_charges": oxidized_charges,
+                f"reduced_{chg}_charges": reduced_charges,
+                "fplus": fplus,
+                "fminus": fminus,
+                "frad": rad_fukui,
+            },
+            "cpu_records": [
+                ("neutral", neutral_data["source_path"], neutral_data["cpu_times"]),
+                ("reduced", reduced_data["source_path"], reduced_data["cpu_times"]),
+                ("oxidized", oxidized_data["source_path"], oxidized_data["cpu_times"]),
+            ],
+            "error": None,
+        }
+    except BaseException as exc:
+        return {
+            "raw_file_name": raw_file_name,
+            "matched_name": matched_name,
+            "error": f"Could not parse {raw_file_name} to calculate Fukui descriptors: {exc}",
+        }
+
 
 class fukui:
     """
@@ -39,72 +152,47 @@ class fukui:
         if create_dat:
             elapsed_time = round(time.time() - start_time_overall, 2)
             self.args.log.write(f"-- Fukui Parameter Collection complete in {elapsed_time} seconds\n")
+            self.args.log.finalize()
 
     def get_data(self):
 
         first = False
         self.args.log.write(f"-- Fukui Parameter Collection starting")
-        total = len(self.data)
-        last_step = 0
-        for idx, file_name in enumerate(list(self.data.keys()), start=1):
-            percent = int((idx / total) * 100) if total else 100
-            step = percent // 5
-            if step > last_step:
-                for s in range(last_step + 1, step + 1):
-                    self.args.log.write(f"Progress: {s * 5}% ({idx}/{total})")
-                last_step = step
-            neutral_data, oxidized_data, reduced_data = None, None, None
-            if "neutral" in self.data[file_name].keys():
-                neutral_data = self.parse_cc_data(file_name, self.data[file_name]["neutral"])
-                if first == False:
-                    try:
-                        self.args.log.write(f"   Package used: {neutral_data.metadata['package']} {neutral_data.metadata['package_version']}")
-                        self.args.log.write(f"   Functional used: {neutral_data.metadata['functional']}")
-                        self.args.log.write(f"   Basis set used: {neutral_data.metadata['basis_set']}\n")
-                    except: pass
-            if "oxidized" in self.data[file_name].keys():
-                oxidized_data = self.parse_cc_data(file_name, self.data[file_name]["oxidized"])
-            if "reduced" in self.data[file_name].keys():
-                reduced_data = self.parse_cc_data(file_name, self.data[file_name]["reduced"])
-            if neutral_data != None and oxidized_data != None and reduced_data != None:
-                self.args.log.write_only(f"o  Parsing Fukui data from {file_name}")
-                neut_e = neutral_data.scfenergies[-1] * eV_to_hartree
-                red_e = reduced_data.scfenergies[-1] * eV_to_hartree
-                ox_e = oxidized_data.scfenergies[-1] * eV_to_hartree
-                self.data_dict[file_name]['mol']['vertical_ie'] = ox_e - neut_e
-                self.data_dict[file_name]['mol']['vertical_ea'] = red_e - neut_e
-                chg = self.find_first_match(["natural", "hirshfeld", "mulliken"], list(neutral_data.atomcharges.keys()))
-                if first == False:
-                    self.args.log.write(f'   Charges used for FUKUI: {chg}')
-                    first = True
-                reduced_charges = np.array(reduced_data.atomcharges[chg])
-                neutral_charges = np.array(neutral_data.atomcharges[chg])
-                oxidized_charges = np.array(oxidized_data.atomcharges[chg])
-                self.data_dict[file_name]['atom'][f'oxidized_{chg}_charges'] = oxidized_charges
-                self.data_dict[file_name]['atom'][f'reduced_{chg}_charges'] = reduced_charges
-                #multiplied by -1 to change from charge density to electron density to meet fukui definition
-                fplus = -1 * (reduced_charges - neutral_charges)
-                fminus = -1 * (neutral_charges - oxidized_charges)
-                rad_fukui = (fplus + fminus)/2
-                self.data_dict[file_name]['atom']['fplus'] = (fplus)
-                self.data_dict[file_name]['atom']['fminus'] = (fminus)
-                self.data_dict[file_name]['atom']['frad'] = (rad_fukui)
-            else:
-                self.args.log.write(f"x  Skipping file {file_name} as one either neutral, oxidized or reduced does not exist!")
-            try:
-                datasets = (
-                    ("neutral", neutral_data, self.data[file_name].get('neutral')),
-                    ("reduced", reduced_data, self.data[file_name].get('reduced')),
-                    ("oxidized", oxidized_data, self.data[file_name].get('oxidized')),
-                )
-                for label, dataset, source in datasets:
-                    if not dataset:
-                        continue
-                    cpu_times = dataset.metadata.get('cpu_time') if hasattr(dataset, 'metadata') else None
-                    self.module_cpu_seconds += record_cpu_time(self.data_dict, file_name, source, cpu_times)
+        jobs = []
+        for raw_file_name in list(self.data.keys()):
+            file_name = resolve_data_key(raw_file_name, self.data_dict, module_name="FUKUI", logger=self.args.log)
+            jobs.append((raw_file_name, file_name, self.data[raw_file_name]))
 
-            except:
-                self.args.log.write(f'!!Could not obtain CPU time for {file_name}, skipping!!')
+        for result in run_file_jobs(jobs, _parse_fukui_job, workers=self.args.workers, logger=self.args.log):
+            raw_file_name = result["raw_file_name"]
+            file_name = result["matched_name"]
+            if result.get("error"):
+                self.args.log.write(f"x  {result['error']}")
+                raise SystemExit
+
+            if result.get("skip"):
+                self.args.log.write(f"x  Skipping file {raw_file_name} as one either neutral, oxidized or reduced does not exist!")
+                continue
+
+            metadata = result["metadata"]
+            if first == False:
+                try:
+                    self.args.log.write(f"   Package used: {metadata['package']} {metadata['package_version']}")
+                    self.args.log.write(f"   Functional used: {metadata['functional']}")
+                    self.args.log.write(f"   Basis set used: {metadata['basis_set']}\n")
+                except: pass
+                self.args.log.write(f"   Charges used for FUKUI: {result['charge_type']}")
+                first = True
+
+            self.args.log.write_only(f"o  Parsing Fukui data from {raw_file_name}")
+            for key, value in result["mol_values"].items():
+                self.data_dict[file_name]['mol'][key] = value
+            for key, value in result["atom_values"].items():
+                self.data_dict[file_name]['atom'][key] = value
+
+            for label, source, cpu_times in result["cpu_records"]:
+                self.module_cpu_seconds += cpu_times_seconds(cpu_times)
+                record_cpu_time(self.data_dict, file_name, source, cpu_times)
         module_cpu_td = datetime.timedelta(seconds=self.module_cpu_seconds)
         if self.module_cpu_seconds:
             self.args.log.write(f"-- FUKUI CPU time: {format_timedelta(module_cpu_td)}")
@@ -124,47 +212,23 @@ class fukui:
         return cc_data
 
     def npa_data(self, file, cc_data):
-        start_npop = None
-        outfile = open(file, "r")
-        lines = outfile.readlines()
-        list_npop = []
-        for i, line in enumerate(lines):
-            if line.find(" Summary of Natural Population Analysis:") > -1:
-                list_npop.append(i + 6)
-        start_npop = list_npop[0]
-        if start_npop != None:
-            nat_charges = []
-            end_npop = start_npop + len(cc_data.atomnos)
-            for i in range(start_npop, end_npop):
-                nat_charges.append(float(lines[i].split()[2]))
-        return nat_charges
+        return _fukui_npa_data(file, cc_data)
     def find_first_match(self, list_a, list_b):
-        for element in list_a:
-            if element in list_b:
-                return element
-        return None  # No match found
+        return _find_first_match(list_a, list_b)
     def fukui_data_dict(self,data):
         """
         Initiates a data dictionary to store all the data from the files.
         """
-        self.args.log.write(f"Initializing data parsing with SMILES and geometry data")
-        data_dict = {}
-        for i, file_name in enumerate(data.keys()):
-            data_dict[file_name] = dict()
-            data_dict[file_name]["mol"] = dict()
-            data_dict[file_name]["atom"] = dict()
-            data_dict[file_name]["bond"] = dict()
-            parsed_data = parse_cc_data(file_name, data[file_name]['neutral'])
-            try:
-                mol = xyz2mol.xyz2mol(parsed_data.atomnos.tolist(), parsed_data.atomcoords[-1].tolist(), charge=parsed_data.charge)[0]
-                smi = Chem.MolToSmiles(mol)
-            except:
-                self.args.log.write("Encountered an issue with the mol embedding. Skipping smiles string.")
-            data_dict[file_name]["mol"]["smiles"] = smi if 'smi' in locals() else ''
-            data_dict[file_name]["atom"]["atomnos"] = parsed_data.atomnos
-            data_dict[file_name]["bond"]["bond_length"] = parsed_data.bond_data_matrix
-            data_dict[file_name]["mol"]["scfenergy"] = (parsed_data.scfenergies[-1] * eV_to_hartree)
-        return data_dict
+        neutral_files = {
+            file_name: states["neutral"]
+            for file_name, states in data.items()
+            if "neutral" in states
+        }
+        return initiate_data_dict(
+            neutral_files,
+            logger=self.args.log,
+            workers=self.args.workers,
+        )
 
 
 

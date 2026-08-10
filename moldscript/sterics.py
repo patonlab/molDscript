@@ -13,19 +13,20 @@ import ast
 from moldscript.argument_parser import load_variables
 
 class sterics:
-    def __init__(self, opt_data, data_dict, volume, vall, radii=3):
+    def __init__(self, opt_data, data_dict, volume, vall, radii=3, output=""):
         t1 = time.time()
-        # create a module logger so messages go to MOLDSCRIPT_STERICS.dat
-        self.args = load_variables({}, "STERICS", create_dat=True)
+        self.args = load_variables({"output": output}, "STERICS", create_dat=True)
         self.data = opt_data
         self.dd = data_dict
         self.rad = radii
+        self.args.log.write("-- Steric Parameter Collection starting")
         if vall != False:
             self.get_params(vall=vall)
         else:
             self.get_params(volume=volume)
         elapsed_time = round(time.time() - t1, 2)
-        self.args.log.write_only(f"-- Steric Parameter Collection complete in {elapsed_time} seconds\n")
+        self.args.log.write(f"-- Steric Parameter Collection complete in {elapsed_time} seconds\n")
+        self.args.log.finalize()
     def get_params(self, vall=False, volume=False):
         try:
             self.rad = [float(self.rad)]
@@ -105,4 +106,3 @@ class sterics:
         )
 
             
-
